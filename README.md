@@ -26,13 +26,13 @@ Cancels the WS command from being sent to the game if you are out of range. Norm
 
 In your job file, add the following code to the beginning of your `job_precasts` function:
 ```
-cancel_outranged_ws(spell, eventArgs)
+silibs.cancel_outranged_ws(spell, eventArgs)
 ```
 
 If you do not have a `job_precasts` function in your lua, you can just add that as follows:
 ```
 function job_precast(spell, action, spellMap, eventArgs)
-  cancel_outranged_ws(spell, eventArgs)
+  silibs.cancel_outranged_ws(spell, eventArgs)
 end
 ```
 
@@ -45,13 +45,13 @@ When you use a spell, item, ability, etc this will check to see if you have a st
 
 In your job file, add the following code to the beginning of your `job_precasts` function:
 ```
-cancel_on_blocking_status(spell, eventArgs)
+silibs.cancel_on_blocking_status(spell, eventArgs)
 ```
 
 If you do not have a `job_precasts` function in your lua, you can just add that as follows:
 ```
 function job_precast(spell, action, spellMap, eventArgs)
-  cancel_on_blocking_status(spell, eventArgs)
+  silibs.cancel_on_blocking_status(spell, eventArgs)
 end
 ```
 
