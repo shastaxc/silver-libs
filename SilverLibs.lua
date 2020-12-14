@@ -1,27 +1,40 @@
+--=============================================================================
+--=============================================================================
+--====================             DO NOT              ========================
+--====================             MODIFY              ========================
+--====================            ANYTHING             ========================
+--=============================================================================
+--=============================================================================
+
+silibs = {} -- Initialize library namespace
+
 -------------------------------------------------------------------------------
 -- Includes/imports
 -------------------------------------------------------------------------------
 res = include('resources')
 
+-------------------------------------------------------------------------------
+-- Flags to enable/disable features and store user settings
+-------------------------------------------------------------------------------
+silibs.use_weapon_rearm = false
+silibs.use_dynamic_ws_keybinds = false
+silibs.main_ws_target_mode = 't'
+silibs.ranged_ws_target_mode = 't'
 
 -------------------------------------------------------------------------------
 -- Instatiated variables for storing values and states
 -------------------------------------------------------------------------------
 -- Most recent weapons (used for re-arming)
-sets.MostRecent = {main="",sub="",ranged="",ammo=""} --DO NOT MODIFY
-current_weapon_type = nil --DO NOT MODIFY
-current_ranged_weapon_type = nil -- Do not modify
-latest_ws_binds = {} --DO NOT MODIFY
-USE_WEAPON_REARM = false --DO NOT MODIFY
-USE_DYNAMIC_MAIN_WS_KEYBINDS = false --DO NOT MODIFY
-MAIN_WS_TARGET_MODE = 't' --DO NOT MODIFY
-RANGED_WS_TARGET_MODE = 't' --DO NOT MODIFY
+silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
+silibs.current_weapon_type = nil
+silibs.current_ranged_weapon_type = nil
+silibs.latest_ws_binds = {}
 
 
 -------------------------------------------------------------------------------
 -- Constants and maps
 -------------------------------------------------------------------------------
-range_mult = {
+silibs.range_mult = {
   [2] = 1.55,
   [3] = 1.490909,
   [4] = 1.44,
@@ -35,7 +48,7 @@ range_mult = {
   [12] = 1.666666666666667,
 }
 
-action_type_blocks = {
+silibs.action_type_blockers = {
   ['Magic'] = {'terror', 'petrification', 'stun', 'sleep', 'charm', 'silence', 'mute', 'Omerta'},
   ['Ranged Attack'] = {'terror', 'petrification', 'stun', 'sleep', 'charm'},
   ['Ability'] = {'terror', 'petrification', 'stun', 'sleep', 'charm', 'amnesia', 'impairment'},
@@ -54,7 +67,7 @@ action_type_blocks = {
 --   and you are main job MNK, those bindings will overwrite default. If you have a '/WAR'
 --   table after that, then those keybinds will overwrite the previous ones if you are sub
 --   job WAR.
-default_ws_bindings = {
+silibs.ws_binds = {
   ['Hand-to-Hand'] = {
     ['Default'] = {
       ['^numpad7'] = "Victory Smite", --empyrean
@@ -299,18 +312,18 @@ default_ws_bindings = {
   },
 }
 
-valid_keybind_modifiers = S{
+silibs.valid_keybind_modifiers = S{
   "^", 	-- Ctrl
   "!", 	-- Alt
   "@", 	-- Win
   "#", 	-- Apps
   "~", 	-- Shift
 }
-valid_keybind_states = S{
+silibs.valid_keybind_states = S{
   "$", -- Keybind is valid while the game input line is active
   "%", -- Keybind is valid while the game input line is inactive
 }
-valid_keybinds = S{
+silibs.valid_keybinds = S{
   "`",
   "escape",
   "1",
@@ -451,25 +464,25 @@ valid_keybinds = S{
 -- Functions
 -------------------------------------------------------------------------------
 
-function init_settings()
-  sets.MostRecent = {main="",sub="",ranged="",ammo=""} --DO NOT MODIFY
-  USE_WEAPON_REARM = false
-  USE_DYNAMIC_MAIN_WS_KEYBINDS = false
-  MAIN_WS_TARGET_MODE = 't'
-  RANGED_WS_TARGET_MODE = 't'
+function silibs.init_settings()
+  silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
+  silibs.use_weapon_rearm = false
+  silibs.use_dynamic_ws_keybinds = false
+  silibs.main_ws_target_mode = 't'
+  silibs.ranged_ws_target_mode = 't'
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
 -- 's' is self player object
 -- 't' is target object
-function is_ws_out_of_range(ws_range, s, t)
+function silibs.is_ws_out_of_range(ws_range, s, t)
   if ws_range == nil or s == nil or t == nil then
     print('Invalid params for is_ws_out_of_range.')
     return true
   end
 
   local distance = t.distance:sqrt()
-  local is_out_of_range = distance > (t.model_size + ws_range * range_mult[ws_range] + s.model_size)
+  local is_out_of_range = distance > (t.model_size + ws_range * silibs.range_mult[ws_range] + s.model_size)
 
   if is_out_of_range then
     windower.add_to_chat(167, 'Target out of range.')
@@ -480,7 +493,7 @@ end
 
 -- 'spell' is the same as input parameter in job_precast function of Mote libs
 -- 'eventArgs' is the same as input parameter in job_precast function of Mote libs
-function cancel_outranged_ws(spell, eventArgs)
+function silibs.cancel_outranged_ws(spell, eventArgs)
   -- Ensure spell is a weaponskill to proceed
   if spell.type ~= "WeaponSkill" then
     return
@@ -489,7 +502,7 @@ function cancel_outranged_ws(spell, eventArgs)
   local player = windower.ffxi.get_mob_by_target('me')
   local target = windower.ffxi.get_mob_by_id(spell.target.id)
 
-  if is_ws_out_of_range(spell.range, player, target) then
+  if silibs.is_ws_out_of_range(spell.range, player, target) then
     cancel_spell() -- Blocks the outgoing action packet that would perform the WS
     eventArgs.cancel = true -- Ensures gear doesn't swap
   end
@@ -498,18 +511,18 @@ end
 -- Don't swap gear if status forbids the action
 -- 'spell' is the same as input parameter in job_precast function of Mote libs
 -- 'eventArgs' is the same as input parameter in job_precast function of Mote libs
-function cancel_on_blocking_status(spell, eventArgs)
-  local forbidden_statuses = action_type_blocks[spell.action_type]
+function silibs.cancel_on_blocking_status(spell, eventArgs)
+  local forbidden_statuses = silibs.action_type_blockers[spell.action_type]
   for k,status in pairs(forbidden_statuses) do
     if buffactive[status] then
-      add_to_chat(167, 'Stopped due to status.')
+      windower.add_to_chat(167, 'Stopped due to status.')
       eventArgs.cancel = true -- Ensures gear doesn't swap
       return -- Ends function without finishing loop
     end
   end
 end
 
-function has_item(bag_name, item_name)
+function silibs.has_item(bag_name, item_name)
   local bag = res.bags:with('en', bag_name)
   local item = res.items:with('en', item_name)
   local items_in_bag = windower.ffxi.get_items(bag['id'])
@@ -528,14 +541,14 @@ end
 --    send_command('bind @w gs c toggle WeaponLock')
 -- If 'main', 'sub', or 'ranged' are in idle, engaged, or defense sets
 -- it may conflict with this functionality
-function update_and_rearm_weapons()
+function silibs.update_and_rearm_weapons()
   -- Save state of any equipped weapons
   if player.equipment.main ~= "empty" then
     if not is_encumbered('main') then
-      sets.MostRecent.main = player.equipment.main
+      silibs.most_recent_weapons.main = player.equipment.main
     end
     if not is_encumbered('sub') then
-      sets.MostRecent.sub = player.equipment.sub
+      silibs.most_recent_weapons.sub = player.equipment.sub
     end
   end
   if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
@@ -543,25 +556,25 @@ function update_and_rearm_weapons()
     local rangedItem = res.items:with('name', player.equipment.ranged)
     if res.skills[rangedItem.skill].category == 'Combat' then
       if not is_encumbered('ranged') then
-        sets.MostRecent.ranged = player.equipment.ranged
+        silibs.most_recent_weapons.ranged = player.equipment.ranged
       end
       if not is_encumbered('ammo') then
-        sets.MostRecent.ammo = player.equipment.ammo
+        silibs.most_recent_weapons.ammo = player.equipment.ammo
       end
     end
   end
 
   -- Disarm Handling
   -- Table fills the string "empty" for empty slot. It won't return nil
-  if (player.equipment.main == "empty" and sets.MostRecent.main ~= "empty")
-      or (player.equipment.ranged == "empty" and sets.MostRecent.ranged ~= "empty") then
+  if (player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty")
+      or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty") then
     if state.WeaponLock == nil or state.WeaponLock.value == false then
-      equip(sets.MostRecent)
+      equip(silibs.most_recent_weapons)
     end
   end
 end
 
-function update_weaponskill_binds(has_job_changed)
+function silibs.update_weaponskill_binds(has_job_changed)
   local has_main_weapon_changed = false
   local has_ranged_weapon_changed = false
   local main_weapon = nil
@@ -585,7 +598,7 @@ function update_weaponskill_binds(has_job_changed)
   end
 
   has_main_weapon_changed = main_weapon_type ~= current_main_weapon_type
-  has_ranged_weapon_changed = ranged_weapon_type ~= current_ranged_weapon_type
+  has_ranged_weapon_changed = ranged_weapon_type ~= silibs.current_ranged_weapon_type
   
   -- Do not proceed to update keybinds if:
   -- Main weapon type has not changed, and
@@ -598,12 +611,12 @@ function update_weaponskill_binds(has_job_changed)
   -- Update the main weapon type tracker and get new keybinds
   current_main_weapon_type = main_weapon_type
   -- Get new main hand bindings
-  local new_main_ws_bindings = get_ws_bindings(main_weapon_type)
+  local new_main_ws_bindings = silibs.get_ws_bindings(main_weapon_type)
 
   -- Update the ranged weapon type tracker and get new keybinds
-  current_ranged_weapon_type = ranged_weapon_type
+  silibs.current_ranged_weapon_type = ranged_weapon_type
   -- Get new ranged bindings
-  local new_ranged_ws_bindings = get_ws_bindings(ranged_weapon_type)
+  local new_ranged_ws_bindings = silibs.get_ws_bindings(ranged_weapon_type)
 
   -- Merge main and ranged keybinds into same table
   local merged_main_ranged_bindings = new_main_ws_bindings
@@ -619,7 +632,7 @@ function update_weaponskill_binds(has_job_changed)
   -- Unbind previous bindings if there is no overlap in new bindings. This
   -- is necessary because unbind commands appear to be asynchronous and
   -- would otherwise erase your new keybinds too.
-  for old_keybind,old_ws_name in pairs(latest_ws_binds) do
+  for old_keybind,old_ws_name in pairs(silibs.latest_ws_binds) do
     local is_same = false
     for new_keybind,new_ws_name in pairs(merged_main_ranged_bindings) do
       if old_keybind == new_keybind then
@@ -637,26 +650,26 @@ function update_weaponskill_binds(has_job_changed)
     local ws = res.weapon_skills:with('en', ws_name)
     local is_main_hand_keybind = ws.skill > 0 and ws.skill < 13 -- Skill ID 1-12 are main hand
     if is_main_hand_keybind then
-      send_command("bind "..keybind.." input /ws \""..ws_name.."\" <"..MAIN_WS_TARGET_MODE..">")
+      send_command("bind "..keybind.." input /ws \""..ws_name.."\" <"..silibs.main_ws_target_mode..">")
     else
-      send_command("bind "..keybind.." input /ws \""..ws_name.."\" <"..RANGED_WS_TARGET_MODE..">")
+      send_command("bind "..keybind.." input /ws \""..ws_name.."\" <"..silibs.ranged_ws_target_mode..">")
     end
   end
 
-  latest_ws_binds = merged_main_ranged_bindings
+  silibs.latest_ws_binds = merged_main_ranged_bindings
 
   -- Notify user that keybinds have been updated
   local notify_msg = 'WS Keybinds: '..main_weapon_type
   if ranged_weapon_type ~= nil then
     notify_msg = notify_msg..'/'..ranged_weapon_type..''
   end
-  notify_msg = notify_msg..' for '..get_current_job()
+  notify_msg = notify_msg..' for '..silibs.get_current_job()
   windower.add_to_chat(8, notify_msg)
 end
 
-function get_ws_bindings(weapon_type)
+function silibs.get_ws_bindings(weapon_type)
   -- Null check
-  if default_ws_bindings == nil or weapon_type == nil then
+  if silibs.ws_binds == nil or weapon_type == nil then
     return {}
   end
 
@@ -667,7 +680,7 @@ function get_ws_bindings(weapon_type)
   if user_ws_bindings and user_ws_bindings[weapon_type] then
     weapon_specific_bindings = user_ws_bindings[weapon_type]
   else
-    weapon_specific_bindings = default_ws_bindings[weapon_type]
+    weapon_specific_bindings = silibs.ws_binds[weapon_type]
   end
 
   -- Separate default bindings, main job bindings, and sub job bindings
@@ -720,10 +733,10 @@ function get_ws_bindings(weapon_type)
   end
   
   -- Purge invalid entries
-  return purge_invalid_ws_bindings(merged_bindings)
+  return silibs.purge_invalid_ws_bindings(merged_bindings)
 end
 
-function purge_invalid_ws_bindings(ws_bindings)
+function silibs.purge_invalid_ws_bindings(ws_bindings)
   local purged_table = {}
   for keybind,ws_name in pairs(ws_bindings) do
 
@@ -733,12 +746,12 @@ function purge_invalid_ws_bindings(ws_bindings)
     local modifier
     local state
     local bind_btn
-    if valid_keybind_states:contains(first_char) then
+    if silibs.valid_keybind_states:contains(first_char) then
       state = first_char
       bind_btn = keybind:sub(2,string.len(keybind))
-    elseif valid_keybind_modifiers:contains(first_char) then
+    elseif silibs.valid_keybind_modifiers:contains(first_char) then
       modifier = first_char
-      if valid_keybind_states:contains(second_char) then
+      if silibs.valid_keybind_states:contains(second_char) then
         state = second_char
         bind_btn = keybind:sub(3,string.len(keybind))
       else
@@ -749,7 +762,7 @@ function purge_invalid_ws_bindings(ws_bindings)
     end
 
     local is_keybind_blank = bind_btn == ''
-    local is_keybind_valid = valid_keybinds:contains(bind_btn)
+    local is_keybind_valid = silibs.valid_keybinds:contains(bind_btn)
     local is_ws_name_valid = res.weapon_skills:with('en', ws_name) ~= nil
 
     -- If keybind is valid and ws name is valid, add to purged table
@@ -773,15 +786,15 @@ function purge_invalid_ws_bindings(ws_bindings)
   return purged_table
 end
 
-function get_current_job()
+function silibs.get_current_job()
   local player = windower.ffxi.get_player()
   return player.main_job..'/'..player.sub_job
 end
 
-function unbind_all_ws()
-  -- Iterate through all categories in default_ws_bindings
+function silibs.unbind_all_ws()
+  -- Iterate through all categories in silibs.ws_binds
   -- If there is a user override in user_ws_bindings, unbind that instead
-  for weapon_category, weapon_specific_table in pairs(default_ws_bindings) do
+  for weapon_category, weapon_specific_table in pairs(silibs.ws_binds) do
     if user_ws_bindings and user_ws_bindings[weapon_category] then
       weapon_specific_table = user_ws_bindings[weapon_category]
     end
@@ -799,12 +812,12 @@ end
 -------------------------------------------------------------------------------
 -- Executes on every frame. This is just a way to create a perpetual loop.
 windower.register_event('prerender',function()
-  if USE_WEAPON_REARM then
-    update_and_rearm_weapons()
+  if silibs.use_weapon_rearm then
+    silibs.update_and_rearm_weapons()
   end
   
-  if USE_DYNAMIC_WS_KEYBINDS then
-    update_weaponskill_binds(false)
+  if silibs.use_dynamic_ws_keybinds then
+    silibs.update_weaponskill_binds(false)
   end
 end)
 
@@ -814,11 +827,13 @@ windower.register_event('job change', function(main_job_id, main_job_level, sub_
   -- the player's new job. Enforce a check to ensure it has.
   if main_job_id == nil then return end
 
-  init_settings()
-  unbind_all_ws()
-  if USE_DYNAMIC_WS_KEYBINDS then
+  silibs.init_settings()
+  silibs.unbind_all_ws()
+  if silibs.use_dynamic_ws_keybinds then
     coroutine.schedule(function()
-      update_weaponskill_binds(true)
+      silibs.update_weaponskill_binds(true)
     end, 1)
   end
 end)
+
+return silibs
