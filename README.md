@@ -62,7 +62,7 @@ Whenever your weapons are removed, this function will re-equip whatever you prev
 
 **Implementation**
 
-In your job file after `include`ing SilverLibs and Mote libs, add the following:
+In your job file at the beginning of the `job_setup` function, add the following:
 ```
 silibs.use_weapon_rearm = true
 ```
@@ -70,12 +70,12 @@ Recommend putting it in your job lua instead of globals.
 
 **Usage**
 
-Functionality can be temporarily disabled by adding a togglable weapon lock state:
+Functionality can be temporarily disabled by adding a togglable weapon lock state (also in `job_setup`):
 ```
 state.WeaponLock = M(false, 'Weapon Lock')
 ```
 
-And add a keybind to perform the actual toggling (WIN+W is used here but it can be anything you want):
+And add a keybind (also in `job_setup`) to perform the actual toggling (WIN+W is used here but it can be anything you want):
 ```
 send_command('bind @w gs c toggle WeaponLock')
 ```
