@@ -113,7 +113,7 @@ function silibs.cancel_outranged_ws(spell, eventArgs)
   if spell.type ~= "WeaponSkill" then
     return
   end
-  
+
   local player = windower.ffxi.get_mob_by_target('me')
   local target = windower.ffxi.get_mob_by_id(spell.target.id)
 
@@ -153,9 +153,8 @@ end
 -- Re-arms your weapons when conditions are met
 -- Can be temporarily disabled by adding a toggled weapon lock state:
 --    state.WeaponLock = M(false, 'Weapon Lock')
+-- Which can be turned off or off with a keybind
 --    send_command('bind @w gs c toggle WeaponLock')
--- If 'main', 'sub', or 'ranged' are in idle, engaged, or defense sets
--- it may conflict with this functionality
 function silibs.update_and_rearm_weapons()
   -- Save state of any equipped weapons
   if player.equipment.main ~= "empty" then
@@ -197,12 +196,14 @@ end
 frame_count=0
 windower.register_event('prerender',function()
   -- Use frame count to limit execution rate (roughly 0.16-0.33 seconds depending on FPS)
-  if frame_count%10 == 0 and windower.ffxi.get_info().logged_in then
+  if frame_count%10 == 0 and windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
     if silibs.use_weapon_rearm then
       silibs.update_and_rearm_weapons()
+      frame_count = 0
     end
+  else
+    frame_count = frame_count + 1
   end
-  frame_count = frame_count + 1
 end)
 
 -- Hook into job/subjob change event (happens after job has finished changing)
