@@ -66,7 +66,12 @@ In your job file at the beginning of the `job_setup` function, add the following
 ```
 silibs.use_weapon_rearm = true
 ```
-Recommend putting it in your job lua instead of globals.
+If you do not have a `job_setup` function, just go ahead and create one underneath `get_sets` like this:
+```
+function job_setup()
+  silibs.use_weapon_rearm = true
+end
+```
 
 **Usage**
 
