@@ -75,14 +75,14 @@ end
 
 **Usage**
 
-Functionality can be temporarily disabled by adding a togglable weapon lock state (also in `job_setup`):
+Functionality can be temporarily disabled by adding a togglable `Rearming Lock` state (also in `job_setup`):
 ```
-state.WeaponLock = M(false, 'Weapon Lock')
+state.RearmingLock = M(false, 'Rearming Lock')
 ```
 
 And add a keybind (also in `job_setup`) to perform the actual toggling (WIN+W is used here but it can be anything you want):
 ```
-send_command('bind @w gs c toggle WeaponLock')
+send_command('bind @w gs c toggle RearmingLock')
 ```
 
 

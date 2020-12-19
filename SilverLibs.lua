@@ -49,7 +49,7 @@ silibs.use_weapon_rearm = false
 -- Instatiated variables for storing values and states
 -------------------------------------------------------------------------------
 -- Most recent weapons (used for re-arming)
-silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
+silibs.most_recent_weapons = {main="empty",sub="empty",ranged="empty",ammo="empty"}
 
 
 -------------------------------------------------------------------------------
@@ -151,13 +151,13 @@ end
 
 -- Saves the state of your weapons
 -- Re-arms your weapons when conditions are met
--- Can be temporarily disabled by adding a toggled weapon lock state:
---    state.WeaponLock = M(false, 'Weapon Lock')
+-- Can be temporarily disabled by adding a toggled rearming lock state:
+--    state.RearmingLock = M(false, 'Rearming Lock')
 -- Which can be turned off or off with a keybind
---    send_command('bind @w gs c toggle WeaponLock')
+--    send_command('bind @w gs c toggle RearmingLock')
 function silibs.update_and_rearm_weapons()
   -- Save state of any equipped weapons
-  if player.equipment.main ~= "empty" then
+  if player.equipment.main ~= "empty" and player.equipment.main ~= nil then
     if not is_encumbered('main') then
       silibs.most_recent_weapons.main = player.equipment.main
     end
@@ -165,24 +165,58 @@ function silibs.update_and_rearm_weapons()
       silibs.most_recent_weapons.sub = player.equipment.sub
     end
   end
-  if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
-    -- Only save if ranged is a combat item
-    local rangedItem = res.items:with('name', player.equipment.ranged)
-    if res.skills[rangedItem.skill].category == 'Combat' then
-      if not is_encumbered('ranged') then
-        silibs.most_recent_weapons.ranged = player.equipment.ranged
+  if player.equipment.ammo == "empty" or player.equipment.ammo == nil then
+    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
+      -- Only save if ranged is a combat item
+      local rangedItem = res.items:with('name', player.equipment.ranged)
+      if res.skills[rangedItem.skill].category == 'Combat' then
+        if not is_encumbered('ranged') then
+          silibs.most_recent_weapons.ranged = player.equipment.ranged
+        end
+        if not is_encumbered('ammo') then
+          silibs.most_recent_weapons.ammo = player.equipment.ammo
+        end
       end
-      if not is_encumbered('ammo') then
-        silibs.most_recent_weapons.ammo = player.equipment.ammo
+    end
+  -- If ammo is an ammunition (like bullet), update ranged if not empty
+  elseif res.items:with('en', player.equipment.ammo).skill > 0 then
+    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
+      -- Only save if ranged is a combat item
+      local rangedItem = res.items:with('name', player.equipment.ranged)
+      if res.skills[rangedItem.skill].category == 'Combat' then
+        if not is_encumbered('ranged') then
+          silibs.most_recent_weapons.ranged = player.equipment.ranged
+        end
+        if not is_encumbered('ammo') then
+          silibs.most_recent_weapons.ammo = player.equipment.ammo
+        end
       end
+    end
+  -- If ammo is a stat item (like Aurgelmir Orb), update ranged even if empty
+  else
+    if not is_encumbered('ranged') then
+      silibs.most_recent_weapons.ranged = player.equipment.ranged
+    end
+    if not is_encumbered('ammo') then
+      silibs.most_recent_weapons.ammo = player.equipment.ammo
     end
   end
 
   -- Disarm Handling
   -- Table fills the string "empty" for empty slot. It won't return nil
-  if ((player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty")
+  -- Must check if sub is also empty (and weapon) because if main hand is removed while dual wielding, the sub stays on for
+  -- 1 cycle longer which will result in the main hand re-equipping but not the sub
+  -- Also, if the sub is a shield, it will stay on even if main hand is removed.
+  local is_sub_armor
+  if player.equipment.sub and player.equipment.sub ~= 'empty' then
+    is_sub_armor = res.items:with('en', player.equipment.sub).category == 'Armor'
+  else
+    is_sub_armor = false
+  end
+  if ((player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and player.equipment.sub == "empty")
+      or (player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and is_sub_armor)
       or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty"))
-      and (state.WeaponLock == nil or state.WeaponLock.value == false) then
+      and (state.RearmingLock == nil or state.RearmingLock.value == false) then
     equip(silibs.most_recent_weapons)
   end
 end
@@ -205,13 +239,12 @@ windower.register_event('prerender',function()
   end
 end)
 
--- Hook into job/subjob change event (happens after job has finished changing)
-windower.register_event('job change', function(main_job_id, main_job_level, sub_job_id, sub_job_level)
-  -- For some reason, this event may fire twice. The first time, the game does not actually detect
-  -- the player's new job. Enforce a check to ensure it has.
-  if main_job_id == nil then return end
-
-  silibs.init_settings()
+-- Hook into job/subjob change event (happens BEFORE job starts changing)
+windower.register_event('outgoing chunk', function(id, data, modified, injected, blocked)
+  if id == 0x100 then -- Sending job change command to server
+    silibs.init_settings()
+  end
 end)
+
 
 return silibs
