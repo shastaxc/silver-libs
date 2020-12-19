@@ -180,11 +180,10 @@ function silibs.update_and_rearm_weapons()
 
   -- Disarm Handling
   -- Table fills the string "empty" for empty slot. It won't return nil
-  if (player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty")
-      or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty") then
-    if state.WeaponLock == nil or state.WeaponLock.value == false then
-      equip(silibs.most_recent_weapons)
-    end
+  if ((player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty")
+      or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty"))
+      and (state.WeaponLock == nil or state.WeaponLock.value == false) then
+    equip(silibs.most_recent_weapons)
   end
 end
 
