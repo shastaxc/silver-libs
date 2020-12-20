@@ -179,7 +179,8 @@ function silibs.update_and_rearm_weapons()
       end
     end
   -- If ammo is an ammunition (like bullet), update ranged if not empty
-  elseif res.items:with('en', player.equipment.ammo).skill > 0 then
+  elseif res.items:with('en', player.equipment.ammo).skill ~= nil and
+      res.items:with('en', player.equipment.ammo).skill > 0 then
     if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
       -- Only save if ranged is a combat item
       local rangedItem = res.items:with('name', player.equipment.ranged)
