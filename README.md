@@ -85,7 +85,15 @@ And add a keybind (also in `job_setup`) to perform the actual toggling (WIN+W is
 send_command('bind @w gs c toggle RearmingLock')
 ```
 
+### Lockstyle Setting
+**Description**
 
-**Known Issue**
+Sets your lockstyle on job or subjob change. Also reapplies your lockstyle when encumbrance changes (which normally breaks lockstyle).
 
-The 'sub' slot sometimes does not re-equip properly. Possibly a race condition.
+**Implementation**
+
+In your job lua, anywhere in the `user_setup()` function, add the following:
+```
+silibs.set_lockstyle(n)
+```
+Replace `n` with a number 1-100 indicating the lockstyle set number you wish to use for that job. You must create the lockstyle set using the in-game menus found in Main Menu -> Macros -> Edit Equip. Set.

@@ -50,6 +50,9 @@ silibs.use_weapon_rearm = false
 -------------------------------------------------------------------------------
 -- Most recent weapons (used for re-arming)
 silibs.most_recent_weapons = {main="empty",sub="empty",ranged="empty",ammo="empty"}
+silibs.locked_style = false
+silibs.lockstyle_set = 0
+silibs.encumbrance = 0
 
 
 -------------------------------------------------------------------------------
@@ -85,6 +88,9 @@ silibs.action_type_blockers = {
 function silibs.init_settings()
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.use_weapon_rearm = false
+  silibs.lockstyle_set = 0
+  silibs.locked_style = false
+  silibs.encumbrance = 0
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -222,6 +228,24 @@ function silibs.update_and_rearm_weapons()
   end
 end
 
+function silibs.set_lockstyle(set_number)
+  if set_number then
+    silibs.lockstyle_set = set_number
+  end
+  -- Set lockstyle 2 seconds after changing job, trying immediately will error
+  coroutine.schedule(function()
+    if silibs.locked_style == false and silibs.lockstyle_set > 0 then
+      send_command('input /lockstyleset '..silibs.lockstyle_set)
+    end
+  end, 2)
+  -- In case lockstyle was on cooldown for first command, try again (lockstyle has 10s cd)
+  coroutine.schedule(function()
+    if silibs.locked_style == false and silibs.lockstyle_set > 0 then
+      send_command('input /lockstyleset '..silibs.lockstyle_set)
+    end
+  end, 10)
+end
+
 
 -------------------------------------------------------------------------------
 -- Event hooks
@@ -241,9 +265,28 @@ windower.register_event('prerender',function()
 end)
 
 -- Hook into job/subjob change event (happens BEFORE job starts changing)
-windower.register_event('outgoing chunk', function(id, data, modified, injected, blocked)
+windower.raw_register_event('outgoing chunk', function(id, data, modified, injected, blocked)
   if id == 0x100 then -- Sending job change command to server
     silibs.init_settings()
+  elseif id == 0x053 then -- Send lockstyle command to server
+    local type = data:unpack("I",0x05)
+    if type == 0 then -- This is lockstyle 'disable' command
+      silibs.locked_style = false
+    else -- Various diff ways to set lockstyle
+      silibs.locked_style = true
+    end
+  end
+end)
+
+-- Set lockstyle again when encumbrance value changes (which disables lockstyle as a side effect)
+windower.raw_register_event('incoming chunk', function(id, data, modified, injected, blocked)
+  if id == 0x01B then
+    local encumbrance = data:unpack('H',0x61)
+    if encumbrance ~= silibs.encumbrance then
+      silibs.locked_style = false
+      silibs.encumbrance = encumbrance
+      silibs.set_lockstyle()
+    end
   end
 end)
 
