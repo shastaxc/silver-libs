@@ -1,4 +1,4 @@
--- Organizer library v2
+-- Organizer library v3
 
 local org = {}
 register_unhandled_command(function(...)
@@ -13,6 +13,12 @@ register_unhandled_command(function(...)
 end)
 
 
+-- Make lists which will tell organizer where gear should go.
+-- If an item is already in wardrobe, it will be left there.
+-- If there are items needed that aren't in wardrobes, they will be assigned to empty space in wardrobes.
+-- If there are still items that need assignment, they will be assigned to wardrobes until they hit max capacity, and
+-- any items currently in that wardrobe that aren't part of needed items for the job will attempt to move to dump bags.
+-- These item assignments are saved to file for organizer addon to use, and then organizer command is called to do so.
 function org.export_set()
     if not sets then
         windower.add_to_chat(123,'Organizer Library: Cannot export your sets for collection because the table is nil.')
@@ -22,8 +28,7 @@ function org.export_set()
         return
     end
     
-    -- Makes a big table keyed to item resource tables, with values that are 1-based
-    -- numerically indexed tables of different entries for each of the items from the sets table.
+    -- Make a table filled with the items from the sets table.
     local item_list = org.unpack_names({},'L1',sets,{})
     
     local trans_item_list = org.identify_items(item_list)
@@ -57,25 +62,26 @@ function org.export_set()
     -- At this point I have a table of equipment pieces indexed by the inventory name.
     -- I need to make a function that will translate that into a list of pieces in
     -- inventory or wardrobe.
-    -- #trans_item_list[i] = Number of a given item
     -- trans_item_list[i].id = item ID
     
     local ward_ids = {8,10,11,12}
-    local wardrobes = {}
-    local ward = {}
+    local current_wards = {}
+    local assigned_items = {}
     
     for _,id in pairs(ward_ids) do
-        wardrobes[id] = windower.ffxi.get_items(id)
-        wardrobes[id].max = windower.ffxi.get_bag_info(id).max
-        ward[id] = T{}
+        current_wards[id] = windower.ffxi.get_items(id)
+        current_wards[id].max = windower.ffxi.get_bag_info(id).max
+        assigned_items[id] = T{}
     end
     
-    local inv = T{}
+    -- Movable items are the ones that weren't matched to "sets" gear, which will be determined below
+    local movable_items = table.reassign({}, current_wards)
+    local unassigned_items = T{}
     for i,v in ipairs(flattab) do
         local found
         local ward_id
         -- Iterate over the wardrobes and look for gear from the list that is already in wardrobes, then eliminate it from the list
-        for id,wardrobe in pairs(wardrobes) do
+        for id,wardrobe in pairs(current_wards) do
             for n,m in ipairs(wardrobe) do
                 if m.id == v.id and (not v.augments or v.augments and gearswap.extdata.decode(m).augments and gearswap.extdata.compare_augments(v.augments,gearswap.extdata.decode(m).augments)) then
                     found = n
@@ -88,37 +94,49 @@ function org.export_set()
             end
         end
         if found then
-            table.remove(wardrobes[ward_id],found)
-            ward[ward_id]:append(v)
+            table.remove(movable_items[ward_id],found)
+            assigned_items[ward_id]:append(v)
         else
-            inv:append(v)
+          unassigned_items:append(v)
         end
+    end
+    -- Movable items should now be an accurate list
+
+    -- Allocate gear that's not already in wardrobes to the wardrobes' empty space
+    for _,id in ipairs(ward_ids) do
+      if #unassigned_items > 0 then
+        local available_in_ward = current_wards[id].max - #assigned_items[id] - #movable_items[id]
+        local amount_to_assign = math.min(#unassigned_items, available_in_ward)
+        if amount_to_assign > 0 then
+          local moving = unassigned_items:slice(0-amount_to_assign)
+          unassigned_items = unassigned_items:slice(1,#unassigned_items-amount_to_assign)
+          assigned_items[id]:extend(moving)
+        end
+      end
     end
 
-    local inventory_max = windower.ffxi.get_bag_info(0).max
-    
-    for id=1,4 do
-        if #inv > inventory_max and #ward[id] + (#inv-inventory_max) < wardrobes[id].max then
-            local available = wardrobes[id].max - #ward[id]
-            local length = math.min(#inv-80,available)
-            ward:extend(inv:slice(1-length))
+    -- If there is still unassigned gear, fill out wardrobes to max capacity
+    -- (room will be made by moving items to dump bags later)
+    for _,id in ipairs(ward_ids) do
+      if #unassigned_items > 0 then
+        local available_in_ward = current_wards[id].max - #assigned_items[id]
+        local amount_to_assign = math.min(#unassigned_items, available_in_ward)
+        if amount_to_assign > 0 then
+          local moving = unassigned_items:slice(0-amount_to_assign)
+          unassigned_items = unassigned_items:slice(1,#unassigned_items-amount_to_assign)
+          assigned_items[id]:extend(moving)
         end
+      end
     end
-    
-    if #inv > inventory_max then
-        windower.add_to_chat(123,'Organizer Library: Your sets table contains too many items.')
-        return
+
+    if #unassigned_items > 0 then
+      windower.add_to_chat(123, 'Organizer Library: Your sets table contains too many items.')
+      return
     end
-    
-    -- Scan wardrobe, eliminate items from your table that are in wardrobe
-    -- Scan inventory
-    
-    local fi = file.new('../organizer/data/inventory/organizer-lib-file.lua')
-    fi:write('-- Generated by the Organizer Library ('..os.date()..')\nreturn '..(inv:tovstring({'augments','log_name','name','id','count'})))
     
     for _,id in ipairs(ward_ids) do
         local fw = file.new('../organizer/data/'..gearswap.res.bags[id].command..'/organizer-lib-file.lua')
-        fw:write('-- Generated by the Organizer Library ('..os.date()..')\nreturn '..(ward[id]:tovstring({'augments','log_name','name','id','count'})))
+        fw:write('-- Generated by the Organizer Library ('..os.date()..')\nreturn '..(assigned_items[id]:tovstring({'augments','log_name','name','id','count'})))
     end
 
     windower.send_command('wait 0.5;org o organizer-lib-file')
