@@ -12,7 +12,6 @@ register_unhandled_command(function(...)
     return false
 end)
 
-
 -- Make lists which will tell organizer where gear should go.
 -- If an item is already in wardrobe, it will be left there.
 -- If there are items needed that aren't in wardrobes, they will be assigned to empty space in wardrobes.
@@ -63,28 +62,47 @@ function org.export_set()
     -- I need to make a function that will translate that into a list of pieces in
     -- inventory or wardrobe.
     -- trans_item_list[i].id = item ID
-    
     local ward_ids = {8,10,11,12}
     local current_wards = {}
     local assigned_items = {}
-    
+
     for _,id in pairs(ward_ids) do
         current_wards[id] = windower.ffxi.get_items(id)
         current_wards[id].max = windower.ffxi.get_bag_info(id).max
         assigned_items[id] = T{}
     end
     
-    -- Movable items are the ones that weren't matched to "sets" gear, which will be determined below
-    local movable_items = table.reassign({}, current_wards)
+    -- Note: Empty slots in current_wards is formatted like an item with ID == 0.
+    -- Remove empty slot entries.
+    local temp = T{}
+    for bag_id,bag in pairs(current_wards) do
+      temp[bag_id] = T{}
+      for item_index,item_data in ipairs(bag) do
+        if item_data.id ~= 0 then
+          temp[bag_id]:append(item_data)
+        end
+      end
+    end
+    current_wards = nil
+    current_wards = table.copy(temp, true)
+    temp = nil
+    local movable_items = table.copy(current_wards, true) -- Deep copy table
+
+    -- Add max counts for each wardrobe
+    for _,id in pairs(ward_ids) do
+      current_wards[id].max = windower.ffxi.get_bag_info(id).max
+    end
+  
     local unassigned_items = T{}
     for i,v in ipairs(flattab) do
         local found
         local ward_id
-        -- Iterate over the wardrobes and look for gear from the list that is already in wardrobes, then eliminate it from the list
+        local list_index
         for id,wardrobe in pairs(current_wards) do
             for n,m in ipairs(wardrobe) do
                 if m.id == v.id and (not v.augments or v.augments and gearswap.extdata.decode(m).augments and gearswap.extdata.compare_augments(v.augments,gearswap.extdata.decode(m).augments)) then
-                    found = n
+                    found = true
+                    list_index = n
                     break
                 end
             end
@@ -94,37 +112,53 @@ function org.export_set()
             end
         end
         if found then
-            table.remove(movable_items[ward_id],found)
-            assigned_items[ward_id]:append(v)
+          -- Item is in the right bag!
+          -- Set nil in movable_items to be removed later.
+          movable_items[ward_id][list_index] = nil
+          -- Add to list of assigned_items.
+          assigned_items[ward_id]:append(v)
         else
+          -- List as an unassigned item.
           unassigned_items:append(v)
         end
     end
-    -- Movable items should now be an accurate list
-
-    -- Allocate gear that's not already in wardrobes to the wardrobes' empty space
-    for _,id in ipairs(ward_ids) do
-      if #unassigned_items > 0 then
-        local available_in_ward = current_wards[id].max - #assigned_items[id] - #movable_items[id]
-        local amount_to_assign = math.min(#unassigned_items, available_in_ward)
-        if amount_to_assign > 0 then
-          local moving = unassigned_items:slice(0-amount_to_assign)
-          unassigned_items = unassigned_items:slice(1,#unassigned_items-amount_to_assign)
-          assigned_items[id]:extend(moving)
+    -- Remove nil entries from movable_items
+    local temp = T{}
+    for bag_id,bag in pairs(movable_items) do
+      temp[bag_id] = T{}
+      for item_index,item_data in pairs(bag) do
+        if item_data then
+          temp[bag_id]:append(item_data)
         end
       end
     end
+    movable_items = nil
+    movable_items = table.copy(temp, true)
+    temp = nil
 
-    -- If there is still unassigned gear, fill out wardrobes to max capacity
-    -- (room will be made by moving items to dump bags later)
-    for _,id in ipairs(ward_ids) do
+    -- Allocate gear that's not already in wardrobes to the wardrobes' empty space
+    for _,ward_id in ipairs(ward_ids) do
       if #unassigned_items > 0 then
-        local available_in_ward = current_wards[id].max - #assigned_items[id]
+        local available_in_ward = current_wards[ward_id].max - #assigned_items[ward_id] - #movable_items[ward_id]
         local amount_to_assign = math.min(#unassigned_items, available_in_ward)
         if amount_to_assign > 0 then
           local moving = unassigned_items:slice(0-amount_to_assign)
           unassigned_items = unassigned_items:slice(1,#unassigned_items-amount_to_assign)
-          assigned_items[id]:extend(moving)
+          assigned_items[ward_id]:extend(moving)
+        end
+      end
+    end
+    
+    -- If there is still unassigned gear, fill out wardrobes to max capacity
+    -- (room will be made by moving items to dump bags later)
+    for _,ward_id in ipairs(ward_ids) do
+      if #unassigned_items > 0 then
+        local available_in_ward = current_wards[ward_id].max - #assigned_items[ward_id]
+        local amount_to_assign = math.min(#unassigned_items, available_in_ward)
+        if amount_to_assign > 0 then
+          local moving = unassigned_items:slice(0-amount_to_assign)
+          unassigned_items = unassigned_items:slice(1,#unassigned_items-amount_to_assign)
+          assigned_items[ward_id]:extend(moving)
         end
       end
     end
