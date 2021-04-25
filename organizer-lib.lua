@@ -101,18 +101,22 @@ function org.export_set()
         end
       end
       windower.add_to_chat(8, unavailable_msg)
-    end
-  
-    -- Update list of items to be processed by removing unavailable items
-    local temp = T{}
-    for i,v in ipairs(flattab) do
-      for n,m in ipairs(unavailable_items) do
-        if v.id ~= m.id then
+      
+      -- Update list of items to be processed by removing unavailable items
+      local temp = T{}
+      for i,v in ipairs(flattab) do
+        local is_unavailable
+        for n,m in ipairs(unavailable_items) do
+          if m.id == v.id and (not v.augments or v.augments and gearswap.extdata.decode(m).augments and gearswap.extdata.compare_augments(v.augments,gearswap.extdata.decode(m).augments)) then
+            is_unavailable = true
+          end
+        end
+        if not is_unavailable then
           temp:append(v)
         end
       end
+      flattab = table.reassign({}, temp)
     end
-    flattab = temp
     
     -- At this point I have a table of equipment pieces indexed by the inventory name.
     -- I need to make a function that will translate that into a list of pieces in
