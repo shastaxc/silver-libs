@@ -1,5 +1,7 @@
 -- Organizer library v3
 
+res = include('resources')
+
 local org = {}
 register_unhandled_command(function(...)
     local cmds = {...}
@@ -57,18 +59,71 @@ function org.export_set()
             flattab:append({id=tab.id,name=tab.name,log_name=tab.log_name,count=count})
         end
     end
+
+    -- Get all player's available items
+    local available_items = {}
+    local all_bag_info = {}
+    
+    -- Get available bags only (Ex: not Mog Safe if not near moogle)
+    for _,bag in pairs(res.bags) do
+      all_bag_info[bag.id] = windower.ffxi.get_bag_info(bag.id)
+      if all_bag_info[bag.id].enabled then
+        available_items[bag.id] = windower.ffxi.get_items(bag.id)
+      end
+    end
+    -- Check if all goal items exist in player's available bags
+    local unavailable_items = T{}
+    for i,v in ipairs(flattab) do
+      local found
+      for bag_id,bag in pairs(available_items) do
+        for item_index,item_data in ipairs(bag) do
+          if item_data.id == v.id and (not v.augments or v.augments and gearswap.extdata.decode(item_data).augments and gearswap.extdata.compare_augments(v.augments,gearswap.extdata.decode(item_data).augments)) then
+            found = true
+            break
+          end
+        end
+        if found then
+          break
+        end
+      end
+      if not found then
+        -- Add item to unavailable items list
+        unavailable_items:append(v)
+      end
+    end
+    -- Print message about unavailable items
+    if #unavailable_items > 0 then
+      local unavailable_msg = #unavailable_items..' item(s) unavailable: '
+      for i,v in pairs(unavailable_items) do
+        unavailable_msg = unavailable_msg..v.name
+        if i ~= #unavailable_items then
+          unavailable_msg = unavailable_msg..', '
+        end
+      end
+      windower.add_to_chat(8, unavailable_msg)
+    end
+  
+    -- Update list of items to be processed by removing unavailable items
+    local temp = T{}
+    for i,v in ipairs(flattab) do
+      for n,m in ipairs(unavailable_items) do
+        if v.id ~= m.id then
+          temp:append(v)
+        end
+      end
+    end
+    flattab = temp
     
     -- At this point I have a table of equipment pieces indexed by the inventory name.
     -- I need to make a function that will translate that into a list of pieces in
     -- inventory or wardrobe.
-    -- trans_item_list[i].id = item ID
     local ward_ids = {8,10,11,12}
     local current_wards = {}
     local assigned_items = {}
 
     for _,id in pairs(ward_ids) do
-        current_wards[id] = windower.ffxi.get_items(id)
-        current_wards[id].max = windower.ffxi.get_bag_info(id).max
+        current_wards[id] = available_items[id]
+        current_wards[id].max = all_bag_info[id].max
         assigned_items[id] = T{}
     end
     
