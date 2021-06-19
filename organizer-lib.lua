@@ -107,7 +107,7 @@ function org.export_set()
       for i,v in ipairs(flattab) do
         local is_unavailable
         for n,m in ipairs(unavailable_items) do
-          if m.id == v.id and (not v.augments or v.augments and gearswap.extdata.decode(m).augments and gearswap.extdata.compare_augments(v.augments,gearswap.extdata.decode(m).augments)) then
+          if m.id == v.id and (not v.augments or v.augments and m.augments and gearswap.extdata.compare_augments(v.augments,m.augments)) then
             is_unavailable = true
           end
         end
