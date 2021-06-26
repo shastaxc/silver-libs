@@ -246,6 +246,181 @@ function silibs.set_lockstyle(set_number)
   end, 10)
 end
 
+function silibs.self_command(cmdParams, eventArgs)
+  -- Make all cmdParams lowercase
+  for i,j in ipairs(cmdParams) do
+    cmdParams[i] = j:lower()
+  end
+  if cmdParams[1] == 'sneak' then
+    silibs.use_sneak()
+    eventArgs.handled = true
+  elseif cmdParams[1] == 'invis' or cmdParams[1] == 'invisible' then
+    silibs.use_invisible()
+    eventArgs.handled = true
+  elseif cmdParams[1] == 'usekey' or cmdParams[1] == 'noinvis' then
+    send_command('cancel Invisible; cancel Hide; cancel Gestation; cancel Camouflage')
+    if cmdParams[1] == 'usekey' then
+      silibs.use_key()
+    end
+    eventArgs.handled = true
+  elseif cmdParams[1] == 'faceaway' then
+    windower.ffxi.turn(player.facing - math.pi);
+    eventArgs.handled = true
+  end
+end
+
+function silibs.use_sneak()
+  local cmd
+  -- If access to a spell or job ability (or multiples), attempt to use that (or those) first
+  -- If JA not available, attempt to use spells that consume MP
+  -- If those not available, attempt to use spells that consume items
+  -- If those not available, attempt to use items
+  if not cmd
+    and silibs.can_access_ability("Spectral Jig")
+    and silibs.can_recast_ability("Spectral Jig") then
+    cmd = 'input /ja "Spectral Jig" <me>'
+  end
+  if not cmd
+    and silibs.can_access_spell("Sneak") then
+      cmd = 'input /ma "Sneak" <stpc>'
+  end
+  if not cmd
+    and silibs.can_access_spell("Monomi: Ichi")
+    and silibs.can_recast_spell("Monomi: Ichi", 5)
+    and silibs.has_item('Inventory', 'Sanjaku-Tenugui') then
+      cmd = 'input /ma "Monomi: Ichi" <me>'
+  end
+  if not cmd and silibs.has_item('Inventory','Silent Oil') then
+    cmd = 'input /item "Silent Oil" <me>'
+  end
+
+  send_command(cmd)
+end
+
+function silibs.use_invisible()
+  local cmd
+  -- If access to a spell or job ability (or multiples), attempt to use that (or those) first
+  -- If JA not available, attempt to use spells that consume MP
+  -- If those not available, attempt to use spells that consume items
+  -- If those not available, attempt to use items
+  if not cmd
+    and silibs.can_access_ability("Spectral Jig")
+    and silibs.can_recast_ability("Spectral Jig") then
+    cmd = 'input /ja "Spectral Jig" <me>'
+  end
+  if not cmd
+    and silibs.can_access_spell("Invisible") then
+      cmd = 'input /ma "Invisible" <stpc>'
+  end
+  if not cmd
+    and silibs.can_access_spell("Tonko: Ni")
+    and silibs.can_recast_spell("Tonko: Ni")
+    and silibs.has_item('Inventory', 'Shinobi-Tabi') then
+      cmd = 'input /ma "Tonko: Ni" <me>'
+  end
+  if not cmd
+    and silibs.can_access_spell("Tonko: Ichi")
+    and silibs.can_recast_spell("Tonko: Ichi")
+    and silibs.has_item('Inventory', 'Shinobi-Tabi') then
+      cmd = 'input /ma "Tonko: Ichi" <me>'
+  end
+  if not cmd and silibs.has_item('Inventory','Prism Powder') then
+    cmd = 'input /item "Prism Powder" <me>'
+  end
+
+  send_command(cmd)
+end
+
+function silibs.use_key()
+  if player.target.type ~= 'NONE' then
+    if player.target.name == 'Sturdy Pyxis' then
+      send_command('@input /item "Forbidden Key" <t>')
+    elseif player.main_job == 'THF' then
+      if silibs.has_item('Inventory','Skeleton Key') then
+        send_command('@input /item "Skeleton Key" <t>')
+      elseif silibs.has_item('Inventory','Living Key') then
+        send_command('@input /item "Living Key" <t>')
+      elseif silibs.has_item('Inventory','Thief\'s Tools') then
+        send_command('@input /item "Thief\'s Tools" <t>')
+      end
+    end
+  end
+end
+
+
+-------------------------------------------------------------------------------
+-- Helpful/Supporting functions
+-------------------------------------------------------------------------------
+function silibs.find_ability(ability_name)
+  return res.job_abilities:find(function(ability)
+    return ability.en == ability_name
+  end)
+end
+
+function silibs.find_spell(spell_name)
+  return res.spells:find(function(s)
+    return s.en == spell_name
+  end)
+end
+
+function silibs.can_access_ability(ability_name)
+  local ability_ids = S(windower.ffxi.get_abilities().job_abilities)
+  return ability_ids:contains(silibs.find_ability(ability_name))
+end
+
+function silibs.can_access_spell(spell_name)
+  local _, spell = silibs.find_spell(spell_name)
+  local has_learned_spell = windower.ffxi.get_spells()[spell.id] ~= nil
+	local spell_jobs = res.spells[spell.id].levels
+
+	-- Filter for spells that you do not know. Exclude Impact, Honor March and Dispelga.
+	if not has_learned_spell and not (spell.id == 503 or spell.id == 417 or spell.id == 360) then
+		return false
+	-- Filter for spells that you know, but do not currently have access to
+	elseif (not spell_jobs[player.main_job_id]
+      or not (spell_jobs[player.main_job_id] <= player.main_job_level
+        or (spell_jobs[player.main_job_id] >= 100
+          and silibs.number_of_jps(player.job_points[(res.jobs[player.main_job_id].ens):lower()]) >= spell_jobs[player.main_job_id]
+        )
+      )
+    )
+    and (not spell_jobs[player.sub_job_id] or not (spell_jobs[player.sub_job_id] <= player.sub_job_level)) then
+		  return false
+	elseif res.spells[spell.id].type == 'BlueMagic'
+    and not (
+      (player.main_job_id == 16
+        and (data.spells.unbridled:contains(res.spells[spell.id].en)
+         or table.contains(windower.ffxi.get_mjob_data().spells,spell.id)
+        )
+      )
+      or (player.sub_job_id == 16 and table.contains(windower.ffxi.get_sjob_data().spells,spell.id))
+    ) then	
+		  return false
+	else
+		return true
+	end
+end
+
+function silibs.can_recast_ability(ability_name, time)
+  time = time or 1
+  local _, ability = silibs.find_ability(ability_name)
+  return windower.ffxi.get_ability_recasts()[ability.recast_id] <= time
+end
+
+function silibs.can_recast_spell(spell_name, time)
+  time = time or 1
+  local _, spell = silibs.find_spell(spell_name)
+  return windower.ffxi.get_spell_recasts()[spell.recast_id] <= time
+end
+
+function silibs.number_of_jps(jp_tab)
+    local count = 0
+    for _,v in pairs(jp_tab) do
+        count = count + v*(v+1)
+    end
+    return count/2
+end
+
 
 -------------------------------------------------------------------------------
 -- Event hooks
