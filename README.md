@@ -119,6 +119,10 @@ silibs.waltz_stats = {
 ```
 Override the numbers based on your own stats while wearing your Curing Waltz gear set.
 
+**Details on How It Works**
+
+First, the available Curing Waltz tiers you have available is determined based on your DNC level (either main or sub job). The refiner will use some smart logic to estimate how much HP you can cure with the different tiers of Curing Waltz. Then it will detect how much HP your target is missing, and needs cured. It will select the best tier of Curing Waltz to heal your target to full without wasting too much TP. If the best match is on cooldown, it will go up in tiers to find an available ability. If none are available, it will check down the tiers instead.
+
 **Caveats**
 
 This function is 100% accurate when curing yourself. However, if you are curing another player, some assumptions must be made because the game does not provide all the necessary information about other players in this context. Mainly, the target's VIT affects the amount cured and that data is not sent to you. Also, if the player is not in your party/alliance, we cannot know the target's max HP, so a value is assumed. A non-party/alliance player's max HP is determined by the 'est_non_party_target_hp' stat which you can customize, or leave at default of 2000.
