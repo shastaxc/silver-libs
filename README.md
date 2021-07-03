@@ -98,7 +98,7 @@ silibs.set_lockstyle(n)
 ```
 Replace `n` with a number 1-100 indicating the lockstyle set number you wish to use for that job. You must create the lockstyle set using the in-game menus found in Main Menu -> Macros -> Edit Equip. Set.
 
-### Waltz Handler
+### Waltz Refiner
 **Description**
 
 Using any Curing Waltz will be intercepted by SilverLibs and will automatically use smart logic to determine the appropriate tier of Waltz to use in order to save you TP while still accomplishing your goal!
