@@ -347,6 +347,110 @@ function silibs.use_key()
   end
 end
 
+-- Utility function for automatically adjusting the waltz spell being used to match HP needs and TP limits.
+-- If most appropriate Waltz is on cooldown, switch to next best match (higher tier if off cooldown and have the TP, otherwise lower)
+local curing_waltz = T{
+  [1] = {name='Curing Waltz',     tp=200, main_cure=200,  sub_cure=150 },
+  [2] = {name='Curing Waltz II',  tp=350, main_cure=600,  sub_cure=300 },
+  [3] = {name='Curing Waltz III', tp=500, main_cure=1100, sub_cure=9999},
+  [4] = {name='Curing Waltz IV',  tp=650, main_cure=1500, sub_cure=nil },
+  [5] = {name='Curing Waltz V',   tp=800, main_cure=9999, sub_cure=nil },
+}
+function silibs.refine_waltz(spell, action, spellMap, eventArgs)
+  if spell.type ~= 'Waltz' then
+    return
+  end
+
+  -- Don't modify anything for Healing Waltz or Divine Waltzes
+  if spell.english == "Healing Waltz" or spell.english == "Divine Waltz" or spell.english == "Divine Waltz II" then
+    return
+  end
+
+  local _, tier = curing_waltz:with('name', spell.english)
+  local missingHP
+
+  -- If curing ourself, get our exact missing HP
+  if spell.target.type == "SELF" then
+    missingHP = player.max_hp - player.hp
+  -- If curing someone in our alliance, we can estimate their missing HP
+  elseif spell.target.isallymember then
+    local target = find_player_in_alliance(spell.target.name)
+    local est_max_hp = target.hp / (target.hpp/100)
+    missingHP = math.floor(est_max_hp - target.hp)
+  end
+
+  -- If we have an estimated missing HP value, we can adjust the preferred tier used.
+  if missingHP ~= nil then
+    if player.main_job == 'DNC' then
+      if missingHP < 40 and spell.target.name == player.name then
+        -- Not worth curing yourself for so little.
+        -- Don't block when curing others to allow for waking them up.
+        add_to_chat(122,'Full HP!')
+        eventArgs.cancel = true
+        return
+      elseif missingHP < 200 and silibs.can_recast_ability(curing_waltz[1].name) then
+        tier = 1
+      elseif missingHP < 600 and silibs.can_recast_ability(curing_waltz[2].name) then
+        tier = 2
+      elseif missingHP < 1100 and silibs.can_recast_ability(curing_waltz[3].name) then
+        tier = 3
+      elseif missingHP < 1500 and silibs.can_recast_ability(curing_waltz[4].name) then
+        tier = 4
+      else
+        tier = 5
+      end
+    elseif player.sub_job == 'DNC' then
+      if missingHP < 40 and spell.target.name == player.name then
+        -- Not worth curing yourself for so little.
+        -- Don't block when curing others to allow for waking them up.
+        add_to_chat(122,'Full HP!')
+        eventArgs.cancel = true
+        return
+      elseif missingHP < 150 and silibs.can_recast_ability(curing_waltz[1].name) then
+        tier = 1
+      elseif missingHP < 300 and silibs.can_recast_ability(curing_waltz[2].name) then
+        tier = 2
+      else
+        tier = 3
+      end
+    else
+      -- Not dnc main or sub; bail out
+      return
+    end
+  end
+
+  local tpCost = curing_waltz[tier].tp
+
+  -- Downgrade the spell to what we can afford that's not on cooldown
+  if (player.tp < tpCost and not buffactive.trance) or not silibs.can_recast_ability(curing_waltz[tier].name) then
+    if player.tp >= curing_waltz[5].tp and silibs.can_recast_ability(curing_waltz[5].name) then
+      tier = 5
+    elseif player.tp >= curing_waltz[4].tp and silibs.can_recast_ability(curing_waltz[4].name) then
+      tier = 4
+    elseif player.tp >= curing_waltz[3].tp and silibs.can_recast_ability(curing_waltz[3].name) then
+      tier = 3
+    elseif player.tp >= curing_waltz[2].tp and silibs.can_recast_ability(curing_waltz[2].name) then
+      tier = 2
+    elseif player.tp >= curing_waltz[1].tp and silibs.can_recast_ability(curing_waltz[1].name) then
+      tier = 1
+    else
+      add_to_chat(122, 'Insufficient TP ['..tostring(player.tp)..'] or all on cooldown. Cancelling.')
+      eventArgs.cancel = true
+      return
+    end
+  end
+
+  if curing_waltz[tier].name ~= spell.english then
+    send_command('@input /ja "'..curing_waltz[tier].name..'" '..tostring(spell.target.raw))
+    eventArgs.cancel = true
+    return
+  end
+
+  if missingHP and missingHP > 0 then
+    add_to_chat(122,'Trying to cure '..tostring(missingHP)..' HP using '..curing_waltz[tier].name..'.')
+  end
+end
+
 
 -------------------------------------------------------------------------------
 -- Helpful/Supporting functions
