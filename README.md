@@ -126,3 +126,29 @@ First, the available Curing Waltz tiers you have available is determined based o
 **Caveats**
 
 This function is 100% accurate when curing yourself. However, if you are curing another player, some assumptions must be made because the game does not provide all the necessary information about other players in this context. Mainly, the target's VIT affects the amount cured and that data is not sent to you. Also, if the player is not in your party/alliance, we cannot know the target's max HP, so a value is assumed. A non-party/alliance player's max HP is determined by the 'est_non_party_target_hp' stat which you can customize, or leave at default of 2000.
+
+### Self Commands
+**Description**
+
+Every GearSwap file has the ability to create custom commands in its job.lua file using the `job_self_command` function. SilverLibs has a few pre-built commands you can utilize so you don't have to write everything yourself.
+
+**Implemenetation**
+
+In your job lua, find the function called `job_self_command`. If it does not exist, create it. In the first line inside this function add the `silibs.self_command` function call like so:
+```
+function job_self_command(cmdParams, eventArgs)
+  silibs.self_command(cmdParams, eventArgs)
+end
+```
+
+If you have other content in this function, just put it below the silibs.self_command function call.
+
+**Usage**
+
+There are a few pre-built commands available to you in SilverLibs. Keep in mind that all gearswap commands can be added to in-game macros with the following pattern: `/con c gs c NameOfCommand`. These commands can be added to keybinds as well using the following pattern (usually placed in job_setup function): `send_command('bind !s gs c faceaway')`. The list below explains what they do.
+
+* sneak: Use Sneak. Goes through a list of possible Sneak options that you might have available, prioritizing free/cheap options. First will check if you have a JA that can Sneak you, then spells, then consumable items.
+* invisible: Use Invisible. Goes through a list of possible Invisible options that you might have available, prioritizing free/cheap options. First will check if you have a JA that can Invisible you, then spells, then consumable items.
+* noinvis: Cancels Invisible effects on you. This includes buffs with similar effect as Invisible such as Camouflage and Hide.
+* usekey: Attempts to use a key on a chest you have targeted. If you are in Abyssea targeting a Sturdy Pyxis, it will attempt to use Forbidden Key. If you are targeting any other chest and you are a THF, it will attempt to use (in this order) Skeleton Key, Living Key, and Thief's Tools. Also cancels Invisible effects on you because you cannot interact with chests while invisible.
+* faceaway: Turns your character 180 degrees in-place.
