@@ -97,3 +97,28 @@ In your job lua, anywhere in the `user_setup()` function, add the following:
 silibs.set_lockstyle(n)
 ```
 Replace `n` with a number 1-100 indicating the lockstyle set number you wish to use for that job. You must create the lockstyle set using the in-game menus found in Main Menu -> Macros -> Edit Equip. Set.
+
+### Waltz Handler
+**Description**
+
+Using any Curing Waltz will be intercepted by SilverLibs and will automatically use smart logic to determine the appropriate tier of Waltz to use in order to save you TP while still accomplishing your goal!
+
+**Implementation**
+
+In your job lua, anywhere in the `user_setup()` function, add the following:
+```
+silibs.waltz_stats = {
+  ['base_chr'] = 100,
+  ['base_vit'] = 100,
+  ['bonus_chr'] = 100,
+  ['bonus_vit'] = 100,
+  ['waltz_potency'] = 25,
+  ['waltz_self_potency'] = 15,
+  ['est_non_party_target_hp'] = 2000,
+}
+```
+Override the numbers based on your own stats while wearing your Curing Waltz gear set.
+
+**Caveats**
+
+This function is 100% accurate when curing yourself. However, if you are curing another player, some assumptions must be made because the game does not provide all the necessary information about other players in this context. Mainly, the target's VIT affects the amount cured and that data is not sent to you. Also, if the player is not in your party/alliance, we cannot know the target's max HP, so a value is assumed. A non-party/alliance player's max HP is determined by the 'est_non_party_target_hp' stat which you can customize, or leave at default of 2000.
