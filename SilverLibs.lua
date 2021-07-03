@@ -350,11 +350,11 @@ end
 -- Utility function for automatically adjusting the waltz spell being used to match HP needs and TP limits.
 -- If most appropriate Waltz is on cooldown, switch to next best match (higher tier if off cooldown and have the TP, otherwise lower)
 local curing_waltz = T{
-  [1] = {name='Curing Waltz',     tp=200, main_cure=200,  sub_cure=150 },
-  [2] = {name='Curing Waltz II',  tp=350, main_cure=600,  sub_cure=300 },
-  [3] = {name='Curing Waltz III', tp=500, main_cure=1100, sub_cure=9999},
-  [4] = {name='Curing Waltz IV',  tp=650, main_cure=1500, sub_cure=nil },
-  [5] = {name='Curing Waltz V',   tp=800, main_cure=9999, sub_cure=nil },
+  [1] = {name='Curing Waltz',     tier=1, lv=15, tp=200, main_cure=200,  sub_cure=150 },
+  [2] = {name='Curing Waltz II',  tier=2, lv=30, tp=350, main_cure=600,  sub_cure=300 },
+  [3] = {name='Curing Waltz III', tier=3, lv=45, tp=500, main_cure=1100, sub_cure=9999},
+  [4] = {name='Curing Waltz IV',  tier=4, lv=70, tp=650, main_cure=1500, sub_cure=nil },
+  [5] = {name='Curing Waltz V',   tier=5, lv=87, tp=800, main_cure=9999, sub_cure=nil },
 }
 function silibs.refine_waltz(spell, action, spellMap, eventArgs)
   if spell.type ~= 'Waltz' then
@@ -366,7 +366,24 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
     return
   end
 
-  local _, tier = curing_waltz:with('name', spell.english)
+  -- Trim waltz table to what's available for player's level
+  local viable_waltzes = T{}
+  
+  for k,v in ipairs(curing_waltz) do
+    if player.main_job == 'DNC' and player.main_job_level >= curing_waltz[k].lv then
+      viable_waltzes:append(v)
+    elseif player.sub_job == 'DNC' and player.sub_job_level >= curing_waltz[k].lv then
+      viable_waltzes:append(v)
+    end
+  end
+
+  -- If no viable waltzes, cancel operation
+  if #viable_waltzes == 0 then
+    add_to_chat(122,'Job requirement failed for '..spell.english'!')
+    eventArgs.cancel = true
+    return
+  end
+
   local missingHP
 
   -- If curing ourself, get our exact missing HP
@@ -379,75 +396,55 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
     missingHP = math.floor(est_max_hp - target.hp)
   end
 
+  local waltz
+
   -- If we have an estimated missing HP value, we can adjust the preferred tier used.
   if missingHP ~= nil then
-    if player.main_job == 'DNC' then
-      if missingHP < 40 and spell.target.name == player.name then
-        -- Not worth curing yourself for so little.
-        -- Don't block when curing others to allow for waking them up.
-        add_to_chat(122,'Full HP!')
-        eventArgs.cancel = true
-        return
-      elseif missingHP < 200 and silibs.can_recast_ability(curing_waltz[1].name) then
-        tier = 1
-      elseif missingHP < 600 and silibs.can_recast_ability(curing_waltz[2].name) then
-        tier = 2
-      elseif missingHP < 1100 and silibs.can_recast_ability(curing_waltz[3].name) then
-        tier = 3
-      elseif missingHP < 1500 and silibs.can_recast_ability(curing_waltz[4].name) then
-        tier = 4
-      else
-        tier = 5
-      end
-    elseif player.sub_job == 'DNC' then
-      if missingHP < 40 and spell.target.name == player.name then
-        -- Not worth curing yourself for so little.
-        -- Don't block when curing others to allow for waking them up.
-        add_to_chat(122,'Full HP!')
-        eventArgs.cancel = true
-        return
-      elseif missingHP < 150 and silibs.can_recast_ability(curing_waltz[1].name) then
-        tier = 1
-      elseif missingHP < 300 and silibs.can_recast_ability(curing_waltz[2].name) then
-        tier = 2
-      else
-        tier = 3
-      end
-    else
-      -- Not dnc main or sub; bail out
+    if missingHP < 40 and spell.target.name == player.name then
+      -- Not worth curing yourself for so little.
+      -- Don't block when curing others to allow for waking them up.
+      add_to_chat(122,'Full HP!')
+      eventArgs.cancel = true
       return
+    else
+      for k,v in ipairs(viable_waltzes) do
+        if not waltz and missingHP < v.main_cure and silibs.can_recast_ability(viable_waltzes[k].name) then
+          waltz = v
+        end
+      end
+      -- Default if none selected yet
+      if not waltz then
+        waltz = viable_waltzes:last()
+      end
     end
   end
 
-  local tpCost = curing_waltz[tier].tp
-
   -- Downgrade the spell to what we can afford that's not on cooldown
-  if (player.tp < tpCost and not buffactive.trance) or not silibs.can_recast_ability(curing_waltz[tier].name) then
-    if player.tp >= curing_waltz[5].tp and silibs.can_recast_ability(curing_waltz[5].name) then
-      tier = 5
-    elseif player.tp >= curing_waltz[4].tp and silibs.can_recast_ability(curing_waltz[4].name) then
-      tier = 4
-    elseif player.tp >= curing_waltz[3].tp and silibs.can_recast_ability(curing_waltz[3].name) then
-      tier = 3
-    elseif player.tp >= curing_waltz[2].tp and silibs.can_recast_ability(curing_waltz[2].name) then
-      tier = 2
-    elseif player.tp >= curing_waltz[1].tp and silibs.can_recast_ability(curing_waltz[1].name) then
-      tier = 1
-    else
+  if (player.tp < waltz.tp and not buffactive.trance) or not silibs.can_recast_ability(waltz.name) then
+    local bad_tier = waltz.tier
+    waltz = nil
+    -- Loop down through viable waltzes starting at index for the current waltz tier
+    for k,v in ipairs(viable_waltzes:reverse()) do
+      if not waltz and v.tier < bad_tier and player.tp >= v.tp and silibs.can_recast_ability(v.name) then
+        waltz = v
+      end
+    end
+    -- If went through all viable waltzes and still don't have one selected, cancel operation
+    if not waltz then
       add_to_chat(122, 'Insufficient TP ['..tostring(player.tp)..'] or all on cooldown. Cancelling.')
       eventArgs.cancel = true
       return
     end
   end
 
-  if curing_waltz[tier].name ~= spell.english then
-    send_command('@input /ja "'..curing_waltz[tier].name..'" '..tostring(spell.target.raw))
+  if waltz.name ~= spell.english then
+    send_command('@input /ja "'..waltz.name..'" '..tostring(spell.target.raw))
     eventArgs.cancel = true
     return
   end
 
   if missingHP and missingHP > 0 then
-    add_to_chat(122,'Trying to cure '..tostring(missingHP)..' HP using '..curing_waltz[tier].name..'.')
+    add_to_chat(122,'Trying to cure '..tostring(missingHP)..' HP using '..waltz.name..'.')
   end
 end
 
