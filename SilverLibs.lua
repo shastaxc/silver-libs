@@ -53,6 +53,18 @@ silibs.most_recent_weapons = {main="empty",sub="empty",ranged="empty",ammo="empt
 silibs.locked_style = false
 silibs.lockstyle_set = 0
 silibs.encumbrance = 0
+silibs.waltz_stats = {
+  ['base_chr'] = 100,
+  ['base_vit'] = 100,
+  ['bonus_chr'] = 100,
+  ['bonus_vit'] = 100,
+  ['waltz_potency'] = 25,
+  ['waltz_self_potency'] = 15,
+  ['est_non_party_target_hp'] = 2000,
+}
+silibs.playerStats = {}
+silibs.playerStats.Base = {}
+silibs.playerStats.Bonus = {}
 
 
 -------------------------------------------------------------------------------
@@ -80,6 +92,22 @@ silibs.action_type_blockers = {
   ['Monster Move'] = {'terror', 'petrification', 'stun', 'sleep', 'charm', 'amnesia'},
 }
 
+silibs.curing_waltz = T{
+  [1] = {name='Curing Waltz',     tier=1, lv=15, tp=200, cure_slope=0.25, cure_base=60},
+  [2] = {name='Curing Waltz II',  tier=2, lv=30, tp=350, cure_slope=0.5,  cure_base=130},
+  [3] = {name='Curing Waltz III', tier=3, lv=45, tp=500, cure_slope=0.75, cure_base=270},
+  [4] = {name='Curing Waltz IV',  tier=4, lv=70, tp=650, cure_slope=1,    cure_base=450},
+  [5] = {name='Curing Waltz V',   tier=5, lv=87, tp=800, cure_slope=1.25, cure_base=600},
+}
+
+-------------------------------------------------------------------------------
+-- One-off commands to execute on load
+-------------------------------------------------------------------------------
+
+-- Send request for player stats update
+local packet = packets.new('outgoing', 0x061, {})
+packets.inject(packet)
+
 
 -------------------------------------------------------------------------------
 -- Functions
@@ -91,6 +119,15 @@ function silibs.init_settings()
   silibs.lockstyle_set = 0
   silibs.locked_style = false
   silibs.encumbrance = 0
+  silibs.waltz_stats = {
+    ['base_chr'] = 100,
+    ['base_vit'] = 100,
+    ['bonus_chr'] = 100,
+    ['bonus_vit'] = 100,
+    ['waltz_potency'] = 25,
+    ['waltz_self_potency'] = 15,
+    ['est_non_party_target_hp'] = 2000,
+  }
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -349,14 +386,13 @@ end
 
 -- Utility function for automatically adjusting the waltz spell being used to match HP needs and TP limits.
 -- If most appropriate Waltz is on cooldown, switch to next best match (higher tier if off cooldown and have the TP, otherwise lower)
-local curing_waltz = T{
-  [1] = {name='Curing Waltz',     tier=1, lv=15, tp=200, main_cure=200,  sub_cure=150 },
-  [2] = {name='Curing Waltz II',  tier=2, lv=30, tp=350, main_cure=600,  sub_cure=300 },
-  [3] = {name='Curing Waltz III', tier=3, lv=45, tp=500, main_cure=1100, sub_cure=9999},
-  [4] = {name='Curing Waltz IV',  tier=4, lv=70, tp=650, main_cure=1500, sub_cure=nil },
-  [5] = {name='Curing Waltz V',   tier=5, lv=87, tp=800, main_cure=9999, sub_cure=nil },
-}
 function silibs.refine_waltz(spell, action, spellMap, eventArgs)
+  -- In the case where this might be called from Selindrile lua, arguments are structured differently
+  -- like so: refine_waltz(spell, spellMap, eventArgs)
+  if not eventArgs then
+    eventArgs = spellMap
+    spellMap = action
+  end
   if spell.type ~= 'Waltz' then
     return
   end
@@ -369,10 +405,10 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
   -- Trim waltz table to what's available for player's level
   local viable_waltzes = T{}
   
-  for k,v in ipairs(curing_waltz) do
-    if player.main_job == 'DNC' and player.main_job_level >= curing_waltz[k].lv then
+  for k,v in ipairs(silibs.curing_waltz) do
+    if player.main_job == 'DNC' and player.main_job_level >= v.lv then
       viable_waltzes:append(v)
-    elseif player.sub_job == 'DNC' and player.sub_job_level >= curing_waltz[k].lv then
+    elseif player.sub_job == 'DNC' and player.sub_job_level >= v.lv then
       viable_waltzes:append(v)
     end
   end
@@ -394,29 +430,34 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
     local target = find_player_in_alliance(spell.target.name)
     local est_max_hp = target.hp / (target.hpp/100)
     missingHP = math.floor(est_max_hp - target.hp)
+  else
+    local est_max_hp = silibs.waltz_stats.est_non_party_target_hp
+    missingHP = math.floor(est_max_hp - (est_max_hp * spell.target.hpp/100))
+  end
+
+  -- If missing HP cannot be calculated, or is too low, cancel operation
+  -- Don't block when curing others to allow for waking them up.
+  if not missingHP or (missingHP < 40 and spell.target.name == player.name) then
+    add_to_chat(122,'Full HP!')
+    eventArgs.cancel = true
+    return
   end
 
   local waltz
 
   -- If we have an estimated missing HP value, we can adjust the preferred tier used.
-  if missingHP ~= nil then
-    if missingHP < 40 and spell.target.name == player.name then
-      -- Not worth curing yourself for so little.
-      -- Don't block when curing others to allow for waking them up.
-      add_to_chat(122,'Full HP!')
-      eventArgs.cancel = true
-      return
-    else
-      for k,v in ipairs(viable_waltzes) do
-        if not waltz and missingHP < v.main_cure and silibs.can_recast_ability(viable_waltzes[k].name) then
+  for k,v in ipairs(viable_waltzes) do
+    if not waltz then
+      if missingHP < silibs.waltz_cure_amount(k, spell.target) then
+        if silibs.can_recast_ability(v.name) then
           waltz = v
         end
       end
-      -- Default if none selected yet
-      if not waltz then
-        waltz = viable_waltzes:last()
-      end
     end
+  end
+  -- Default to highest tier if none selected yet (all higher than most appropriate are on cooldown)
+  if not waltz then
+    waltz = viable_waltzes:last()
   end
 
   -- Downgrade the spell to what we can afford that's not on cooldown
@@ -446,6 +487,21 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
   if missingHP and missingHP > 0 then
     add_to_chat(122,'Trying to cure '..tostring(missingHP)..' HP using '..waltz.name..'.')
   end
+end
+
+function silibs.set_waltz_stats(table)
+  -- Write given values to settings table
+  for k,v in pairs(table) do
+    if rawget(silibs.waltz_stats,k) ~= nil then
+      silibs.waltz_stats[k] = v
+    else
+      print('Silibs: Invalid waltz stat defined \''..tostring(k)..'\'')
+    end
+  end
+
+  -- Assume that since user called this function they intend to use the silibs
+  -- version, so overwrite the global function refine_waltz with our own.
+  refine_waltz = silibs.refine_waltz
 end
 
 
@@ -522,6 +578,58 @@ function silibs.number_of_jps(jp_tab)
     return count/2
 end
 
+-- Cure 3 - 503
+
+-- Values used for calculations can be customized in player's lua by setting silibs.waltz_stats
+function silibs.waltz_cure_amount(tier, target)
+  -- HP Cured = floor(
+  --              floor(Slope×(User's CHR + Target's VIT) + Base + 2*(Waltz Job Point Tiers))
+  --              × (Waltz Potency gear + Waltz Potency Received gear)
+  --            )
+
+  -- Determine slope (main vs sub DNC)
+  -- The slope is halved when Dancer is subbed.
+  local slope = silibs.curing_waltz[tier].cure_slope
+  if player.main_job == 'DNC' then
+    slope = slope
+  elseif player.sub_job == 'DNC' then
+    slope = 0.5 * slope
+  else
+    return
+  end
+
+  local cure_base = silibs.curing_waltz[tier].cure_base
+
+  -- Get stats (these are not 100% up-to-date, has about 1-2 seconds lag)
+  local base_chr = silibs.playerStats["Base"]["CHR"] or silibs.waltz_stats.base_chr
+  local base_vit = silibs.playerStats["Base"]["VIT"] or silibs.waltz_stats.base_vit
+  local bonus_chr = silibs.playerStats["Bonus"]["CHR"] or silibs.waltz_stats.bonus_chr
+  local bonus_vit = silibs.playerStats["Bonus"]["VIT"] or silibs.waltz_stats.bonus_vit
+
+  if not target then
+    return
+  end
+
+  local isTargetingSelf = target.name == player.name
+  local waltz_jp_count = 0
+  if player.main_job == 'DNC' then
+    waltz_jp_count = player.job_points.dnc.waltz_potency
+  end
+
+  -- Add waltz potency from gear.
+  -- Enforce game's caps: waltz potency gear 50%; waltz potency received gear 30%
+  local potency = math.min(silibs.waltz_stats.waltz_potency, 50)
+  if isTargetingSelf then
+    potency = potency + math.min(silibs.waltz_stats.waltz_self_potency, 30)
+  end
+  potency = potency / 100 -- convert to percentiles for mathing
+
+  return math.floor(
+    math.floor((slope * (base_chr + bonus_chr + base_vit + bonus_vit)) + cure_base + (2 * waltz_jp_count))
+    * (1+potency)
+  )
+end
+
 
 -------------------------------------------------------------------------------
 -- Event hooks
@@ -563,8 +671,25 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
       silibs.encumbrance = encumbrance
       silibs.set_lockstyle()
     end
+  elseif id == 0x061 then
+    local p = packets.parse('incoming', data)
+    local player = windower.ffxi.get_player()
+
+    silibs.playerStats["Base"]["STR"] = p["Base STR"] -- Includes STR merits
+    silibs.playerStats["Base"]["DEX"] = p["Base DEX"] -- Includes DEX merits
+    silibs.playerStats["Base"]["VIT"] = p["Base VIT"] -- Includes VIT merits
+    silibs.playerStats["Base"]["AGI"] = p["Base AGI"] -- Includes AGI merits
+    silibs.playerStats["Base"]["INT"] = p["Base INT"] -- Includes INT merits
+    silibs.playerStats["Base"]["MND"] = p["Base MND"] -- Includes MND merits
+    silibs.playerStats["Base"]["CHR"] = p["Base CHR"] -- Includes CHR merits
+    silibs.playerStats["Bonus"]["STR"] = p["Added STR"]
+    silibs.playerStats["Bonus"]["DEX"] = p["Added DEX"]
+    silibs.playerStats["Bonus"]["VIT"] = p["Added VIT"]
+    silibs.playerStats["Bonus"]["AGI"] = p["Added AGI"]
+    silibs.playerStats["Bonus"]["INT"] = p["Added INT"]
+    silibs.playerStats["Bonus"]["MND"] = p["Added MND"]
+    silibs.playerStats["Bonus"]["CHR"] = p["Added CHR"]
   end
 end)
-
 
 return silibs
