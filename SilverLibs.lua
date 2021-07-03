@@ -39,6 +39,17 @@ silibs = {} -- Initialize library namespace
 -- Includes/imports
 -------------------------------------------------------------------------------
 res = include('resources')
+packets = include('packets')
+
+
+-------------------------------------------------------------------------------
+-- One-off commands to execute on load
+-------------------------------------------------------------------------------
+
+-- Send request for player stats update
+local packet = packets.new('outgoing', 0x061, {})
+packets.inject(packet)
+
 
 -------------------------------------------------------------------------------
 -- Flags to enable/disable features and store user settings
@@ -99,14 +110,6 @@ silibs.curing_waltz = T{
   [4] = {name='Curing Waltz IV',  tier=4, lv=70, tp=650, cure_slope=1,    cure_base=450},
   [5] = {name='Curing Waltz V',   tier=5, lv=87, tp=800, cure_slope=1.25, cure_base=600},
 }
-
--------------------------------------------------------------------------------
--- One-off commands to execute on load
--------------------------------------------------------------------------------
-
--- Send request for player stats update
-local packet = packets.new('outgoing', 0x061, {})
-packets.inject(packet)
 
 
 -------------------------------------------------------------------------------
