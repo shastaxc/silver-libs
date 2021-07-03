@@ -107,15 +107,15 @@ Using any Curing Waltz will be intercepted by SilverLibs and will automatically 
 
 In your job lua, anywhere in the `user_setup()` function, add the following:
 ```
-silibs.waltz_stats = {
-  ['base_chr'] = 100,
-  ['base_vit'] = 100,
-  ['bonus_chr'] = 100,
-  ['bonus_vit'] = 100,
-  ['waltz_potency'] = 25,
-  ['waltz_self_potency'] = 15,
+silibs.set_waltz_stats({
+  ['base_chr'] = 104,
+  ['base_vit'] = 97,
+  ['bonus_chr'] = 128,
+  ['bonus_vit'] = 96,
+  ['waltz_potency'] = 50,
+  ['waltz_self_potency'] = 17,
   ['est_non_party_target_hp'] = 2000,
-}
+})
 ```
 Override the numbers based on your own stats while wearing your Curing Waltz gear set.
 
