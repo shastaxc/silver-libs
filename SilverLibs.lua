@@ -1,3 +1,4 @@
+-- Version 2021.JUL.04.000
 -- Copyright © 2020, Silvermutt (Asura)
 -- All rights reserved.
 
@@ -55,6 +56,7 @@ packets.inject(packet)
 -- Flags to enable/disable features and store user settings
 -------------------------------------------------------------------------------
 silibs.use_weapon_rearm = false
+silibs.th_marker_enabled = false
 
 -------------------------------------------------------------------------------
 -- Instatiated variables for storing values and states
@@ -76,6 +78,7 @@ silibs.waltz_stats = {
 silibs.playerStats = {}
 silibs.playerStats.Base = {}
 silibs.playerStats.Bonus = {}
+silibs.last_action_applied_TH = false
 
 
 -------------------------------------------------------------------------------
@@ -131,6 +134,7 @@ function silibs.init_settings()
     ['waltz_self_potency'] = 15,
     ['est_non_party_target_hp'] = 2000,
   }
+  silibs.last_action_applied_TH = false
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -507,6 +511,21 @@ function silibs.set_waltz_stats(table)
   refine_waltz = silibs.refine_waltz
 end
 
+function silibs.mark_th_tagged(target_id)
+  -- Use TH set using offensive ability, if TH mode is on, and mob hasn't been hit yet
+  if player.id ~= target_id and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[target_id] then
+    equip(sets.TreasureHunter)
+    silibs.last_action_applied_TH = true
+  else
+    silibs.last_action_applied_TH = false
+  end
+end
+
+-- Marks enemy as tagged with TH set if "true" is returned
+function silibs.th_action_check(category, param)
+  return silibs.last_action_applied_TH
+end
+
 
 -------------------------------------------------------------------------------
 -- Helpful/Supporting functions
@@ -633,6 +652,35 @@ function silibs.waltz_cure_amount(tier, target)
   )
 end
 
+-------------------------------------------------------------------------------
+-- Feature-enabling functions
+-------------------------------------------------------------------------------
+function silibs.enable_th_marker()
+  silibs.th_marker_enabled = true
+  th_action_check = silibs.th_action_check
+end
+
+
+-------------------------------------------------------------------------------
+-- Gearswap lifecycle hooks
+-------------------------------------------------------------------------------
+function silibs.precast_hook(spell, action, spellMap, eventArgs)
+end
+
+function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
+  if silibs.th_marker_enabled then
+    silibs.mark_th_tagged(spell.target.id)
+  end
+end
+
+function silibs.midcast_hook(spell, action, spellMap, eventArgs)
+end
+
+function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
+  if silibs.th_marker_enabled then
+    silibs.mark_th_tagged(spell.target.id)
+  end
+end
 
 -------------------------------------------------------------------------------
 -- Event hooks

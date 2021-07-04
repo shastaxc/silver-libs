@@ -1,7 +1,9 @@
 # SilverLibs
 FFXI Windower v4 GearSwap library. Hooks into GearSwap to provide additional advanced functionality.
 
-The SilverLibs.lua file contains functionality that is designed to be easily implemented into job files. To use any of these functions, follow the instructions below:
+The SilverLibs.lua file contains functionality that is designed to be easily implemented into job files. To use any of these functions, follow the instructions below.
+
+If you would like to see my personal GearSwap job files for reference on implementing these features, you can find them at https://github.com/shastaxc/gearswap-data
 
 ## Installing SilverLibs
 1. The SilverLibs.lua file should be placed in the gearswap/libs folder. It will still work if you have it in the gearswap/data folder though.
@@ -14,6 +16,11 @@ silibs = include('SilverLibs')
 mote_include_version = 2
 include('Mote-Include.lua')
 ```
+4. Add a few lines of code into all your job luas so that when you enable features, they have the ability to pull info from your lua where needed. Please add the following (and if the functions specified don't exist, they will need to be created):
+* Inside your function `job_precast`, at the top of the function add: `silibs.precast_hook(spell, action, spellMap, eventArgs)`
+* Inside your function `job_post_precast`, at the bottom of the function just before the `end` that closes it, add: `silibs.post_precast_hook(spell, action, spellMap, eventArgs)`
+* Inside your function `job_midcast`, at the top of the function add: `silibs.midcast_hook(spell, action, spellMap, eventArgs)`
+* Inside your function `job_post_midcast`, at the bottom of the function just before the `end` that closes it, add: `silibs.post_midcast_hook(spell, action, spellMap, eventArgs)`
 
 ## Features
 
@@ -152,3 +159,29 @@ There are a few pre-built commands available to you in SilverLibs. Keep in mind 
 * noinvis: Cancels Invisible effects on you. This includes buffs with similar effect as Invisible such as Camouflage and Hide.
 * usekey: Attempts to use a key on a chest you have targeted. If you are in Abyssea targeting a Sturdy Pyxis, it will attempt to use Forbidden Key. If you are targeting any other chest and you are a THF, it will attempt to use (in this order) Skeleton Key, Living Key, and Thief's Tools. Also cancels Invisible effects on you because you cannot interact with chests while invisible.
 * faceaway: Turns your character 180 degrees in-place.
+
+### Treasure Hunter Marker
+**Description**
+
+Intended to work with `Mote-TreasureHunter`. This feature enhances the way TH is used by the Mote library. Specifically, this adds the functionality for Treasure Hunter set to be used when attacking an enemy without engaging.
+
+**How is this different from Mote-TreasureHunter?**
+
+The base functionality of the Mote library has a problem in that it will only equip your TH set if you have engaged the enemy first (by drawing your weapon), but it will still erroneously mark it as tagged with TH if you hit the enemy without engaging. This means that if you tag it with something (like Flash) without engaging, and then engage it, it won't use your TH set either on the Flash nor any time afterward because it thinks you applied TH already (which you didn't). SilverLibs's TH Marker feature corrects this behavior.
+
+**Implementation**
+
+Ensure you have the silibs post_precast and post_midcast hooks in your job lua. See the "Installing SilverLibs" section above for more details.
+
+Make sure the `Mote-TreasureHunter` library is imported somewhere in your job lua. This can be done with the following line of code, usually in your `job_setup` function: `include('Mote-TreasureHunter')`.
+
+Must remove the function `th_action_check` from your job file if it is there. Optionally, you can remove any references of `info.default_ja_ids` and `info.default_u_ja_ids` from your job file since they will do nothing now.
+
+Must have a set named `sets.TreasureHunter`. This does not need to be a complete set, as it will be overlayed on top of your normal sets for whatever action you use against an enemy (only if you have TH mode turned on).
+
+Set up a keybind for turning TH mode on and off. This can be done with a command such as:
+```
+send_command('bind ^` gs c cycle treasuremode')
+```
+
+Enable this feature by adding the following anywhere in your `job_setup` function: `silibs.enable_th_marker()`
