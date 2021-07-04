@@ -48,7 +48,9 @@ silibs = include('SilverLibs')
 ```
 
 ### Using Selindrile's Libraries
-TODO: Add Selindrile installation instructions (or link to it).
+Setting up Selindrile's library take a little more effort than Mote's so you should reference his documentation directly at https://github.com/Selindrile/GearSwap
+
+With Selindrile library now set up, a few more steps must be completed to integrate SilverLibs into your job files:
 
 1. The SilverLibs.lua file should be placed in the gearswap/libs folder.
 2. Add the following line at the top of your gearswap Charname_Job_Gear.lua file in which you wish to use the function. If you have a global file, you can put it at the top of that one instead.
