@@ -29,22 +29,34 @@ With Mote library now set up, a few more steps must be completed to integrate Si
 ```lua
 silibs = include('SilverLibs')
 ```
-3. Add a few lines of code into all your job luas so that when you enable features, they have the ability to pull info from your lua where needed. Please add the following (and if the functions specified don't exist, they will need to be created):
-* Inside your function `job_precast`, at the top of the function add:
+3. Add a few lines of code into all your job luas so that when you enable features, they have the ability to pull info from your lua where needed. If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
+* Add hook inside the function `job_precast`, at the top of the function:
 ```lua
+function job_precast(spell, action, spellMap, eventArgs)
   silibs.precast_hook(spell, action, spellMap, eventArgs)
+  ----------- All other content goes below this line -----------
+end
 ```
-* Inside your function `job_post_precast`, at the bottom of the function just before the `end` that closes it, add:
+* Add hook inside the function `job_post_precast`, at the bottom of the function:
 ```lua
+function job_post_precast(spell, action, spellMap, eventArgs)
+  ----------- All other content goes above this line -----------
   silibs.post_precast_hook(spell, action, spellMap, eventArgs)
+end
 ```
-* Inside your function `job_midcast`, at the top of the function add:
+* Add a hook inside the function `job_midcast`, at the top of the function:
 ```lua
+function job_midcast(spell, action, spellMap, eventArgs)
   silibs.midcast_hook(spell, action, spellMap, eventArgs)
+  ----------- All other content goes below this line -----------
+end
 ```
-* Inside your function `job_post_midcast`, at the bottom of the function just before the `end` that closes it, add:
+* Add a hook inside the function `job_post_midcast`, at the bottom of the function:
 ```lua
+function job_post_midcast(spell, action, spellMap, eventArgs)
+  ----------- All other content goes above this line -----------
   silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
+end
 ```
 
 ### Using Selindrile's Libraries
@@ -57,23 +69,36 @@ With Selindrile library now set up, a few more steps must be completed to integr
 ```lua
 silibs = include('SilverLibs')
 ```
-3. Add a few lines of code into all your job luas so that when you enable features, they have the ability to pull info from your lua where needed. Please add the following (and if the functions specified don't exist, they will need to be created):
-* Inside your function `user_job_precast`, at the top of the function add:
+3. Add a few lines of code into all your job luas so that when you enable features, they have the ability to pull info from your lua where needed. If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
+* Add hook inside the function `user_job_precast`, at the top of the function:
 ```lua
+function user_job_precast(spell, spellMap, eventArgs)
   silibs.precast_hook(spell, nil, spellMap, eventArgs)
+  ----------- All other content goes below this line -----------
+end
 ```
-* Inside your function `extra_user_post_precast`, at the bottom of the function just before the `end` that closes it, add:
+* Add hook inside the function `extra_user_post_precast`, at the bottom of the function:
 ```lua
+function extra_user_post_precast(spell, spellMap, eventArgs)
+  ----------- All other content goes above this line -----------
   silibs.post_precast_hook(spell, nil, spellMap, eventArgs)
+end
 ```
-* Inside your function `user_job_midcast`, at the top of the function add:
+* Add a hook inside the function `user_job_midcast`, at the top of the function:
 ```lua
+function user_job_midcast(spell, spellMap, eventArgs)
   silibs.midcast_hook(spell, nil, spellMap, eventArgs)
+  ----------- All other content goes below this line -----------
+end
 ```
-* Inside your function `extra_user_post_midcast`, at the bottom of the function just before the `end` that closes it, add:
+* Add a hook inside the function `extra_user_post_midcast`, at the bottom of the function:
 ```lua
+function extra_user_post_midcast(spell, spellMap, eventArgs)
+  ----------- All other content goes above this line -----------
   silibs.post_midcast_hook(spell, nil, spellMap, eventArgs)
+end
 ```
+
 
 ## Features
 
@@ -88,11 +113,7 @@ __If Using Mote Libs__
 
 Ensure you have the silibs precast hook in your job lua. See the "Installing SilverLibs" section above for more details.
 
-In your job file at the beginning of the `job_setup` function, add the following:
-```lua
-silibs.enable_cancel_outranged_ws()
-```
-If you do not have a `job_setup` function, just go ahead and create one underneath (not inside of) `get_sets`.
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
 function job_setup()
   silibs.enable_cancel_outranged_ws()
@@ -103,11 +124,7 @@ __If Using Selindrile Libs__
 
 Ensure you have the silibs precast hook in your job lua. See the "Installing SilverLibs" section above for more details.
 
-In your char_job_gear.lua file at the beginning of the `user_job_setup` function, add the following:
-```lua
-silibs.enable_cancel_outranged_ws()
-```
-If you do not have a `user_job_setup` function, just go ahead and create one.
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
 ```lua
 function user_job_setup()
   silibs.enable_cancel_outranged_ws()
@@ -124,11 +141,7 @@ When you use a spell, item, ability, etc this will check to see if you have a st
 
 __If Using Mote Libs__
 
-In your job file at the beginning of the `job_setup` function, add the following:
-```lua
-silibs.enable_cancel_on_blocking_status()
-```
-If you do not have a `job_setup` function, just go ahead and create one underneath (not inside of) `get_sets` like this:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
 function job_setup()
   silibs.enable_cancel_on_blocking_status()
@@ -139,11 +152,7 @@ __If Using Selindrile Libs__
 
 Ensure you have the silibs precast hook in your job lua. See the "Installing SilverLibs" section above for more details.
 
-In your char_job_gear.lua file at the beginning of the `user_job_setup` function, add the following:
-```lua
-  silibs.enable_cancel_on_blocking_status()
-```
-If you do not have a `user_job_setup` function, just go ahead and create one.
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
 ```lua
 function user_job_setup()
   silibs.enable_cancel_on_blocking_status()
@@ -160,11 +169,7 @@ Whenever your weapons are removed, this function will re-equip whatever you prev
 
 __If Using Mote Libs__
 
-In your job file at the beginning of the `job_setup` function, add the following:
-```lua
-silibs.enable_weapon_rearm()
-```
-If you do not have a `job_setup` function, just go ahead and create one underneath `get_sets` like this:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
 function job_setup()
   silibs.enable_weapon_rearm()
@@ -175,11 +180,7 @@ __If Using Selindrile Libs__
 
 Ensure you have the silibs precast hook in your job lua. See the "Installing SilverLibs" section above for more details.
 
-In your char_job_gear.lua file at the beginning of the `user_job_setup` function, add the following:
-```lua
-  silibs.enable_weapon_rearm()
-```
-If you do not have a `user_job_setup` function, just go ahead and create one.
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
 ```lua
 function user_job_setup()
   silibs.enable_weapon_rearm()
@@ -205,11 +206,7 @@ Sets your lockstyle on job or subjob change. Also reapplies your lockstyle when 
 
 __If Using Mote Libs__
 
-In your job lua, anywhere in the `user_setup` function, add the following:
-```lua
-  silibs.set_lockstyle(n)
-```
-If you do not have a `user_setup` function, just go ahead and create one like this:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
 function user_setup()
   silibs.set_lockstyle(n)
@@ -219,7 +216,12 @@ Replace `n` with a number 1-100 indicating the lockstyle set number you wish to 
 
 __If Using Selindrile Libs__
 
-TODO
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
+```lua
+function user_job_setup()
+  silibs.set_lockstyle(n)
+end
+```
 
 
 ### Waltz Refiner
@@ -231,22 +233,18 @@ Using any Curing Waltz will be intercepted by SilverLibs and will automatically 
 
 __If Using Mote Libs__
 
-In your job lua, anywhere in the `job_setup` function, add the following:
-```lua
-silibs.enable_waltz_refiner({
-  ['base_chr'] = 100,
-  ['base_vit'] = 100,
-  ['bonus_chr'] = 100,
-  ['bonus_vit'] = 100,
-  ['waltz_potency'] = 25,
-  ['waltz_self_potency'] = 15,
-  ['est_non_party_target_hp'] = 2000,
-})
-```
-If you do not have a `job_setup` function, just go ahead and create one like this:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
 function job_setup()
-  -- Job initialization stuff goes here
+  silibs.enable_waltz_refiner({
+    ['base_chr'] = 100,
+    ['base_vit'] = 100,
+    ['bonus_chr'] = 100,
+    ['bonus_vit'] = 100,
+    ['waltz_potency'] = 25,
+    ['waltz_self_potency'] = 15,
+    ['est_non_party_target_hp'] = 2000,
+  })
 end
 ```
 Override the numbers based on your own stats while wearing your Curing Waltz gear set. Any of these settings that are omitted will cause the refiner to use defaults (which are the numbers listed in the code snippet above).
@@ -257,22 +255,18 @@ __If Using Selindrile Libs__
 
 Ensure you have the silibs precast hook in your job lua. See the "Installing SilverLibs" section above for more details.
 
-In your char_job_gear.lua file at the beginning of the `user_job_setup` function, add the following:
-```lua
-silibs.enable_waltz_refiner({
-  ['base_chr'] = 100,
-  ['base_vit'] = 100,
-  ['bonus_chr'] = 100,
-  ['bonus_vit'] = 100,
-  ['waltz_potency'] = 25,
-  ['waltz_self_potency'] = 15,
-  ['est_non_party_target_hp'] = 2000,
-})
-```
-If you do not have a `user_job_setup` function, just go ahead and create one like this:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
 ```lua
 function user_job_setup()
-  -- Job initialization stuff goes here
+  silibs.enable_waltz_refiner({
+    ['base_chr'] = 100,
+    ['base_vit'] = 100,
+    ['bonus_chr'] = 100,
+    ['bonus_vit'] = 100,
+    ['waltz_potency'] = 25,
+    ['waltz_self_potency'] = 15,
+    ['est_non_party_target_hp'] = 2000,
+  })
 end
 ```
 
@@ -293,20 +287,22 @@ Every GearSwap file has the ability to create custom commands in its job.lua fil
 
 __If Using Mote Libs__
 
-In your job lua, find the function called `job_self_command`. If it does not exist, create it. In the first line inside this function add the `silibs.self_command` function call like so:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
 function job_self_command(cmdParams, eventArgs)
   silibs.self_command(cmdParams, eventArgs)
+  ----------- All other content goes below this line -----------
 end
 ```
 If you have other content in this function, put it below the silibs.self_command function call. **Be aware** that this function changes all cmdParams to lowercase, so if you have other content in `job_self_command` that attempts to match params with capitalization, you should change those to match lowercase params.
 
 __If Using Selindrile Libs__
 
-In your job lua, find the function called `user_job_self_command`. If it does not exist, create it. In the first line inside this function add the `silibs.self_command` function call like so:
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
 ```lua
 function user_job_self_command(cmdParams, eventArgs)
   silibs.self_command(cmdParams, eventArgs)
+  ----------- All other content goes below this line -----------
 end
 ```
 If you have other content in this function, put it below the silibs.self_command function call. **Be aware** that this function changes all cmdParams to lowercase, so if you have other content in `user_job_self_command` that attempts to match params with capitalization, you should change those to match lowercase params.
@@ -343,7 +339,12 @@ Set up a keybind for turning TH mode on and off. This can be done with a command
 
 __If Using Mote Libs__
 
-Enable TH Fix by adding the following anywhere in your `job_setup` function: `silibs.enable_th_fix()`
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
+```lua
+function job_setup()
+  silibs.enable_th_fix()
+end
+```
 
 Make sure the `Mote-TreasureHunter` library is imported somewhere in your job lua. This can be done with the following line of code, usually in your `job_setup` function: `include('Mote-TreasureHunter')`.
 
@@ -351,6 +352,11 @@ Must remove the function `th_action_check` from your job file if it is there. Op
 
 __If Using Selindrile Libs__
 
-Enable TH Fix by adding the following anywhere in your `user_job_setup` function: `silibs.enable_th_fix()`
+If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
+```lua
+function user_job_setup()
+  silibs.enable_th_fix()
+end
+```
 
-Optionally, you can remove any references of `info.th_ma_ids`, `info.th_ws_ids`, `info.th_ja_ids`, and `info.th_u_ja_ids` from your job file since they will do nothing now.
+Must remove the function `th_action_check` from your char_job_gear.lua file if it is there. Optionally, you can remove any references of `info.th_ma_ids`, `info.th_ws_ids`, `info.th_ja_ids`, and `info.th_u_ja_ids` from your job file since they will do nothing now.
