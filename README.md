@@ -31,17 +31,19 @@ Cancels the WS command from being sent to the game if you are out of range. Norm
 
 **Implementation**
 
-In your job file, add the following code to the beginning of your `job_precasts` function:
-```
-silibs.cancel_outranged_ws(spell, eventArgs)
-```
+Ensure you have the silibs precast hook in your job lua. See the "Installing SilverLibs" section above for more details.
 
-If you do not have a `job_precasts` function in your lua, you can just add that as follows:
+In your job file at the beginning of the `job_setup` function, add the following:
 ```
-function job_precast(spell, action, spellMap, eventArgs)
-  silibs.cancel_outranged_ws(spell, eventArgs)
+silibs.enable_cancel_outranged_ws()
+```
+If you do not have a `job_setup` function, just go ahead and create one underneath (not inside of) `get_sets` like this:
+```
+function job_setup()
+  silibs.enable_cancel_outranged_ws()
 end
 ```
+
 
 ### Cancel action if blocked by status effect
 **Description**
@@ -50,17 +52,17 @@ When you use a spell, item, ability, etc this will check to see if you have a st
 
 **Implementation**
 
-In your job file, add the following code to the beginning of your `job_precasts` function:
+In your job file at the beginning of the `job_setup` function, add the following:
 ```
-silibs.cancel_on_blocking_status(spell, eventArgs)
+silibs.enable_cancel_on_blocking_status()
 ```
-
-If you do not have a `job_precasts` function in your lua, you can just add that as follows:
+If you do not have a `job_setup` function, just go ahead and create one underneath (not inside of) `get_sets` like this:
 ```
-function job_precast(spell, action, spellMap, eventArgs)
-  silibs.cancel_on_blocking_status(spell, eventArgs)
+function job_setup()
+  silibs.enable_cancel_on_blocking_status()
 end
 ```
+
 
 ### Automatic weapon re-arming
 **Descripton**
@@ -71,23 +73,20 @@ Whenever your weapons are removed, this function will re-equip whatever you prev
 
 In your job file at the beginning of the `job_setup` function, add the following:
 ```
-silibs.use_weapon_rearm = true
+silibs.enable_weapon_rearm()
 ```
 If you do not have a `job_setup` function, just go ahead and create one underneath `get_sets` like this:
 ```
 function job_setup()
-  silibs.use_weapon_rearm = true
+  silibs.enable_weapon_rearm()
 end
 ```
 
 **Usage**
 
-Functionality can be temporarily disabled by adding a togglable `Rearming Lock` state (also in `job_setup`):
-```
-state.RearmingLock = M(false, 'Rearming Lock')
-```
+Simply including the "enable" line from the Implementation section above will allow the re-arming to work. However, if you want more control to turn this function on and off, you can do so with the following command: `gs c toggle RearmingLock`
 
-And add a keybind (also in `job_setup`) to perform the actual toggling (WIN+W is used here but it can be anything you want):
+You can tie this command to a keybind by adding the following line to your `job_setup` function (WIN+W is used here but it can be anything you want):
 ```
 send_command('bind @w gs c toggle RearmingLock')
 ```
@@ -112,19 +111,21 @@ Using any Curing Waltz will be intercepted by SilverLibs and will automatically 
 
 **Implementation**
 
-In your job lua, anywhere in the `user_setup()` function, add the following:
+In your job lua, anywhere in the `job_setup()` function, add the following:
 ```
-silibs.set_waltz_stats({
-  ['base_chr'] = 104,
-  ['base_vit'] = 97,
-  ['bonus_chr'] = 128,
-  ['bonus_vit'] = 96,
-  ['waltz_potency'] = 50,
-  ['waltz_self_potency'] = 17,
+silibs.enable_waltz_refiner({
+  ['base_chr'] = 100,
+  ['base_vit'] = 100,
+  ['bonus_chr'] = 100,
+  ['bonus_vit'] = 100,
+  ['waltz_potency'] = 25,
+  ['waltz_self_potency'] = 15,
   ['est_non_party_target_hp'] = 2000,
 })
 ```
-Override the numbers based on your own stats while wearing your Curing Waltz gear set.
+Override the numbers based on your own stats while wearing your Curing Waltz gear set. Any of these settings that are omitted will cause the refiner to use defaults (which are the numbers listed in the code snippet above).
+
+`base_chr` and `base_vit` are your character's CHR and VIT without gear on whatever job you choose to implement this function. `bonus_chr`, `bonus_vit`, `waltz_potency`, and `waltz_self_potency` are the bonuses from gear in your Curing Waltz set.
 
 **Details on How It Works**
 
@@ -148,7 +149,7 @@ function job_self_command(cmdParams, eventArgs)
 end
 ```
 
-If you have other content in this function, just put it below the silibs.self_command function call.
+If you have other content in this function, just put it below the silibs.self_command function call. **Be aware** that this function changes all cmdParams to lowercase, so if you have other content in `job_self_command` that attempts to match params with capitalization, you should change those to match lowercase params.
 
 **Usage**
 
@@ -160,14 +161,14 @@ There are a few pre-built commands available to you in SilverLibs. Keep in mind 
 * usekey: Attempts to use a key on a chest you have targeted. If you are in Abyssea targeting a Sturdy Pyxis, it will attempt to use Forbidden Key. If you are targeting any other chest and you are a THF, it will attempt to use (in this order) Skeleton Key, Living Key, and Thief's Tools. Also cancels Invisible effects on you because you cannot interact with chests while invisible.
 * faceaway: Turns your character 180 degrees in-place.
 
-### Treasure Hunter Marker
+### Treasure Hunter Fix
 **Description**
 
 Intended to work with `Mote-TreasureHunter`. This feature enhances the way TH is used by the Mote library. Specifically, this adds the functionality for Treasure Hunter set to be used when attacking an enemy without engaging.
 
 **How is this different from Mote-TreasureHunter?**
 
-The base functionality of the Mote library has a problem in that it will only equip your TH set if you have engaged the enemy first (by drawing your weapon), but it will still erroneously mark it as tagged with TH if you hit the enemy without engaging. This means that if you tag it with something (like Flash) without engaging, and then engage it, it won't use your TH set either on the Flash nor any time afterward because it thinks you applied TH already (which you didn't). SilverLibs's TH Marker feature corrects this behavior.
+The base functionality of the Mote library has a problem in that it will only equip your TH set if you have engaged the enemy first (by drawing your weapon), but it will still erroneously mark it as tagged with TH if you hit the enemy without engaging. This means that if you tag it with something (like Flash) without engaging, and then engage it, it won't use your TH set either on the Flash nor any time afterward because it thinks you applied TH already (which you didn't). SilverLibs's TH Fix feature corrects this behavior.
 
 **Implementation**
 
@@ -184,4 +185,4 @@ Set up a keybind for turning TH mode on and off. This can be done with a command
 send_command('bind ^` gs c cycle treasuremode')
 ```
 
-Enable this feature by adding the following anywhere in your `job_setup` function: `silibs.enable_th_marker()`
+Enable this feature by adding the following anywhere in your `job_setup` function: `silibs.enable_th_fix()`

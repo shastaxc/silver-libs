@@ -1,4 +1,4 @@
--- Version 2021.JUL.04.000
+-- Version 2021.JUL.04.001
 -- Copyright © 2020, Silvermutt (Asura)
 -- All rights reserved.
 
@@ -55,8 +55,10 @@ packets.inject(packet)
 -------------------------------------------------------------------------------
 -- Flags to enable/disable features and store user settings
 -------------------------------------------------------------------------------
-silibs.use_weapon_rearm = false
-silibs.th_marker_enabled = false
+silibs.cancel_outranged_ws_enabled = false
+silibs.cancel_on_blocking_status_enabled = false
+silibs.weapon_rearm_enabled = false
+silibs.th_fix_enabled = false
 
 -------------------------------------------------------------------------------
 -- Instatiated variables for storing values and states
@@ -79,6 +81,7 @@ silibs.playerStats = {}
 silibs.playerStats.Base = {}
 silibs.playerStats.Bonus = {}
 silibs.last_action_applied_TH = false
+state.RearmingLock = M(false, 'Rearming Lock')
 
 
 -------------------------------------------------------------------------------
@@ -120,8 +123,12 @@ silibs.curing_waltz = T{
 -------------------------------------------------------------------------------
 
 function silibs.init_settings()
+  silibs.cancel_outranged_ws_enabled = false
+  silibs.cancel_on_blocking_status_enabled = false
+  silibs.weapon_rearm_enabled = false
+  silibs.th_fix_enabled = false
+
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
-  silibs.use_weapon_rearm = false
   silibs.lockstyle_set = 0
   silibs.locked_style = false
   silibs.encumbrance = 0
@@ -135,6 +142,8 @@ function silibs.init_settings()
     ['est_non_party_target_hp'] = 2000,
   }
   silibs.last_action_applied_TH = false
+  
+  state.RearmingLock = M(false, 'Rearming Lock')
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -505,10 +514,6 @@ function silibs.set_waltz_stats(table)
       print('Silibs: Invalid waltz stat defined \''..tostring(k)..'\'')
     end
   end
-
-  -- Assume that since user called this function they intend to use the silibs
-  -- version, so overwrite the global function refine_waltz with our own.
-  refine_waltz = silibs.refine_waltz
 end
 
 function silibs.mark_th_tagged(target_id)
@@ -655,8 +660,26 @@ end
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
 -------------------------------------------------------------------------------
-function silibs.enable_th_marker()
-  silibs.th_marker_enabled = true
+function silibs.enable_cancel_outranged_ws()
+  silibs.cancel_outranged_ws_enabled = true
+end
+
+function silibs.enable_cancel_on_blocking_status()
+  silibs.cancel_on_blocking_status_enabled = true
+end
+
+function silibs.enable_weapon_rearm()
+  silibs.weapon_rearm_enabled = true
+end
+  
+function silibs.enable_waltz_refiner(table)
+  silibs.set_waltz_stats(table)
+  -- Overwrite the global function refine_waltz with our own.
+  refine_waltz = silibs.refine_waltz
+end
+
+function silibs.enable_th_fix()
+  silibs.th_fix_enabled = true
   th_action_check = silibs.th_action_check
 end
 
@@ -665,10 +688,16 @@ end
 -- Gearswap lifecycle hooks
 -------------------------------------------------------------------------------
 function silibs.precast_hook(spell, action, spellMap, eventArgs)
+  if silibs.cancel_outranged_ws_enabled then
+    silibs.cancel_outranged_ws(spell, eventArgs)
+  end
+  if silibs.cancel_on_blocking_status_enabled then
+    silibs.cancel_on_blocking_status(spell, eventArgs)
+  end
 end
 
 function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
-  if silibs.th_marker_enabled then
+  if silibs.th_fix_enabled then
     silibs.mark_th_tagged(spell.target.id)
   end
 end
@@ -677,7 +706,7 @@ function silibs.midcast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
-  if silibs.th_marker_enabled then
+  if silibs.th_fix_enabled then
     silibs.mark_th_tagged(spell.target.id)
   end
 end
@@ -690,7 +719,7 @@ frame_count=0
 windower.register_event('prerender',function()
   -- Use frame count to limit execution rate (roughly 0.16-0.33 seconds depending on FPS)
   if frame_count%10 == 0 and windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
-    if silibs.use_weapon_rearm then
+    if silibs.weapon_rearm_enabled then
       silibs.update_and_rearm_weapons()
       frame_count = 0
     end
