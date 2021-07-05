@@ -1,5 +1,5 @@
 -- Version 2021.JUL.05.001
--- Copyright © 2020, Silvermutt (Asura)
+-- Copyright © 2021, Shasta
 -- All rights reserved.
 
 -- Redistribution and use in source and binary forms, with or without
