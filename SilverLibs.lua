@@ -518,9 +518,9 @@ function silibs.set_waltz_stats(table)
   end
 end
 
-function silibs.mark_th_tagged(target_id)
+function silibs.mark_th_tagged(target_type)
   -- Use TH set using offensive ability, if TH mode is on, and mob hasn't been hit yet
-  if player.id ~= target_id and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[target_id] then
+  if target_type == "MONSTER" and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[target_id] then
     equip(sets.TreasureHunter)
     silibs.last_action_applied_TH = true
   else
@@ -709,7 +709,7 @@ end
 
 function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   if silibs.th_fix_enabled then
-    silibs.mark_th_tagged(spell.target.id)
+    silibs.mark_th_tagged(spell.target.type)
   end
 end
 
@@ -718,7 +718,7 @@ end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
   if silibs.th_fix_enabled then
-    silibs.mark_th_tagged(spell.target.id)
+    silibs.mark_th_tagged(spell.target.type)
   end
 end
 
