@@ -1,4 +1,4 @@
--- Version 2021.JUL.04.001
+-- Version 2021.JUL.04.002
 -- Copyright © 2020, Silvermutt (Asura)
 -- All rights reserved.
 
@@ -58,6 +58,7 @@ packets.inject(packet)
 silibs.cancel_outranged_ws_enabled = false
 silibs.cancel_on_blocking_status_enabled = false
 silibs.weapon_rearm_enabled = false
+silibs.auto_lockstyle_enabled = false
 silibs.th_fix_enabled = false
 
 -------------------------------------------------------------------------------
@@ -126,6 +127,7 @@ function silibs.init_settings()
   silibs.cancel_outranged_ws_enabled = false
   silibs.cancel_on_blocking_status_enabled = false
   silibs.weapon_rearm_enabled = false
+  silibs.auto_lockstyle_enabled = false
   silibs.th_fix_enabled = false
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
@@ -281,9 +283,9 @@ function silibs.update_and_rearm_weapons()
   end
 end
 
-function silibs.set_lockstyle(set_number)
-  if set_number then
-    silibs.lockstyle_set = set_number
+function silibs.set_lockstyle()
+  if not silibs.auto_lockstyle_enabled then
+    return
   end
   -- Set lockstyle 2 seconds after changing job, trying immediately will error
   coroutine.schedule(function()
@@ -671,8 +673,17 @@ end
 function silibs.enable_weapon_rearm()
   silibs.weapon_rearm_enabled = true
 end
-  
+
+function silibs.enable_auto_lockstyle(set_number)
+  if set_number then
+    silibs.lockstyle_set = set_number
+    silibs.auto_lockstyle_enabled = true
+    silibs.set_lockstyle(set_number)
+  end
+end
+
 function silibs.enable_waltz_refiner(table)
+  if not table then table = {} end
   silibs.set_waltz_stats(table)
   -- Overwrite the global function refine_waltz with our own.
   refine_waltz = silibs.refine_waltz
@@ -731,7 +742,12 @@ end)
 -- Hook into job/subjob change event (happens BEFORE job starts changing)
 windower.raw_register_event('outgoing chunk', function(id, data, modified, injected, blocked)
   if id == 0x100 then -- Sending job change command to server
-    silibs.init_settings()
+    -- Re-init settings if changing main
+    local newmain = data:byte(5)
+    local newsub = data:byte(6)
+    if res.jobs[newmain] and newmain ~= 0 and newmain ~= player.main_job_id then
+      silibs.init_settings()
+    end
   elseif id == 0x053 then -- Send lockstyle command to server
     local type = data:unpack("I",0x05)
     if type == 0 then -- This is lockstyle 'disable' command
@@ -744,14 +760,14 @@ end)
 
 -- Set lockstyle again when encumbrance value changes (which disables lockstyle as a side effect)
 windower.raw_register_event('incoming chunk', function(id, data, modified, injected, blocked)
-  if id == 0x01B then
-    local encumbrance = data:unpack('H',0x61)
+  if id == 0x01B then -- Contains info about player's encumbrance status
+    local encumbrance = data:unpack('I',0x61)
     if encumbrance ~= silibs.encumbrance then
       silibs.locked_style = false
       silibs.encumbrance = encumbrance
       silibs.set_lockstyle()
     end
-  elseif id == 0x061 then
+  elseif id == 0x061 then -- Contains info about player stats
     local p = packets.parse('incoming', data)
     local player = windower.ffxi.get_player()
 

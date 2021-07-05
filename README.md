@@ -208,8 +208,8 @@ __If Using Mote Libs__
 
 If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following:
 ```lua
-function user_setup()
-  silibs.set_lockstyle(n)
+function job_setup()
+  silibs.enable_auto_lockstyle(n)
 end
 ```
 Replace `n` with a number 1-100 indicating the lockstyle set number you wish to use for that job. You must create the lockstyle set using the in-game menus found in Main Menu -> Macros -> Edit Equip. Set.
@@ -219,9 +219,11 @@ __If Using Selindrile Libs__
 If the specified functions already exist, just put the silibs part inside of it in the appropriate spot. Please add the following in your char_job_gear.lua file:
 ```lua
 function user_job_setup()
-  silibs.set_lockstyle(n)
+  silibs.enable_auto_lockstyle(n)
 end
 ```
+Replace `n` with a number 1-100 indicating the lockstyle set number you wish to use for that job. You must create the lockstyle set using the in-game menus found in Main Menu -> Macros -> Edit Equip. Set.
+
 
 
 ### Waltz Refiner
