@@ -747,6 +747,8 @@ windower.raw_register_event('outgoing chunk', function(id, data, modified, injec
     local newsub = data:byte(6)
     if res.jobs[newmain] and newmain ~= 0 and newmain ~= player.main_job_id then
       silibs.init_settings()
+    elseif res.jobs[newsub] and newsub ~= 0 and newsub ~= player.sub_job_id then
+      silibs.set_lockstyle()
     end
   elseif id == 0x053 then -- Send lockstyle command to server
     local type = data:unpack("I",0x05)
