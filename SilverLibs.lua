@@ -81,7 +81,7 @@ silibs.waltz_stats = {
 silibs.playerStats = {}
 silibs.playerStats.Base = {}
 silibs.playerStats.Bonus = {}
-silibs.last_action_applied_TH = false
+silibs.prev_action_applied_TH = false
 state.RearmingLock = M(false, 'Rearming Lock')
 
 
@@ -143,7 +143,7 @@ function silibs.init_settings()
     ['waltz_self_potency'] = 15,
     ['est_non_party_target_hp'] = 2000,
   }
-  silibs.last_action_applied_TH = false
+  silibs.prev_action_applied_TH = false
   
   state.RearmingLock = M(false, 'Rearming Lock')
 end
@@ -521,16 +521,15 @@ end
 function silibs.mark_th_tagged(target_type)
   -- Use TH set using offensive ability, if TH mode is on, and mob hasn't been hit yet
   if target_type == "MONSTER" and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[target_id] then
-    equip(sets.TreasureHunter)
-    silibs.last_action_applied_TH = true
+    silibs.prev_action_applied_TH = true
   else
-    silibs.last_action_applied_TH = false
+    silibs.prev_action_applied_TH = false
   end
 end
 
 -- Marks enemy as tagged with TH set if "true" is returned
 function silibs.th_action_check(category, param)
-  return silibs.last_action_applied_TH
+  return silibs.prev_action_applied_TH
 end
 
 
