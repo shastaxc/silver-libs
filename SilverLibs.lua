@@ -708,7 +708,13 @@ end
 
 function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   if silibs.th_fix_enabled then
-    silibs.mark_th_tagged(spell.target.type)
+    -- Equip TH gear if appropriate
+    if spell.target.type == "MONSTER" and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[spell.target.id]then
+      equip(sets.TreasureHunter)
+    end
+
+    -- Mark enemy as tagged
+    silibs.mark_th_tagged(spell.target.type) -- Probably move this to aftercast
   end
 end
 
