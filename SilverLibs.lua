@@ -1,4 +1,4 @@
--- Version 2021.JUL.05.001
+-- Version 2021.JUL.10.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -51,6 +51,12 @@ packets = include('packets')
 local packet = packets.new('outgoing', 0x061, {})
 packets.inject(packet)
 
+options = options or {}
+state = state or {}
+info = info or {}
+info.tagged_mobs = T{}
+state.TreasureMode = M{['description']='Treasure Mode'}
+
 
 -------------------------------------------------------------------------------
 -- Flags to enable/disable features and store user settings
@@ -59,7 +65,10 @@ silibs.cancel_outranged_ws_enabled = false
 silibs.cancel_on_blocking_status_enabled = false
 silibs.weapon_rearm_enabled = false
 silibs.auto_lockstyle_enabled = false
-silibs.th_fix_enabled = false
+silibs.premade_commands_enabled = false
+silibs.force_lower_cmd = false
+silibs.th_enabled = false
+
 
 -------------------------------------------------------------------------------
 -- Instatiated variables for storing values and states
@@ -81,8 +90,14 @@ silibs.waltz_stats = {
 silibs.playerStats = {}
 silibs.playerStats.Base = {}
 silibs.playerStats.Bonus = {}
-silibs.prev_action_applied_TH = false
 state.RearmingLock = M(false, 'Rearming Lock')
+-- TH mode handling
+if player.main_job == 'THF' then
+    state.TreasureMode:options('None','Tag','SATA','Fulltime')
+else
+    state.TreasureMode:options('None','Tag')
+end
+
 
 
 -------------------------------------------------------------------------------
@@ -128,7 +143,9 @@ function silibs.init_settings()
   silibs.cancel_on_blocking_status_enabled = false
   silibs.weapon_rearm_enabled = false
   silibs.auto_lockstyle_enabled = false
-  silibs.th_fix_enabled = false
+  silibs.premade_commands_enabled = false
+  silibs.force_lower_cmd = false
+  silibs.th_enabled = false
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -143,9 +160,14 @@ function silibs.init_settings()
     ['waltz_self_potency'] = 15,
     ['est_non_party_target_hp'] = 2000,
   }
-  silibs.prev_action_applied_TH = false
-  
   state.RearmingLock = M(false, 'Rearming Lock')
+
+  -- TH mode handling
+  if player.main_job == 'THF' then
+      state.TreasureMode:options('None','Tag','SATA','Fulltime')
+  else
+      state.TreasureMode:options('None','Tag')
+  end
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -302,25 +324,31 @@ function silibs.set_lockstyle()
 end
 
 function silibs.self_command(cmdParams, eventArgs)
-  -- Make all cmdParams lowercase
-  for i,j in ipairs(cmdParams) do
-    cmdParams[i] = j:lower()
-  end
-  if cmdParams[1] == 'sneak' then
-    silibs.use_sneak()
-    eventArgs.handled = true
-  elseif cmdParams[1] == 'invis' or cmdParams[1] == 'invisible' then
-    silibs.use_invisible()
-    eventArgs.handled = true
-  elseif cmdParams[1] == 'usekey' or cmdParams[1] == 'noinvis' then
-    send_command('cancel Invisible; cancel Hide; cancel Gestation; cancel Camouflage')
-    if cmdParams[1] == 'usekey' then
-      silibs.use_key()
+  if silibs.premade_commands_enabled  then
+    local lowerCmdParams = T{}
+    -- Make all cmdParams lowercase
+    for i,j in ipairs(cmdParams) do
+      lowerCmdParams[i] = j:lower()
     end
-    eventArgs.handled = true
-  elseif cmdParams[1] == 'faceaway' then
-    windower.ffxi.turn(player.facing - math.pi);
-    eventArgs.handled = true
+    if lowerCmdParams[1] == 'sneak' then
+      silibs.use_sneak()
+      eventArgs.handled = true
+    elseif lowerCmdParams[1] == 'invis' or lowerCmdParams[1] == 'invisible' then
+      silibs.use_invisible()
+      eventArgs.handled = true
+    elseif lowerCmdParams[1] == 'usekey' or lowerCmdParams[1] == 'noinvis' then
+      send_command('cancel Invisible; cancel Hide; cancel Gestation; cancel Camouflage')
+      if lowerCmdParams[1] == 'usekey' then
+        silibs.use_key()
+      end
+      eventArgs.handled = true
+    elseif lowerCmdParams[1] == 'faceaway' then
+      windower.ffxi.turn(player.facing - math.pi);
+      eventArgs.handled = true
+    end
+    if silibs.force_lower_cmd then
+      cmdParams = lowerCmdParams
+    end
   end
 end
 
@@ -518,18 +546,80 @@ function silibs.set_waltz_stats(table)
   end
 end
 
-function silibs.mark_th_tagged(target_type)
-  -- Use TH set using offensive ability, if TH mode is on, and mob hasn't been hit yet
-  if target_type == "MONSTER" and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[target_id] then
-    silibs.prev_action_applied_TH = true
-  else
-    silibs.prev_action_applied_TH = false
+-- On any action event, mark mobs that we tag with TH.  Also, update the last time tagged mobs were acted on.
+function silibs.on_action_for_th(action)
+  -- category == 1=melee, 2=ranged, 3=weaponskill, 4=spell, 6=job ability, 14=unblinkable JA
+  -- Only bother if Treasure mode is on
+  if state.TreasureMode.value ~= 'None' then
+    -- If player takes action
+    if action.actor_id == player.id then
+      -- If offensive action taken, mark mob as tagged
+      for index,target in pairs(action.targets) do
+        -- Get additional info about target
+        target = windower.ffxi.get_mob_by_id(target.id)
+        -- Determine if action was offensive based on target type
+        local is_target_enemy = silibs.is_target_enemy(target)
+        if is_target_enemy then
+          info.tagged_mobs[target.id] = os.time()
+        end
+      end
+    -- If mob acts, keep an update of last action time for TH bookkeeping
+    elseif info.tagged_mobs[action.actor_id] then
+      info.tagged_mobs[action.actor_id] = os.time()
+    -- If anyone else acts, check if any of the targets are our tagged mobs
+    else
+      for index,target in pairs(action.targets) do
+        if info.tagged_mobs[target.id] then
+          info.tagged_mobs[target.id] = os.time()
+        end
+      end
+    end
   end
 end
 
--- Marks enemy as tagged with TH set if "true" is returned
-function silibs.th_action_check(category, param)
-  return silibs.prev_action_applied_TH
+-- Remove mobs that we've marked as tagged with TH if we haven't seen any activity from or on them
+-- for over 3 minutes.  This is to handle deagros, player deaths, or other random stuff where the
+-- mob is lost, but doesn't die.
+function silibs.cleanup_tagged_mobs()
+  local current_time = os.time()
+  -- Search list and flag old entries.
+  for target_id,last_action_time in pairs(info.tagged_mobs) do
+    local time_since_last_action = current_time - last_action_time
+    if time_since_last_action > 180 then
+      -- Clean out mobs flagged for removal.
+      info.tagged_mobs[target_id] = nil
+      if _settings.debug_mode then
+        add_to_chat(123,'Over 3 minutes since last action on mob '..target_id..'. Removing from tagged mobs list.')
+      end
+    end
+  end
+end
+
+-- Need to use this event handler to listen for deaths in case Battlemod is loaded,
+-- because Battlemod blocks the 'action message' event.
+--
+-- This function removes mobs from our tracking table when they die.
+function silibs.on_incoming_chunk_for_th(id, data, modified, injected, blocked)
+  if id == 0x29 then
+      local target_id = data:unpack('I',0x09)
+      local message_id = data:unpack('H',0x19)%32768
+
+      -- Remove mobs that die from our tagged mobs list.
+      if info.tagged_mobs[target_id] then
+          -- 6 == actor defeats target
+          -- 20 == target falls to the ground
+          if message_id == 6 or message_id == 20 then
+              if _settings.debug_mode then add_to_chat(123,'Mob '..target_id..' died. Removing from tagged mobs table.') end
+              info.tagged_mobs[target_id] = nil
+          end
+      end
+  end
+end
+
+-- Clear out the entire tagged mobs table when zoning.
+function silibs.on_zone_change_for_th(new_zone, old_zone)
+  if _settings.debug_mode then add_to_chat(123,'Zoning. Clearing tagged mobs table.') end
+  info.tagged_mobs:clear()
 end
 
 
@@ -658,6 +748,12 @@ function silibs.waltz_cure_amount(tier, target)
   )
 end
 
+-- Takes in a mob table or spawn_type and determines if target is enemy
+function silibs.is_target_enemy(mob_table)
+  return (mob_table and mob_table.spawn_type == 16) or mob_table == 16
+end
+
+
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
 -------------------------------------------------------------------------------
@@ -681,6 +777,15 @@ function silibs.enable_auto_lockstyle(set_number)
   end
 end
 
+function silibs.enable_premade_commands(feature_config)
+  silibs.premade_commands_enabled = true
+  if feature_config and feature_config.force_lower_cmd == false then
+    silibs.force_lower_cmd = false
+  else
+    silibs.force_lower_cmd = true
+  end
+end
+
 function silibs.enable_waltz_refiner(table)
   if not table then table = {} end
   silibs.set_waltz_stats(table)
@@ -688,9 +793,20 @@ function silibs.enable_waltz_refiner(table)
   refine_waltz = silibs.refine_waltz
 end
 
-function silibs.enable_th_fix()
-  silibs.th_fix_enabled = true
-  th_action_check = silibs.th_action_check
+function silibs.enable_th(starting_mode)
+  silibs.th_enabled = true
+  if starting_mode then
+    state.TreasureMode:set(starting_mode)
+  elseif player.main_job == 'THF' then
+    state.TreasureMode:set('Tag')
+  end
+
+  -- Override any other TH libraries that might already be loaded
+  on_status_change_for_th = function() end
+  on_target_change_for_th = function() end
+  on_action_for_th = function() end
+  on_incoming_chunk_for_th = function() end
+  on_zone_change_for_th = function() end
 end
 
 
@@ -707,14 +823,19 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
-  if silibs.th_fix_enabled then
+  if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
     -- Equip TH gear if appropriate
-    if spell.target.type == "MONSTER" and state.TreasureMode.value ~= 'None' and not info.tagged_mobs[spell.target.id]then
+    if state.TreasureMode.value == 'Fulltime'
+      or (state.TreasureMode.value == 'SATA'
+        and (buffactive['sneak attack'] or buffactive['trick attack'])
+        and spell.type == 'WeaponSkill'
+        and spell.target.type == 'MONSTER')
+      or (state.TreasureMode.value == 'Tag'
+        and spell.target.type == 'MONSTER'
+        and not info.tagged_mobs[spell.target.id])
+    then
       equip(sets.TreasureHunter)
     end
-
-    -- Mark enemy as tagged
-    silibs.mark_th_tagged(spell.target.type) -- Probably move this to aftercast
   end
 end
 
@@ -722,9 +843,51 @@ function silibs.midcast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
-  if silibs.th_fix_enabled then
-    silibs.mark_th_tagged(spell.target.type)
+  -- TH needs to be on for midcast too in order to apply TH to mob
+  -- SATA-compatible actions (melee & WS) do not have midcast
+  if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
+    -- Equip TH gear if appropriate
+    if state.TreasureMode.value == 'Fulltime'
+      or (state.TreasureMode.value == 'Tag'
+        and spell.target.type == 'MONSTER'
+        and not info.tagged_mobs[spell.target.id])
+    then
+      equip(sets.TreasureHunter)
+    end
   end
+end
+
+function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
+end
+
+function silibs.post_aftercast_hook(spell, action, spellMap, eventArgs)
+end
+
+function silibs.customize_idle_set(idleSet)
+  return idleSet
+end
+
+function silibs.customize_melee_set(meleeSet)
+  if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
+    local current_target = windower.ffxi.get_mob_by_target('t')
+    local is_target_enemy = silibs.is_target_enemy(current_target)
+    -- Equip TH gear if appropriate
+    if state.TreasureMode.value == 'Fulltime'
+      or (state.TreasureMode.value == 'SATA'
+        and (buffactive['sneak attack'] or buffactive['trick attack'])
+        and is_target_enemy)
+      or (state.TreasureMode.value == 'Tag'
+        and is_target_enemy
+        and not info.tagged_mobs[current_target.id])
+    then
+      meleeSet = set_combine(meleeSet, sets.TreasureHunter)
+    end
+  end
+  return meleeSet
+end
+
+function silibs.customize_defense_set(defenseSet)
+  return defenseSet
 end
 
 -------------------------------------------------------------------------------
@@ -733,14 +896,28 @@ end
 -- Executes on every frame. This is just a way to create a perpetual loop.
 frame_count=0
 windower.register_event('prerender',function()
-  -- Use frame count to limit execution rate (roughly 0.16-0.33 seconds depending on FPS)
-  if frame_count%10 == 0 and windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
-    if silibs.weapon_rearm_enabled then
-      silibs.update_and_rearm_weapons()
-      frame_count = 0
+  if windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
+    -- Use frame count to limit execution rate
+    -- Every 10 frames (roughly 0.16-0.33 seconds depending on FPS)
+    if frame_count%10 == 0 then
+      if silibs.weapon_rearm_enabled then
+        silibs.update_and_rearm_weapons()
+      end
     end
-  else
-    frame_count = frame_count + 1
+    -- Every 600 frames (roughly 10-20 seconds depending on FPS)
+    if frame_count%600 == 0 then
+      if state.TreasureMode.value ~= 'None' then
+        -- Clean TH tagged mob list
+        silibs.cleanup_tagged_mobs()
+      end
+    end
+
+    -- Increment frame_count but prevent overflows
+    if frame_count == MAX_INT then
+      frame_count = 0
+    else
+      frame_count = frame_count + 1
+    end
   end
 end)
 
@@ -776,7 +953,6 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
     end
   elseif id == 0x061 then -- Contains info about player stats
     local p = packets.parse('incoming', data)
-    local player = windower.ffxi.get_player()
 
     silibs.playerStats["Base"]["STR"] = p["Base STR"] -- Includes STR merits
     silibs.playerStats["Base"]["DEX"] = p["Base DEX"] -- Includes DEX merits
@@ -793,6 +969,15 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
     silibs.playerStats["Bonus"]["MND"] = p["Added MND"]
     silibs.playerStats["Bonus"]["CHR"] = p["Added CHR"]
   end
+  silibs.on_incoming_chunk_for_th(id, data, modified, injected, blocked)
+end)
+
+windower.raw_register_event('action', function(action)
+  silibs.on_action_for_th(action)
+end)
+
+windower.raw_register_event('zone change', function(new_zone, old_zone)
+  silibs.on_zone_change_for_th(new_zone, old_zone)
 end)
 
 return silibs
