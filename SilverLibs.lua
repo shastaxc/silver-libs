@@ -806,6 +806,9 @@ function silibs.enable_th(starting_mode)
   on_action_for_th = function() end
   on_incoming_chunk_for_th = function() end
   on_zone_change_for_th = function() end
+  if job_state_change_via_th then
+    job_state_change = job_state_change_via_th
+  end
 end
 
 
