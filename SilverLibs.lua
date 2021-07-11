@@ -79,13 +79,13 @@ silibs.locked_style = false
 silibs.lockstyle_set = 0
 silibs.encumbrance = 0
 silibs.waltz_stats = {
-  ['base_chr'] = 100,
-  ['base_vit'] = 100,
-  ['bonus_chr'] = 100,
-  ['bonus_vit'] = 100,
-  ['waltz_potency'] = 25,
-  ['waltz_self_potency'] = 15,
-  ['est_non_party_target_hp'] = 2000,
+  base_chr = 100,
+  base_vit = 100,
+  bonus_chr = 100,
+  bonus_vit = 100,
+  waltz_potency = 25,
+  waltz_self_potency = 15,
+  est_non_party_target_hp = 2000,
 }
 silibs.playerStats = {}
 silibs.playerStats.Base = {}
@@ -152,13 +152,13 @@ function silibs.init_settings()
   silibs.locked_style = false
   silibs.encumbrance = 0
   silibs.waltz_stats = {
-    ['base_chr'] = 100,
-    ['base_vit'] = 100,
-    ['bonus_chr'] = 100,
-    ['bonus_vit'] = 100,
-    ['waltz_potency'] = 25,
-    ['waltz_self_potency'] = 15,
-    ['est_non_party_target_hp'] = 2000,
+    base_chr = 100,
+    base_vit = 100,
+    bonus_chr = 100,
+    bonus_vit = 100,
+    waltz_potency = 25,
+    waltz_self_potency = 15,
+    est_non_party_target_hp = 2000,
   }
   state.RearmingLock = M(false, 'Rearming Lock')
 
