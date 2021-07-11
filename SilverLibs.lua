@@ -97,6 +97,7 @@ if player.main_job == 'THF' then
 else
     state.TreasureMode:options('None','Tag')
 end
+silibs.th_aoe_actions = {}
 
 
 -------------------------------------------------------------------------------
@@ -167,6 +168,7 @@ function silibs.init_settings()
   else
       state.TreasureMode:options('None','Tag')
   end
+  silibs.th_aoe_actions = {}
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -792,12 +794,15 @@ function silibs.enable_waltz_refiner(table)
   refine_waltz = silibs.refine_waltz
 end
 
-function silibs.enable_th(starting_mode)
+function silibs.enable_th(feature_config)
   silibs.th_enabled = true
-  if starting_mode then
-    state.TreasureMode:set(starting_mode)
+  if feature_config and feature_config.starting_mode then
+    state.TreasureMode:set(feature_config.starting_mode)
   elseif player.main_job == 'THF' then
     state.TreasureMode:set('Tag')
+  end
+  if feature_config and feature_config.aoe_actions then
+    silibs.th_aoe_actions = feature_config.aoe_actions
   end
 
   -- Override any other TH libraries that might already be loaded
