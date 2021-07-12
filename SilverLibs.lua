@@ -1,4 +1,4 @@
--- Version 2021.JUL.11.001
+-- Version 2021.JUL.12.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -68,6 +68,7 @@ silibs.auto_lockstyle_enabled = false
 silibs.premade_commands_enabled = false
 silibs.force_lower_cmd = false
 silibs.th_enabled = false
+silibs.th_aoe_disabled = false
 
 
 -------------------------------------------------------------------------------
@@ -195,6 +196,7 @@ function silibs.init_settings()
   silibs.premade_commands_enabled = false
   silibs.force_lower_cmd = false
   silibs.th_enabled = false
+  silibs.th_aoe_disabled = false
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -631,6 +633,7 @@ function silibs.on_action_for_th(action)
         end
       -- If AoE offensive action taken and action is in list of th_aoe_actions, mark all mobs as tagged
       elseif action.target_count > 1
+        and not silibs.th_aoe_disabled
         and action_details
         and silibs.th_aoe_actions[action_category.th_aoe_category][action_details.name]
       then
@@ -906,6 +909,10 @@ function silibs.enable_th(feature_config)
     state.TreasureMode:set('Tag')
   end
 
+  if feature_config and feature_config.disable_aoe_tag then
+    silibs.th_aoe_disabled = true
+  end
+
   -- User-defined aoe actions should overwrite/append existing lists
   if feature_config and feature_config.aoe_actions then
     for k,v in pairs(feature_config.aoe_actions) do
@@ -973,7 +980,8 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         and not info.tagged_mobs[spell.target.id])
     then
       equip(sets.TreasureHunter)
-    elseif (state.TreasureMode.value == 'Tag') then
+    -- Handle AoE actions separately
+    elseif (not silibs.th_aoe_disabled and state.TreasureMode.value == 'Tag') then
       local aoe_action = (spell.type == 'WeaponSkill' and silibs.th_aoe_actions.weaponskills[spell.name])
         or (spell.action_type == 'Magic' and silibs.th_aoe_actions.spells[spell.name])
         or (spell.type == 'JobAbility' and silibs.th_aoe_actions.abilities[spell.name])
@@ -985,7 +993,7 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         local enemies = silibs.get_enemies_in_range(math.ceil(aoe_action.aoe_range), aoe_center_target)
         -- If spell targeting enemy but centered on self (such as Geist Wall), ensure the targeted enemy
         -- is also in the enemies list because it could be outside of the aoe but still hit it because it was the target
-        if aoe_action.aoe_center_self and spell.target.type == 'MONSTER' then
+        if not enemies:with('id', spell.target.id) and aoe_action.aoe_center_self and spell.target.type == 'MONSTER' then
           enemies:append(spell.target)
         end
         -- If at least one enemy is not yet tagged with TH, equip TH set
@@ -1017,8 +1025,8 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
     if state.TreasureMode.value == 'Fulltime'
       or (state.TreasureMode.value == 'Tag'
         and spell.target.type == 'MONSTER'
-        and not info.tagged_mobs[spell.target.id])
-      or spell.use_th_midcast
+        and not info.tagged_mobs[spell.target.id]) -- Single target tagging
+      or spell.use_th_midcast -- AoE tagging
     then
       equip(sets.TreasureHunter)
     end
