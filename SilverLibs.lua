@@ -1,4 +1,4 @@
--- Version 2021.JUL.10.001
+-- Version 2021.JUL.11.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -97,7 +97,46 @@ if player.main_job == 'THF' then
 else
     state.TreasureMode:options('None','Tag')
 end
-silibs.th_aoe_actions = {}
+silibs.th_aoe_actions = {
+  weaponskills = {
+    ["Aeolian Edge"] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32,aoe_range=10,aoe_center_self=false},
+    ["Cyclone"] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
+    ["Shockwave"] = {id=52,en="Shockwave",ja="ショックウェーブ",element=7,icon_id=604,prefix="/weaponskill",range=2,skill=4,skillchain_a="Reverberation",skillchain_b="",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
+    ["Earth Crusher"] = {id=178,en="Earth Crusher",ja="アースクラッシャー",element=3,icon_id=632,prefix="/weaponskill",range=2,skill=12,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=5,aoe_center_self=false},
+    ["Cataclysm"] = {id=189,en="Cataclysm",ja="カタクリスム",element=7,icon_id=633,prefix="/weaponskill",range=2,skill=12,skillchain_a="Compression",skillchain_b="Reverberation",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
+  },
+  spells = {
+    ["Diaga"] = {id=33,en="Diaga",ja="ディアガ",cast_time=1.5,element=6,icon_id=101,icon_id_nq=6,levels={[3]=18,[5]=15},mp_cost=12,prefix="/magic",range=12,recast=6,recast_id=33,requirements=0,skill=35,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
+    ["Banishga"] = {id=38,en="Banishga",ja="バニシュガ",cast_time=2.75,element=6,icon_id=112,icon_id_nq=6,levels={[3]=15,[7]=30},mp_cost=41,prefix="/magic",range=12,recast=15,recast_id=38,requirements=0,skill=32,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
+    ["Firaga"] = {id=174,en="Firaga",ja="ファイガ",cast_time=2,element=0,icon_id=245,icon_id_nq=8,levels={[4]=28},mp_cost=57,prefix="/magic",range=12,recast=5,recast_id=174,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Blizzaga"] = {id=179,en="Blizzaga",ja="ブリザガ",cast_time=2,element=1,icon_id=274,icon_id_nq=9,levels={[4]=32},mp_cost=80,prefix="/magic",range=12,recast=5,recast_id=179,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Aeroga"] = {id=184,en="Aeroga",ja="エアロガ",cast_time=2,element=2,icon_id=285,icon_id_nq=10,levels={[4]=23},mp_cost=45,prefix="/magic",range=12,recast=5,recast_id=184,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Stonega"] = {id=189,en="Stonega",ja="ストンガ",cast_time=2,element=3,icon_id=215,icon_id_nq=11,levels={[4]=15},mp_cost=24,prefix="/magic",range=12,recast=5,recast_id=189,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Thundaga"] = {id=194,en="Thundaga",ja="サンダガ",cast_time=2,element=4,icon_id=265,icon_id_nq=12,levels={[4]=36},mp_cost=105,prefix="/magic",range=12,recast=5,recast_id=194,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Waterga"] = {id=199,en="Waterga",ja="ウォタガ",cast_time=2,element=5,icon_id=254,icon_id_nq=13,levels={[4]=19},mp_cost=34,prefix="/magic",range=12,recast=5,recast_id=199,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Poisonga"] = {id=225,en="Poisonga",ja="ポイゾガ",cast_time=2,element=5,icon_id=228,icon_id_nq=13,levels={[4]=24,[8]=26},mp_cost=44,prefix="/magic",range=12,recast=10,recast_id=225,requirements=0,skill=35,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+    ["Venom Shell"] = {id=513,en="Venom Shell",ja="ベノムシェル",blu_points=3,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=42},mp_cost=86,prefix="/magic",range=4,recast=45,recast_id=513,requirements=0,skill=43,status=41,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Mysterious Light"] = {id=534,en="Mysterious Light",ja="神秘の光",blu_points=4,cast_time=3.75,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=40},mp_cost=73,prefix="/magic",range=4,recast=24.5,recast_id=534,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Stinking Gas"] = {id=537,en="Stinking Gas",ja="スティンキングガス",blu_points=2,cast_time=4,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=44},mp_cost=37,prefix="/magic",range=4,recast=60,recast_id=537,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Blood Saber"] = {id=541,en="Blood Saber",ja="ブラッドセイバー",blu_points=2,cast_time=4,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=48},mp_cost=25,prefix="/magic",range=4,recast=26,recast_id=541,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Cursed Sphere"] = {id=544,en="Cursed Sphere",ja="カースドスフィア",blu_points=2,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=19.5,recast_id=544,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
+    ["Sound Blast"] = {id=572,en="Sound Blast",ja="サウンドブラスト",blu_points=1,cast_time=4,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=32},mp_cost=25,prefix="/magic",range=4,recast=30,recast_id=572,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Sheep Song"] = {id=584,en="Sheep Song",ja="シープソング",blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix="/magic",range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
+    ["Soporific"] = {id=598,en="Soporific",ja="サペリフィック",blu_points=4,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=24},mp_cost=38,prefix="/magic",range=4,recast=26,recast_id=598,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
+    ["Geist Wall"] = {id=605,en="Geist Wall",ja="ガイストウォール",blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix="/magic",range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
+    ["Blastbomb"] = {id=618,en="Blastbomb",ja="炸裂弾",blu_points=2,cast_time=2.25,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=15,recast_id=618,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
+    ["Battledance"] = {id=620,en="Battle Dance",ja="バトルダンス",blu_points=3,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=12},mp_cost=12,prefix="/magic",range=4,recast=10,recast_id=620,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Grand Slam"] = {id=622,en="Grand Slam",ja="グランドスラム",blu_points=2,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=30},mp_cost=24,prefix="/magic",range=4,recast=14.25,recast_id=622,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+    ["Bomb Toss"] = {id=626,en="Bomb Toss",ja="爆弾投げ",blu_points=3,cast_time=3.75,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=28},mp_cost=42,prefix="/magic",range=9,recast=24.5,recast_id=626,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
+    ["Fira"] = {id=828,en="Fira",ja="ファイラ",cast_time=1.5,element=0,icon_id=245,icon_id_nq=8,levels={[21]=40},mp_cost=93,prefix="/magic",range=8,recast=5,recast_id=828,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+    ["Blizzara"] = {id=830,en="Blizzara",ja="ブリザラ",cast_time=1.5,element=1,icon_id=274,icon_id_nq=9,levels={[21]=45},mp_cost=108,prefix="/magic",range=8,recast=5,recast_id=830,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+    ["Aera"] = {id=832,en="Aera",ja="エアロラ",cast_time=1.5,element=2,icon_id=285,icon_id_nq=10,levels={[21]=35},mp_cost=79,prefix="/magic",range=8,recast=5,recast_id=832,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+    ["Stonera"] = {id=834,en="Stonera",ja="ストンラ",cast_time=1.5,element=3,icon_id=215,icon_id_nq=11,levels={[21]=25},mp_cost=54,prefix="/magic",range=8,recast=5,recast_id=834,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+    ["Thundara"] = {id=836,en="Thundara",ja="サンダラ",cast_time=1.5,element=4,icon_id=265,icon_id_nq=12,levels={[21]=50},mp_cost=123,prefix="/magic",range=8,recast=5,recast_id=836,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+    ["Watera"] = {id=838,en="Watera",ja="ウォタラ",cast_time=1.5,element=5,icon_id=254,icon_id_nq=13,levels={[21]=30},mp_cost=66,prefix="/magic",range=8,recast=5,recast_id=838,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+  },
+  abilities = {}
+}
 
 
 -------------------------------------------------------------------------------
@@ -131,6 +170,16 @@ silibs.curing_waltz = T{
   [3] = {name='Curing Waltz III', tier=3, lv=45, tp=500, cure_slope=0.75, cure_base=270},
   [4] = {name='Curing Waltz IV',  tier=4, lv=70, tp=650, cure_slope=1,    cure_base=450},
   [5] = {name='Curing Waltz V',   tier=5, lv=87, tp=800, cure_slope=1.25, cure_base=600},
+}
+
+-- category == 1=melee, 2=ranged, 3=weaponskill, 4=spell, 6=job ability, 14=unblinkable JA
+silibs.action_categories = {
+  [1]={category=1,description='Melee Attacks',resource=nil,th_aoe_category=nil},
+  [2]={category=2,description='Ranged Attacks',resource=nil,th_aoe_category=nil},
+  [3]={category=3,description='Weaponskills',resource='weapon_skills',th_aoe_category='weaponskills'},
+  [4]={category=4,description='Spells',resource='spells',th_aoe_category='spells'},
+  [6]={category=6,description='Job Abilities',resource='job_abilities',th_aoe_category='abilities'},
+  [14]={category=14,description='Unblinkable Job Abilities',resource='job_abilities',th_aoe_category='abilities'},
 }
 
 
@@ -168,7 +217,17 @@ function silibs.init_settings()
   else
       state.TreasureMode:options('None','Tag')
   end
-  silibs.th_aoe_actions = {}
+  silibs.th_aoe_actions = {
+    weaponskills = {
+      ['Aeolian Edge'] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32},
+      ['Cyclone'] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32}
+    },
+    spells = {
+      ['Geist Wall'] = {id=605,en="Geist Wall",ja="ガイストウォール",blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix="/magic",range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type="BlueMagic"},
+      ['Sheep Song'] = {id=584,en="Sheep Song",ja="シープソング",blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix="/magic",range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type="BlueMagic"}
+    },
+    abilities = {}
+  }
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -549,19 +608,39 @@ end
 
 -- On any action event, mark mobs that we tag with TH.  Also, update the last time tagged mobs were acted on.
 function silibs.on_action_for_th(action)
+  local action_details
+  local action_category = silibs.action_categories[action.category]
+  local resource
+  if action_category then
+    resource = res[action_category.resource]
+  end
+  if resource then
+    action_details = resource[action.param]
+  end
+
   -- category == 1=melee, 2=ranged, 3=weaponskill, 4=spell, 6=job ability, 14=unblinkable JA
   -- Only bother if Treasure mode is on
-  if state.TreasureMode.value ~= 'None' then
+  if state.TreasureMode.value ~= 'None' and action_category then
     -- If player takes action
     if action.actor_id == player.id then
-      -- If offensive action taken, mark mob as tagged
-      for index,target in pairs(action.targets) do
-        -- Get additional info about target
-        target = windower.ffxi.get_mob_by_id(target.id)
-        -- Determine if action was offensive based on target type
-        local is_target_enemy = silibs.is_target_enemy(target)
-        if is_target_enemy then
+      -- If single target offensive action taken, mark mob as tagged
+      if action.target_count == 1 then
+        target = windower.ffxi.get_mob_by_id(action.targets[1].id)
+        if silibs.is_target_enemy(target) then
           info.tagged_mobs[target.id] = os.time()
+        end
+      -- If AoE offensive action taken and action is in list of th_aoe_actions, mark all mobs as tagged
+      elseif action.target_count > 1
+        and action_details
+        and silibs.th_aoe_actions[action_category.th_aoe_category][action_details.name]
+      then
+        for index,target in pairs(action.targets) do
+          -- Get additional info about target
+          target = windower.ffxi.get_mob_by_id(target.id)
+          -- Determine if action was offensive based on target type
+          if silibs.is_target_enemy(target) then
+            info.tagged_mobs[target.id] = os.time()
+          end
         end
       end
     -- If mob acts, keep an update of last action time for TH bookkeeping
@@ -754,6 +833,29 @@ function silibs.is_target_enemy(mob_table)
   return (mob_table and mob_table.spawn_type == 16) or mob_table == 16
 end
 
+-- Returns table of monsters within given distance, accounting for model sizes
+-- Given range must be in yalms
+function silibs.get_enemies_in_range(range, aoe_center_target)
+  local return_list = T{}
+  local center = aoe_center_target or player
+  local npcs = windower.ffxi.get_mob_list()
+  for index,name in pairs(npcs) do
+    if name then
+      local mob = windower.ffxi.get_mob_by_index(index)
+      -- Check if mob is monster
+      if mob and mob.spawn_type == 16 then
+        -- Check if in range (aoe do not account for model size)
+        local distance = math.sqrt((mob.x - center.x)^2 + (mob.y - center.y)^2)
+        local is_in_range = distance <= (center.model_size + range + mob.model_size)
+        if is_in_range then
+          return_list:append(mob)
+        end
+      end
+    end
+  end
+  return return_list
+end
+
 
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
@@ -796,13 +898,42 @@ end
 
 function silibs.enable_th(feature_config)
   silibs.th_enabled = true
+
+  -- Set starting TH mode
   if feature_config and feature_config.starting_mode then
     state.TreasureMode:set(feature_config.starting_mode)
   elseif player.main_job == 'THF' then
     state.TreasureMode:set('Tag')
   end
+
+  -- User-defined aoe actions should overwrite/append existing lists
   if feature_config and feature_config.aoe_actions then
-    silibs.th_aoe_actions = feature_config.aoe_actions
+    for k,v in pairs(feature_config.aoe_actions) do
+      local name = v.name
+      local aoe_range = v.aoe_range
+      local aoe_center_self = v.aoe_center_self
+      -- If valid weaponskill and range not 0, add to list
+      local found = res.weapon_skills:with('en', name) or res.spells:with('en', name) or res.job_abilities:with('en', name)
+      if found then
+        found.aoe_range = aoe_range
+        found.aoe_center_self = aoe_center_self
+        -- Only allow ranges between 0 and 30
+        if found.aoe_range > 0 and found.aoe_range < 30 then
+          -- Place into proper category
+          if found.prefix == '/weaponskill' then
+            silibs.th_aoe_actions.weaponskills[name] = found
+          elseif found.prefix == '/magic' then
+            silibs.th_aoe_actions.spells[name] = found
+          elseif found.prefix == '/jobability' then
+            silibs.th_aoe_actions.abilities[name] = found
+          end
+        else
+          windower.add_to_chat(123, 'Silibs: \''..name..'\' invalid range of '..aoe_range..'.')
+        end
+      else
+        windower.add_to_chat(123, 'Silibs: \''..name..'\' invalid name. Not a WS, spell, or JA')
+      end
+    end
   end
 
   -- Override any other TH libraries that might already be loaded
@@ -842,6 +973,35 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         and not info.tagged_mobs[spell.target.id])
     then
       equip(sets.TreasureHunter)
+    elseif (state.TreasureMode.value == 'Tag') then
+      local aoe_action = (spell.type == 'WeaponSkill' and silibs.th_aoe_actions.weaponskills[spell.name])
+        or (spell.action_type == 'Magic' and silibs.th_aoe_actions.spells[spell.name])
+        or (spell.type == 'JobAbility' and silibs.th_aoe_actions.abilities[spell.name])
+      if aoe_action then
+        -- Get list of enemies in range
+        local aoe_center_target = (aoe_action.aoe_center_self and player) or (not aoe_action.aoe_center_self and spell.target)
+        -- Round up the range; better to equip TH for mobs slightly out of range than to not equip and end up having mobs marked
+        -- as tagged with TH when you didn't actually have the TH gear on.
+        local enemies = silibs.get_enemies_in_range(math.ceil(aoe_action.aoe_range), aoe_center_target)
+        -- If spell targeting enemy but centered on self (such as Geist Wall), ensure the targeted enemy
+        -- is also in the enemies list because it could be outside of the aoe but still hit it because it was the target
+        if aoe_action.aoe_center_self and spell.target.type == 'MONSTER' then
+          enemies:append(spell.target)
+        end
+        -- If at least one enemy is not yet tagged with TH, equip TH set
+        local end_loop
+        for k,v in pairs(enemies) do
+          if not end_loop and not info.tagged_mobs[v.id] then
+            equip(sets.TreasureHunter)
+            end_loop = true
+            -- To save us from having to process all this again in midcast, set a flag to tell
+            -- Midcast function to keep TH set on if this action has a cast time
+            if aoe_action.cast_time then
+              spell.use_th_midcast = true
+            end
+          end
+        end
+      end
     end
   end
 end
@@ -858,6 +1018,7 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
       or (state.TreasureMode.value == 'Tag'
         and spell.target.type == 'MONSTER'
         and not info.tagged_mobs[spell.target.id])
+      or spell.use_th_midcast
     then
       equip(sets.TreasureHunter)
     end
