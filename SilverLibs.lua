@@ -1,4 +1,4 @@
--- Version 2021.JUL.12.001
+-- Version 2021.JUL.12.002
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -838,21 +838,19 @@ end
 
 -- Returns table of monsters within given distance, accounting for model sizes
 -- Given range must be in yalms
+-- TODO: Observe npc update packets and keep list of mobs in memory
 function silibs.get_enemies_in_range(range, aoe_center_target)
   local return_list = T{}
   local center = aoe_center_target or player
-  local npcs = windower.ffxi.get_mob_list()
-  for index,name in pairs(npcs) do
-    if name then
-      local mob = windower.ffxi.get_mob_by_index(index)
-      -- Check if mob is monster
-      if mob and mob.spawn_type == 16 then
-        -- Check if in range (aoe do not account for model size)
-        local distance = math.sqrt((mob.x - center.x)^2 + (mob.y - center.y)^2)
-        local is_in_range = distance <= (center.model_size + range + mob.model_size)
-        if is_in_range then
-          return_list:append(mob)
-        end
+  local npcs = windower.ffxi.get_mob_array()
+  for index,mob in pairs(npcs) do
+    -- Check if mob is monster
+    if mob and mob.spawn_type == 16 then
+      -- Check if in range (aoe do not account for model size or z axis distance)
+      local distance = math.sqrt((mob.x - center.x)^2 + (mob.y - center.y)^2)
+      local is_in_range = distance <= (center.model_size + range + mob.model_size)
+      if is_in_range then
+        return_list:append(mob)
       end
     end
   end
