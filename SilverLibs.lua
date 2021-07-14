@@ -1,4 +1,4 @@
--- Version 2021.JUL.12.002
+-- Version 2021.JUL.13.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -977,7 +977,11 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         and spell.target.type == 'MONSTER'
         and not info.tagged_mobs[spell.target.id])
     then
-      equip(sets.TreasureHunter)
+      if sets.TreasureHunter then
+        equip(sets.TreasureHunter)
+      else
+        windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+      end
     -- Handle AoE actions separately
     elseif (not silibs.th_aoe_disabled and state.TreasureMode.value == 'Tag') then
       local aoe_action = (spell.type == 'WeaponSkill' and silibs.th_aoe_actions.weaponskills[spell.name])
@@ -998,7 +1002,11 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         local end_loop
         for k,v in pairs(enemies) do
           if not end_loop and not info.tagged_mobs[v.id] then
-            equip(sets.TreasureHunter)
+            if sets.TreasureHunter then
+              equip(sets.TreasureHunter)
+            else
+              windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+            end
             end_loop = true
             -- To save us from having to process all this again in midcast, set a flag to tell
             -- Midcast function to keep TH set on if this action has a cast time
