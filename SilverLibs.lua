@@ -611,7 +611,7 @@ end
 -- On any action event, mark mobs that we tag with TH.  Also, update the last time tagged mobs were acted on.
 function silibs.on_action_for_th(action)
   local action_details
-  local action_category = silibs.action_categories[action.category]
+  local action_category = action and silibs.action_categories[action.category]
   local resource
   if action_category then
     resource = res[action_category.resource]
@@ -627,9 +627,19 @@ function silibs.on_action_for_th(action)
     if action.actor_id == player.id then
       -- If single target offensive action taken, mark mob as tagged
       if action.target_count == 1 then
-        target = windower.ffxi.get_mob_by_id(action.targets[1].id)
+        local target = windower.ffxi.get_mob_by_id(action.targets[1].id)
         if silibs.is_target_enemy(target) then
+          local prev_tagged
+          if info.tagged_mobs[target.id] then
+            prev_tagged = true
+          end
+          -- Update mob in tag list
           info.tagged_mobs[target.id] = os.time()
+          -- Melee attacks alone do not cause update to engaged set, so call manually
+          if not prev_tagged and action_category.category == 1 then
+            equip(get_melee_set()) -- Sets the equipment table to be used in next update
+            send_command('gs c update') -- Call the update command to force gear change
+          end
         end
       -- If AoE offensive action taken and action is in list of th_aoe_actions, mark all mobs as tagged
       elseif action.target_count > 1
