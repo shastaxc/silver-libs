@@ -1,4 +1,4 @@
--- Version 2021.JUL.17.001
+-- Version 2021.JUL.18.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -636,7 +636,9 @@ function silibs.on_action_for_th(action)
           -- Update mob in tag list
           info.tagged_mobs[target.id] = os.time()
           -- Melee attacks alone do not cause update to engaged set, so call manually
-          if not prev_tagged and action_category.category == 1 then
+          if (state.TreasureMode.value == 'Tag' or state.TreasureMode.value == 'SATA')
+            and not prev_tagged and action_category.category == 1
+          then
             equip(get_melee_set()) -- Sets the equipment table to be used in next update
             send_command('gs c update') -- Call the update command to force gear change
           end
@@ -980,9 +982,10 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
     -- Equip TH gear if appropriate
     if state.TreasureMode.value == 'Fulltime'
       or (state.TreasureMode.value == 'SATA'
-        and (buffactive['sneak attack'] or buffactive['trick attack'])
-        and spell.type == 'WeaponSkill'
-        and spell.target.type == 'MONSTER')
+        and (((state.Buff['Sneak Attack'] or state.Buff['Trick Attack'])
+            and spell.type == 'WeaponSkill'
+            and spell.target.type == 'MONSTER')
+          or (spell.name == 'Sneak Attack' or spell.name == 'Trick Attack')))
       or (state.TreasureMode.value == 'Tag'
         and spell.target.type == 'MONSTER'
         and not info.tagged_mobs[spell.target.id])
@@ -1063,12 +1066,13 @@ function silibs.customize_melee_set(meleeSet)
   if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
     local current_target = windower.ffxi.get_mob_by_target('t')
     local is_target_enemy = silibs.is_target_enemy(current_target)
+    
     -- Equip TH gear if appropriate
     if state.TreasureMode.value == 'Fulltime'
       or (state.TreasureMode.value == 'SATA'
-        and (buffactive['sneak attack'] or buffactive['trick attack'])
+        and (state.Buff['Sneak Attack'] or state.Buff['Trick Attack'])
         and is_target_enemy)
-      or (state.TreasureMode.value == 'Tag'
+      or ((state.TreasureMode.value == 'Tag' or state.TreasureMode.value == 'SATA')
         and is_target_enemy
         and not info.tagged_mobs[current_target.id])
     then
