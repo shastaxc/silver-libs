@@ -1,4 +1,4 @@
--- Version 2021.JUL.18.001
+-- Version 2021.JUL.21.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -1012,7 +1012,7 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         -- If at least one enemy is not yet tagged with TH, equip TH set
         local end_loop
         for k,v in pairs(enemies) do
-          if not end_loop and not info.tagged_mobs[v.id] then
+          if not end_loop and not info.tagged_mobs[v.id] and v.hpp > 0 then
             if sets.TreasureHunter then
               equip(sets.TreasureHunter)
             else
