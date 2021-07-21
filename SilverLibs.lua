@@ -791,13 +791,11 @@ function silibs.number_of_jps(jp_tab)
     return count/2
 end
 
--- Cure 3 - 503
-
 -- Values used for calculations can be customized in player's lua by setting silibs.waltz_stats
 function silibs.waltz_cure_amount(tier, target)
   -- HP Cured = floor(
   --              floor(Slope×(User's CHR + Target's VIT) + Base + 2*(Waltz Job Point Tiers))
-  --              × (Waltz Potency gear + Waltz Potency Received gear)
+  --              × 1+((Waltz Potency gear + Waltz Potency Received gear)/100)
   --            )
 
   -- Determine slope (main vs sub DNC)
