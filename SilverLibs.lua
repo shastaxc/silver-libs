@@ -376,7 +376,7 @@ function silibs.set_lockstyle()
     if silibs.locked_style == false and silibs.lockstyle_set > 0 then
       send_command('input /lockstyleset '..silibs.lockstyle_set)
     end
-  end, 2)
+  end, 3)
   -- In case lockstyle was on cooldown for first command, try again (lockstyle has 10s cd)
   coroutine.schedule(function()
     if silibs.locked_style == false and silibs.lockstyle_set > 0 then
