@@ -92,6 +92,7 @@ silibs.playerStats = {}
 silibs.playerStats.Base = {}
 silibs.playerStats.Bonus = {}
 state.RearmingLock = M(false, 'Rearming Lock')
+state.ShowLuopanUi = M(false, 'Show Luopan UI')
 -- TH mode handling
 if player.main_job == 'THF' then
     state.TreasureMode:options('None','Tag','SATA','Fulltime')
@@ -139,6 +140,19 @@ silibs.th_aoe_actions = {
   abilities = {}
 }
 
+silibs.last_indi = nil
+silibs.last_geo = nil
+
+silibs.ui = {}
+--Luopan Distance Tracking
+silibs.ui.luopan = texts.new('${value}', {
+  pos = { x=0, y=50, },
+  text = { font='Arial', size=12, },
+  flags = { right=false, bold=true, },
+  bg = { alpha=0, },
+  stroke = { width=2, alpha=192 },
+})
+
 
 -------------------------------------------------------------------------------
 -- Constants and maps
@@ -183,6 +197,12 @@ silibs.action_categories = {
   [14]={category=14,description='Unblinkable Job Abilities',resource='job_abilities',th_aoe_category='abilities'},
 }
 
+--Luopan Distance Tracking
+silibs.geo_debuffs = S{'Gravity','Paralysis','Slow','Languor','Vex','Torpor','Slip','Malaise','Fade','Frailty','Wilt','Poison'}
+silibs.luopan_ui_ignore_list = S{'SlipperySilas','HareFamiliar','SheepFamiliar','FlowerpotBill','TigerFamiliar','FlytrapFamiliar','LizardFamiliar','MayflyFamiliar','EftFamiliar','BeetleFamiliar','AntlionFamiliar','CrabFamiliar','MiteFamiliar','KeenearedSteffi','LullabyMelodia','FlowerpotBen','SaberSiravarde','FunguarFamiliar','ShellbusterOrob','ColdbloodComo','CourierCarrie','Homunculus','VoraciousAudrey','AmbusherAllie','PanzerGalahad','LifedrinkerLars','ChopsueyChucky','AmigoSabotender','NurseryNazuna','CraftyClyvonne','PrestoJulio','SwiftSieghard','MailbusterCetas','AudaciousAnna','TurbidToloi','LuckyLulush','DipperYuly','FlowerpotMerle','DapperMac','DiscreetLouise','FatsoFargann','FaithfulFalcorr','BugeyedBroncha','BloodclawShasra','GorefangHobs','GooeyGerard','CrudeRaphie','DroopyDortwin','SunburstMalfik','WarlikePatrick','ScissorlegXerin','RhymingShizuna','AttentiveIbuki','AmiableRoche','HeraldHenry','BrainyWaluis','SuspiciousAlice','HeadbreakerKen','RedolentCandi','CaringKiyomaro','HurlerPercival','AnklebiterJedd','BlackbeardRandy','FleetReinhard','GenerousArthur','ThreestarLynn','BraveHeroGlenn','SharpwitHermes','AlluringHoney','CursedAnnabelle','SwoopingZhivago','BouncingBertha','MosquitoFamilia','Ifrit','Shiva','Garuda','Fenrir','Carbuncle','Ramuh','Leviathan','CaitSith','Diabolos','Titan','Atomos','WaterSpirit','FireSpirit','EarthSpirit','ThunderSpirit','AirSpirit','LightSpirit','DarkSpirit','IceSpirit', 'Azure','Cerulean','Rygor','Firewing','Delphyne','Ember','Rover','Max','Buster','Duke','Oscar','Maggie','Jessie','Lady','Hien','Raiden','Lumiere','Eisenzahn','Pfeil','Wuffi','George','Donryu','Qiqiru','Karav-Marav','Oboro','Darug Borug','Mikan','Vhiki','Sasavi','Tatang','Nanaja','Khocha','Nanaja','Khocha','Dino','Chomper','Huffy','Pouncer','Fido','Lucy','Jake','Rocky','Rex','Rusty','Himmelskralle','Gizmo','Spike','Sylvester','Milo','Tom','Toby','Felix','Komet','Bo','Molly','Unryu','Daisy','Baron','Ginger','Muffin','Lumineux','Quatrevents','Toryu','Tataba','Etoilazuree','Grisnuage','Belorage','Centonnerre','Nouvellune','Missy','Amedeo','Tranchevent','Soufflefeu','Etoile','Tonnerre','Nuage','Foudre','Hyuh','Orage','Lune','Astre','Waffenzahn','Soleil','Courageux','Koffla-Paffla','Venteuse','Lunaire','Tora','Celeste','Galja-Mogalja','Gaboh','Vhyun','Orageuse','Stellaire','Solaire','Wirbelwind','Blutkralle','Bogen','Junker','Flink','Knirps','Bodo','Soryu','Wanaro','Totona','Levian-Movian','Kagero','Joseph','Paparaz','Coco','Ringo','Nonomi','Teter','Gigima','Gogodavi','Rurumo','Tupah','Jyubih','Majha','Luron','Drille','Tournefoux','Chafouin','Plaisantin','Loustic','Histrion','Bobeche','Bougrion','Rouleteau','Allouette','Serenade','Ficelette','Tocadie','Caprice','Foucade','Capillotte','Quenotte','Pacotille','Comedie','Kagekiyo','Toraoh','Genta','Kintoki','Koumei','Pamama','Lobo','Tsukushi','Oniwaka','Kenbishi','Hannya','Mashira','Nadeshiko','E100','Koume','X-32','Poppo','Asuka','Sakura','Tao','Mao','Gadget','Marion','Widget','Quirk','Sprocket','Cogette','Lecter','Coppelia','Sparky','Clank','Calcobrena','Crackle','Ricochet','Josette','Fritz','Skippy','Pino','Mandarin','Jackstraw','Guignol','Moppet','Nutcracker','Erwin','Otto','Gustav','Muffin','Xaver','Toni','Ina','Gerda','Petra','Verena','Rosi','Schatzi','Warashi','Klingel','Clochette','Campanello','Kaiserin','Principessa','Butler','Graf','Caro','Cara','Mademoiselle','Herzog','Tramp','V-1000','Hikozaemon','Nine','Acht','Quattro','Zero','Dreizehn','Seize','Fukusuke','Mataemon','Kansuke','Polichinelle','Tobisuke','Sasuke','Shijimi','Chobi','Aurelie','Magalie','Aurore','Caroline','Andrea','Machinette','Clarine','Armelle','Reinette','Dorlote','Turlupin','Klaxon','Bambino','Potiron','Fustige','Amidon','Machin','Bidulon','Tandem','Prestidige','Purute-Porute','Bito-Rabito','Cocoa','Totomo','Centurion','A7V','Scipio','Sentinel','Pioneer','Seneschal','Ginjin','Amagatsu','Dolly','Fantoccini','Joe','Kikizaru','Whippet','Punchinello','Charlie','Midge','Petrouchka','Schneider','Ushabti','Noel','Yajirobe','Hina','Nora','Shoki','Kobina','Kokeshi','Mame','Bishop','Marvin','Dora','Data','Robin','Robby','Porlo-Moperlo','Paroko-Puronko','Pipima','Gagaja','Mobil','Donzel','Archer','Shooter','Stephen','Mk.IV','Conjurer','Footman','Tokotoko','Sancho','Sarumaro','Picket','Mushroom','Shantotto','Naji','Kupipi','Excenmille','Ayame','NanaaMihgo','Curilla','Volker','Ajido-Marujido','Trion','Zeid','Lion','Tenzen','MihliAliapoh','Valaineral','Joachim','NajaSalaheem','Prishe','Ulmia','ShikareeZ','Cherukiki','IronEater','Gessho','Gadalar','Rainemard','Ingrid','LehkoHabhoka','Nashmeira','Zazarg','Ovjang','Mnejing','Sakura','Luzaf','Najelith','Aldo','Moogle','Fablinix','Maat','D.Shantotto','StarSibyl','Karaha-Baruha','Cid','Gilgamesh','Areuhat','SemihLafihna','Elivira','Noillurie','LhuMhakaracca','FerreousCoffin','Lilisette','Mumor','UkaTotlihn','Klara','RomaaMihgo','KuyinHathdenna','Rahal','Koru-Moru','Pieuje','InvincibleShld','Apururu','JakohWahcondalo','Flaviria','Babban','Abenzio','Rughadjeen','Kukki-Chebukki','Margret','Chacharoon','LheLhangavo','Arciela','Mayakov','Qultada','Adelheid','Amchuchu','Brygid','Mildaurion','Halver','Rongelouts','Leonoyne','Maximilian','Kayeel-Payeel','Robel-Akbel','Kupofried','Selh\'teus','Yoran-Oran','Sylvie','Abquhbah','Balamor','August','Rosulatia','Teodor','Ullegore','Makki-Chebukki','KingOfHearts','Morimar','Darrcuiln','ArkHM','ArkEV','ArkMR','ArkTT','ArkGK','Iroha','Ygnas','Excenmille','Ayame','Maat','Aldo','NajaSalaheem','Lion','Zeid'}
+
+silibs.ui.bt_color = '\\cs(230,118,116)'
+
 
 -------------------------------------------------------------------------------
 -- Functions
@@ -212,6 +232,7 @@ function silibs.init_settings()
     est_non_party_target_hp = 2000,
   }
   state.RearmingLock = M(false, 'Rearming Lock')
+  state.ShowLuopanUi = M(false, 'Show Luopan UI')
 
   -- TH mode handling
   if player.main_job == 'THF' then
@@ -221,15 +242,58 @@ function silibs.init_settings()
   end
   silibs.th_aoe_actions = {
     weaponskills = {
-      ['Aeolian Edge'] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32},
-      ['Cyclone'] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32}
+      ["Aeolian Edge"] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32,aoe_range=10,aoe_center_self=false},
+      ["Cyclone"] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
+      ["Shockwave"] = {id=52,en="Shockwave",ja="ショックウェーブ",element=7,icon_id=604,prefix="/weaponskill",range=2,skill=4,skillchain_a="Reverberation",skillchain_b="",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
+      ["Earth Crusher"] = {id=178,en="Earth Crusher",ja="アースクラッシャー",element=3,icon_id=632,prefix="/weaponskill",range=2,skill=12,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=5,aoe_center_self=false},
+      ["Cataclysm"] = {id=189,en="Cataclysm",ja="カタクリスム",element=7,icon_id=633,prefix="/weaponskill",range=2,skill=12,skillchain_a="Compression",skillchain_b="Reverberation",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
     },
     spells = {
-      ['Geist Wall'] = {id=605,en="Geist Wall",ja="ガイストウォール",blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix="/magic",range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type="BlueMagic"},
-      ['Sheep Song'] = {id=584,en="Sheep Song",ja="シープソング",blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix="/magic",range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type="BlueMagic"}
+      ["Diaga"] = {id=33,en="Diaga",ja="ディアガ",cast_time=1.5,element=6,icon_id=101,icon_id_nq=6,levels={[3]=18,[5]=15},mp_cost=12,prefix="/magic",range=12,recast=6,recast_id=33,requirements=0,skill=35,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
+      ["Banishga"] = {id=38,en="Banishga",ja="バニシュガ",cast_time=2.75,element=6,icon_id=112,icon_id_nq=6,levels={[3]=15,[7]=30},mp_cost=41,prefix="/magic",range=12,recast=15,recast_id=38,requirements=0,skill=32,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
+      ["Firaga"] = {id=174,en="Firaga",ja="ファイガ",cast_time=2,element=0,icon_id=245,icon_id_nq=8,levels={[4]=28},mp_cost=57,prefix="/magic",range=12,recast=5,recast_id=174,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Blizzaga"] = {id=179,en="Blizzaga",ja="ブリザガ",cast_time=2,element=1,icon_id=274,icon_id_nq=9,levels={[4]=32},mp_cost=80,prefix="/magic",range=12,recast=5,recast_id=179,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Aeroga"] = {id=184,en="Aeroga",ja="エアロガ",cast_time=2,element=2,icon_id=285,icon_id_nq=10,levels={[4]=23},mp_cost=45,prefix="/magic",range=12,recast=5,recast_id=184,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Stonega"] = {id=189,en="Stonega",ja="ストンガ",cast_time=2,element=3,icon_id=215,icon_id_nq=11,levels={[4]=15},mp_cost=24,prefix="/magic",range=12,recast=5,recast_id=189,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Thundaga"] = {id=194,en="Thundaga",ja="サンダガ",cast_time=2,element=4,icon_id=265,icon_id_nq=12,levels={[4]=36},mp_cost=105,prefix="/magic",range=12,recast=5,recast_id=194,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Waterga"] = {id=199,en="Waterga",ja="ウォタガ",cast_time=2,element=5,icon_id=254,icon_id_nq=13,levels={[4]=19},mp_cost=34,prefix="/magic",range=12,recast=5,recast_id=199,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Poisonga"] = {id=225,en="Poisonga",ja="ポイゾガ",cast_time=2,element=5,icon_id=228,icon_id_nq=13,levels={[4]=24,[8]=26},mp_cost=44,prefix="/magic",range=12,recast=10,recast_id=225,requirements=0,skill=35,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
+      ["Venom Shell"] = {id=513,en="Venom Shell",ja="ベノムシェル",blu_points=3,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=42},mp_cost=86,prefix="/magic",range=4,recast=45,recast_id=513,requirements=0,skill=43,status=41,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Mysterious Light"] = {id=534,en="Mysterious Light",ja="神秘の光",blu_points=4,cast_time=3.75,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=40},mp_cost=73,prefix="/magic",range=4,recast=24.5,recast_id=534,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Stinking Gas"] = {id=537,en="Stinking Gas",ja="スティンキングガス",blu_points=2,cast_time=4,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=44},mp_cost=37,prefix="/magic",range=4,recast=60,recast_id=537,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Blood Saber"] = {id=541,en="Blood Saber",ja="ブラッドセイバー",blu_points=2,cast_time=4,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=48},mp_cost=25,prefix="/magic",range=4,recast=26,recast_id=541,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Cursed Sphere"] = {id=544,en="Cursed Sphere",ja="カースドスフィア",blu_points=2,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=19.5,recast_id=544,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
+      ["Sound Blast"] = {id=572,en="Sound Blast",ja="サウンドブラスト",blu_points=1,cast_time=4,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=32},mp_cost=25,prefix="/magic",range=4,recast=30,recast_id=572,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Sheep Song"] = {id=584,en="Sheep Song",ja="シープソング",blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix="/magic",range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
+      ["Soporific"] = {id=598,en="Soporific",ja="サペリフィック",blu_points=4,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=24},mp_cost=38,prefix="/magic",range=4,recast=26,recast_id=598,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
+      ["Geist Wall"] = {id=605,en="Geist Wall",ja="ガイストウォール",blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix="/magic",range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
+      ["Blastbomb"] = {id=618,en="Blastbomb",ja="炸裂弾",blu_points=2,cast_time=2.25,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=15,recast_id=618,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
+      ["Battledance"] = {id=620,en="Battle Dance",ja="バトルダンス",blu_points=3,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=12},mp_cost=12,prefix="/magic",range=4,recast=10,recast_id=620,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Grand Slam"] = {id=622,en="Grand Slam",ja="グランドスラム",blu_points=2,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=30},mp_cost=24,prefix="/magic",range=4,recast=14.25,recast_id=622,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
+      ["Bomb Toss"] = {id=626,en="Bomb Toss",ja="爆弾投げ",blu_points=3,cast_time=3.75,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=28},mp_cost=42,prefix="/magic",range=9,recast=24.5,recast_id=626,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
+      ["Fira"] = {id=828,en="Fira",ja="ファイラ",cast_time=1.5,element=0,icon_id=245,icon_id_nq=8,levels={[21]=40},mp_cost=93,prefix="/magic",range=8,recast=5,recast_id=828,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+      ["Blizzara"] = {id=830,en="Blizzara",ja="ブリザラ",cast_time=1.5,element=1,icon_id=274,icon_id_nq=9,levels={[21]=45},mp_cost=108,prefix="/magic",range=8,recast=5,recast_id=830,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+      ["Aera"] = {id=832,en="Aera",ja="エアロラ",cast_time=1.5,element=2,icon_id=285,icon_id_nq=10,levels={[21]=35},mp_cost=79,prefix="/magic",range=8,recast=5,recast_id=832,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+      ["Stonera"] = {id=834,en="Stonera",ja="ストンラ",cast_time=1.5,element=3,icon_id=215,icon_id_nq=11,levels={[21]=25},mp_cost=54,prefix="/magic",range=8,recast=5,recast_id=834,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+      ["Thundara"] = {id=836,en="Thundara",ja="サンダラ",cast_time=1.5,element=4,icon_id=265,icon_id_nq=12,levels={[21]=50},mp_cost=123,prefix="/magic",range=8,recast=5,recast_id=836,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+      ["Watera"] = {id=838,en="Watera",ja="ウォタラ",cast_time=1.5,element=5,icon_id=254,icon_id_nq=13,levels={[21]=30},mp_cost=66,prefix="/magic",range=8,recast=5,recast_id=838,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
     },
     abilities = {}
   }
+  
+  silibs.last_indi = nil
+  silibs.last_geo = nil
+
+  silibs.ui = {}
+  --Luopan Distance Tracking
+  silibs.ui.luopan = texts.new('${value}', {
+    pos = { x=0, y=50, },
+    text = { font='Arial', size=12, },
+    flags = { right=false, bold=true, },
+    bg = { alpha=0, },
+    stroke = { width=2, alpha=192 },
+  })
+
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -721,6 +785,85 @@ end
 -------------------------------------------------------------------------------
 -- Helpful/Supporting functions
 -------------------------------------------------------------------------------
+function silibs.update_ui(frame_count)
+  if frame_count%15 == 0 then
+    update_ui_luopan_distance_tracker()
+  end
+end
+
+function update_ui_luopan_distance_tracker()
+  local s = windower.ffxi.get_mob_by_target('me')
+  local my_luopan
+  if windower.ffxi.get_mob_by_target('pet') then
+    my_luopan = windower.ffxi.get_mob_by_target('pet')
+  else
+    my_luopan = nil
+  end
+  local luopan_txtbox = ''
+  local indi_count = 0
+  local geo_count = 0
+  local battle_target = windower.ffxi.get_mob_by_target('bt') or false
+  if my_luopan and silibs.last_geo then
+    luopan_txtbox = luopan_txtbox..' \\cs(0,255,0)Geo-'..silibs.last_geo..':\\cs(255,255,255)\n'
+    for i,v in pairs(windower.ffxi.get_mob_array()) do
+      local dist_between = ((my_luopan.x - v.x)*(my_luopan.x-v.x) + (my_luopan.y-v.y)*(my_luopan.y-v.y)):sqrt()
+      if dist_between < (6 + v.model_size) and not (v.status == 2 or v.status == 3) and v.name and v.name ~= '' and v.name ~= "Luopan" and v.valid_target and v.model_size > 0 then
+        if silibs.geo_debuffs:contains(silibs.last_geo) then
+          if v.is_npc and not (v.in_party or luopan_ui_ignore_list:contains(v.name)) then
+            if battle_target and battle_target.id == v.id then
+              luopan_txtbox = luopan_txtbox..' '..bt_color..v.name.." "..string.format("%.2f",dist_between).."\\cs(255,255,255)\n"
+            else
+              luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+            end
+            geo_count = geo_count + 1
+          end
+        elseif v.in_party then
+          luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+          geo_count = geo_count + 1
+        end
+      end
+    end
+  end
+
+  if buffactive['Colure Active'] and silibs.last_indi then
+    if my_luopan then
+      luopan_txtbox = luopan_txtbox..'\n'
+    end
+    luopan_txtbox = luopan_txtbox..' \\cs(0,255,0)Indi-'..silibs.last_indi..':\\cs(255,255,255)\n'
+    for i,v in pairs(windower.ffxi.get_mob_array()) do
+      local dist_between = ((s.x - v.x)*(s.x-v.x) + (s.y-v.y)*(s.y-v.y)):sqrt()
+      if dist_between < (6 + v.model_size) and (v.status == 1 or v.status == 0) and v.name and v.name ~= '' and v.name ~= "Luopan" and v.name ~= s.name and v.valid_target and v.model_size > 0 then
+        if silibs.geo_debuffs:contains(silibs.last_indi) then
+          if v.is_npc and not (v.in_party or luopan_ui_ignore_list:contains(v.name)) then
+            if battle_target and battle_target.id == v.id then
+              luopan_txtbox = luopan_txtbox..' '..bt_color..v.name.." "..string.format("%.2f",dist_between).."\\cs(255,255,255)\n"
+            else
+              luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+            end
+            indi_count = indi_count + 1
+          end
+        else
+          if v.in_party then
+            luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+            indi_count = indi_count + 1
+          end
+        end
+      end
+    end
+  end
+
+  silibs.ui.luopan.value = luopan_txtbox
+  if state.ShowLuopanUi and state.ShowLuopanUi.value and ((my_luopan and geo_count ~= 0) or (buffactive['Colure Active'] and indi_count ~= 0)) then
+    silibs.ui.luopan:visible(true)
+  else
+    silibs.ui.luopan:visible(false)
+  end
+end
+
+
+-------------------------------------------------------------------------------
+-- Helpful/Supporting functions
+-------------------------------------------------------------------------------
 function silibs.find_ability(ability_name)
   return res.job_abilities:find(function(ability)
     return ability.en == ability_name
@@ -962,6 +1105,26 @@ function silibs.enable_th(feature_config)
   end
 end
 
+function silibs.enable_ui(feature_config)
+  if feature_config and feature_config.geo_luopan then
+    if feature_config.geo_luopan.align_right then
+      silibs.ui.luopan:right_justified(feature_config.geo_luopan.align_right)
+    end
+    if feature_config.geo_luopan.x and feature_config.geo_luopan.y then
+      silibs.ui.luopan:pos(
+        feature_config.geo_luopan.x,
+        feature_config.geo_luopan.y
+      )
+    end
+    state.ShowLuopanUi:set(true)
+  end
+
+  -- Turn on this UI if no config was passed but job is GEO
+  if not feature_config and (player.main_job == 'GEO' or player.sub_job == 'GEO') then
+    state.ShowLuopanUi:set(true)
+  end
+end
+
 
 -------------------------------------------------------------------------------
 -- Gearswap lifecycle hooks
@@ -1029,6 +1192,19 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
       end
     end
   end
+
+  if not spell.interrupted then
+    if spell.english:startswith('Indi-') then
+      if spell.target.type == 'SELF' then
+        silibs.last_indi = string.sub(spell.english,6)
+      end
+		elseif spell.english:startswith('Geo-') or spell.english == "Mending Halation" or spell.english == "Radial Arcana" then
+			eventArgs.handled = true
+			if spell.english:startswith('Geo-') then
+				silibs.last_geo = string.sub(spell.english,5)
+			end
+    end
+  end
 end
 
 function silibs.midcast_hook(spell, action, spellMap, eventArgs)
@@ -1088,7 +1264,7 @@ end
 -- Event hooks
 -------------------------------------------------------------------------------
 -- Executes on every frame. This is just a way to create a perpetual loop.
-frame_count=0
+frame_count=1
 windower.register_event('prerender',function()
   if windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
     -- Use frame count to limit execution rate
@@ -1106,9 +1282,11 @@ windower.register_event('prerender',function()
       end
     end
 
+    silibs.update_ui(frame_count)
+
     -- Increment frame_count but prevent overflows
-    if frame_count == MAX_INT then
-      frame_count = 0
+    if frame_count > 10000 then
+      frame_count = 1
     else
       frame_count = frame_count + 1
     end
