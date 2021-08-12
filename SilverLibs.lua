@@ -787,7 +787,9 @@ end
 -------------------------------------------------------------------------------
 function silibs.update_ui(frame_count)
   if frame_count%15 == 0 then
-    update_ui_luopan_distance_tracker()
+    if state.ShowLuopanUi.value then
+      update_ui_luopan_distance_tracker()
+    end
   end
 end
 
@@ -853,7 +855,7 @@ function update_ui_luopan_distance_tracker()
   end
 
   silibs.ui.luopan.value = luopan_txtbox
-  if state.ShowLuopanUi and state.ShowLuopanUi.value and ((my_luopan and geo_count ~= 0) or (buffactive['Colure Active'] and indi_count ~= 0)) then
+  if (my_luopan and geo_count ~= 0) or (buffactive['Colure Active'] and indi_count ~= 0) then
     silibs.ui.luopan:visible(true)
   else
     silibs.ui.luopan:visible(false)
