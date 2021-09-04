@@ -435,12 +435,12 @@ function silibs.set_lockstyle()
   if not silibs.auto_lockstyle_enabled then
     return
   end
-  -- Set lockstyle 2 seconds after changing job, trying immediately will error
+  -- Set lockstyle 3 seconds after changing job, trying immediately will error
   coroutine.schedule(function()
     if silibs.locked_style == false and silibs.lockstyle_set > 0 then
       send_command('input /lockstyleset '..silibs.lockstyle_set)
     end
-  end, 2)
+  end, 3)
   -- In case lockstyle was on cooldown for first command, try again (lockstyle has 10s cd)
   coroutine.schedule(function()
     if silibs.locked_style == false and silibs.lockstyle_set > 0 then
@@ -1132,9 +1132,7 @@ end
 -- Gearswap lifecycle hooks
 -------------------------------------------------------------------------------
 function silibs.user_setup_hook()
-  if silibs.auto_lockstyle_enabled then
-    silibs.set_lockstyle()
-  end
+  silibs.set_lockstyle()
 end
 
 function silibs.precast_hook(spell, action, spellMap, eventArgs)
@@ -1310,7 +1308,6 @@ windower.raw_register_event('outgoing chunk', function(id, data, modified, injec
     if res.jobs[newmain] and newmain ~= 0 and newmain ~= player.main_job_id then
       silibs.init_settings()
     end
-  -- TODO: Move this bit to an incoming chunk handler
   elseif id == 0x053 then -- Send lockstyle command to server
     local type = data:unpack("I",0x05)
     if type == 0 then -- This is lockstyle 'disable' command
