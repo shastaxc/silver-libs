@@ -203,6 +203,24 @@ silibs.luopan_ignore_list = S{'SlipperySilas','HareFamiliar','SheepFamiliar','Fl
 
 silibs.ui.bt_color = '\\cs(230,118,116)'
 
+-- Bonuses based on day and weather and gear equipped (in percentage points).
+silibs.day_weather_bns = T{
+  [0] =  { day=-1, weather=-2, base_day_bn=-10, base_weather_bn=-25, iridescence_bn=-10 },
+  [1] =  { day=-1, weather=-1, base_day_bn=-10, base_weather_bn=-10, iridescence_bn=-10 },
+  [2] =  { day=-1, weather=0,  base_day_bn=-10, base_weather_bn=0,   iridescence_bn=0   },
+  [3] =  { day=-1, weather=1,  base_day_bn=-10, base_weather_bn=10,  iridescence_bn=10  },
+  [4] =  { day=-1, weather=2,  base_day_bn=-10, base_weather_bn=25,  iridescence_bn=10  },
+  [5] =  { day=0,  weather=-2, base_day_bn=0,   base_weather_bn=-25, iridescence_bn=-10 },
+  [6] =  { day=0,  weather=-1, base_day_bn=0,   base_weather_bn=-10, iridescence_bn=-10 },
+  [7] =  { day=0,  weather=0,  base_day_bn=0,   base_weather_bn=0,   iridescence_bn=0   },
+  [8] =  { day=0,  weather=1,  base_day_bn=0,   base_weather_bn=10,  iridescence_bn=10  },
+  [9] =  { day=0,  weather=2,  base_day_bn=0,   base_weather_bn=25,  iridescence_bn=10  },
+  [10] = { day=1,  weather=-2, base_day_bn=10,   base_weather_bn=-25, iridescence_bn=-10 },
+  [11] = { day=1,  weather=-1, base_day_bn=10,   base_weather_bn=-10, iridescence_bn=-10 },
+  [12] = { day=1,  weather=0,  base_day_bn=10,   base_weather_bn=0,   iridescence_bn=0   },
+  [13] = { day=1,  weather=1,  base_day_bn=10,   base_weather_bn=10,  iridescence_bn=10  },
+  [14] = { day=1,  weather=2,  base_day_bn=10,   base_weather_bn=25,  iridescence_bn=10  },
+}
 
 -------------------------------------------------------------------------------
 -- Functions
@@ -862,10 +880,6 @@ function update_ui_luopan_distance_tracker()
   end
 end
 
-
--------------------------------------------------------------------------------
--- Helpful/Supporting functions
--------------------------------------------------------------------------------
 function silibs.find_ability(ability_name)
   return res.job_abilities:find(function(ability)
     return ability.en == ability_name
@@ -1012,6 +1026,85 @@ function silibs.get_enemies_in_range(range, aoe_center_target)
   return return_list
 end
 
+-- Returns the total day/weather damage multiplier based on what
+-- enhancing gear you have equipped and the element of the spell/ability
+-- you want to use.
+-- Does not include the flat +15% potency bonus that Chatoyant Staff always has.
+function silibs.get_day_weather_multiplier(spell_element, is_obi_equipped, has_iridescence)
+  -- Get current day
+  local day_element = world.day_element
+  -- Find day alignment vs spell used
+  local day_align = 0
+  -- Same element = positive alignment
+  if (spell_element == day_element) then
+    day_align = 1
+  elseif (spell_element == elements.weak_to[day_element]) then
+    day_align = -1
+  end
+
+  -- Get current weather
+  local weather_element = world.weather_element
+  -- Find weather alignment vs spell used
+  local weather_align = 0
+  -- Same element = positive alignment, 
+  if (spell_element == weather_element) then
+    weather_align = 1
+  elseif (spell_element == elements.weak_to[weather_element]) then
+    weather_align = -1
+  end
+  -- Double weather = x2 bonus
+  weather_align = weather_align * get_weather_intensity()
+
+  -- Using alignments, retrieve bonus values
+  local row_index = silibs.day_weather_bns:find(function(row)
+    return (row.day == day_align) and (row.weather == weather_align)
+  end)
+  local row = silibs.day_weather_bns[row_index]
+
+  local day_proc_rate = 1/5
+  local weather_proc_rate = 1/3
+  -- Obi makes both weather and day proc chance 100%
+  if (is_obi_equipped) then
+    day_proc_rate = 1
+    weather_proc_rate = 1
+  end
+
+  -- Compute average value of day and weather effects based on proc rate
+  local day_bn = row.base_day_bn * day_proc_rate
+  local weather_bn = row.base_weather_bn * weather_proc_rate
+  if (has_iridescence) then
+    weather_bn = weather_bn + (row.iridescence_bn * weather_proc_rate)
+  end
+  local total_bn = day_bn + weather_bn
+
+  -- Convert bonus (percentage) into multiplier (decimal)
+  local multiplier = 1 + (total_bn / 100)
+  return multiplier
+end
+
+-- Gets the damage multiplier of Orpheus sash based on distance from target.
+-- Bonus only exists if the spell used has elemental alignment.
+-- Assumes that the given spell is an elemental WS.
+-- +15% dmg less than 1.93', +1% dmg > 13', scale linearly between 1.93' and 13'.
+-- Also includes base weather/day bonuses based on proc chance.
+function silibs.get_orpheus_multiplier(spell_element, distance)
+  -- TODO: Pad for model sizes
+  local distance_bn = 0
+  if distance <= 1.93 then
+    distance_bn = 15
+  elseif distance > 1.93 and distance < 13 then
+    local rise = 15-1
+    local run = 13-1.93
+    local slope = rise / run
+    distance_bn = (slope * distance) - 1.44083107497741644
+  elseif distance > 13 then
+    distance_bn = 15
+  end
+
+  -- Convert bonus (percentage) into multiplier (decimal)
+  local multiplier = (1 + (distance_bn / 100)) * silibs.get_day_weather_multiplier(spell_element, false, false)
+  return multiplier
+end
 
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
