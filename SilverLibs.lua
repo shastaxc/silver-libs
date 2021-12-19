@@ -1088,7 +1088,14 @@ end
 -- +15% dmg less than 1.93', +1% dmg > 13', scale linearly between 1.93' and 13'.
 -- Also includes base weather/day bonuses based on proc chance.
 function silibs.get_orpheus_multiplier(spell_element, distance)
-  -- TODO: Pad for model sizes
+  -- Distance is assumed to be measured from center of self to center of target.
+  -- Distance of Orpheus bonus is assumed to be the distance from edge of player
+  -- model to edge of target model.
+  -- Modify the given distance to account for the model sizes...
+  local player_model_size = windower.ffxi.get_mob_by_target('me').model_size
+  local t = windower.ffxi.get_mob_by_target('t') or windower.ffxi.get_mob_by_target('st')
+  distance = distance - player_model_size - t.model_size
+
   local distance_bn = 0
   if distance <= 1.93 then
     distance_bn = 15
