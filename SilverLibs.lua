@@ -215,11 +215,11 @@ silibs.day_weather_bns = T{
   [7] =  { day=0,  weather=0,  base_day_bn=0,   base_weather_bn=0,   iridescence_bn=0   },
   [8] =  { day=0,  weather=1,  base_day_bn=0,   base_weather_bn=10,  iridescence_bn=10  },
   [9] =  { day=0,  weather=2,  base_day_bn=0,   base_weather_bn=25,  iridescence_bn=10  },
-  [10] = { day=1,  weather=-2, base_day_bn=10,   base_weather_bn=-25, iridescence_bn=-10 },
-  [11] = { day=1,  weather=-1, base_day_bn=10,   base_weather_bn=-10, iridescence_bn=-10 },
-  [12] = { day=1,  weather=0,  base_day_bn=10,   base_weather_bn=0,   iridescence_bn=0   },
-  [13] = { day=1,  weather=1,  base_day_bn=10,   base_weather_bn=10,  iridescence_bn=10  },
-  [14] = { day=1,  weather=2,  base_day_bn=10,   base_weather_bn=25,  iridescence_bn=10  },
+  [10] = { day=1,  weather=-2, base_day_bn=10,  base_weather_bn=-25, iridescence_bn=-10 },
+  [11] = { day=1,  weather=-1, base_day_bn=10,  base_weather_bn=-10, iridescence_bn=-10 },
+  [12] = { day=1,  weather=0,  base_day_bn=10,  base_weather_bn=0,   iridescence_bn=0   },
+  [13] = { day=1,  weather=1,  base_day_bn=10,  base_weather_bn=10,  iridescence_bn=10  },
+  [14] = { day=1,  weather=2,  base_day_bn=10,  base_weather_bn=25,  iridescence_bn=10  },
 }
 
 -------------------------------------------------------------------------------
