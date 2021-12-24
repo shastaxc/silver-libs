@@ -1102,8 +1102,8 @@ function silibs.get_orpheus_multiplier(spell_element, distance)
   elseif distance > 1.93 and distance < 13 then
     local rise = 15-1
     local run = 13-1.93
-    local slope = rise / run
-    distance_bn = (slope * distance) - 1.44083107497741644
+    local slope = -1 * (rise / run)
+    distance_bn = (slope * distance) + 16.44083107497741644
   elseif distance > 13 then
     distance_bn = 15
   end
