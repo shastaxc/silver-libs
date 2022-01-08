@@ -1,4 +1,4 @@
--- Version 2021.DEC.23.001
+-- Version 2022.JAN.08.001
 -- Copyright © 2021, Shasta
 -- All rights reserved.
 
@@ -1245,7 +1245,7 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
-  if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
+  if silibs.th_enabled and state.TreasureMode.value ~= 'None' and action_type ~= 'Item' then
     -- Equip TH gear if appropriate
     if state.TreasureMode.value == 'Fulltime'
       or (state.TreasureMode.value == 'SATA'
@@ -1319,7 +1319,7 @@ end
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
   -- TH needs to be on for midcast too in order to apply TH to mob
   -- SATA-compatible actions (melee & WS) do not have midcast
-  if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
+  if silibs.th_enabled and state.TreasureMode.value ~= 'None' and spell.action_type ~= 'Item' then
     -- Equip TH gear if appropriate
     if state.TreasureMode.value == 'Fulltime'
       or (state.TreasureMode.value == 'Tag'
