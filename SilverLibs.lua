@@ -1,5 +1,5 @@
 -- Version 2022.JAN.08.002
--- Copyright © 2021, Shasta
+-- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
 -- Redistribution and use in source and binary forms, with or without
