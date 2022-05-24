@@ -226,6 +226,10 @@ silibs.day_weather_bns = T{
 -- Functions
 -------------------------------------------------------------------------------
 
+-- Overwrite Mote's implementation of setting elemental gear (it's outdated)
+function set_elemental_gear(spell)
+end
+
 function silibs.init_settings()
   silibs.cancel_outranged_ws_enabled = false
   silibs.cancel_on_blocking_status_enabled = false
