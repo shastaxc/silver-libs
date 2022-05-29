@@ -222,13 +222,19 @@ silibs.day_weather_bns = T{
   [14] = { day=1,  weather=2,  base_day_bn=10,  base_weather_bn=25,  iridescence_bn=10  },
 }
 
+
 -------------------------------------------------------------------------------
--- Functions
+-- Fix Mote's mistakes
 -------------------------------------------------------------------------------
 
 -- Overwrite Mote's implementation of setting elemental gear (it's outdated)
 function set_elemental_gear(spell)
 end
+
+
+-------------------------------------------------------------------------------
+-- Functions
+-------------------------------------------------------------------------------
 
 function silibs.init_settings()
   silibs.cancel_outranged_ws_enabled = false
