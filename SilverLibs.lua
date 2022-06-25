@@ -222,6 +222,9 @@ silibs.day_weather_bns = T{
   [14] = { day=1,  weather=2,  base_day_bn=10,  base_weather_bn=25,  iridescence_bn=10  },
 }
 
+silibs.equippable_bags = L{'inventory','wardrobe','wardrobe2','wardrobe3',
+'wardrobe4','wardrobe5','wardrobe6','wardrobe7','wardrobe8'}
+
 
 -------------------------------------------------------------------------------
 -- Fix Mote's mistakes
@@ -374,15 +377,26 @@ function silibs.cancel_on_blocking_status(spell, eventArgs)
   end
 end
 
-function silibs.has_item(bag_name, item_name)
-  local bag = res.bags:with('en', bag_name)
-  local item = res.items:with('en', item_name)
-  local items_in_bag = windower.ffxi.get_items(bag['id'])
-  for k,v in pairs(items_in_bag) do
-    if type(v)~='number' and type(v)~='boolean' and v['id'] == item['id'] then
-      return true
+-- item_name: string, name of item to search
+-- bags_to_search: List (optional), list of bags to search through
+-- is_temp_item: boolean (optional), indicates if item is temporary item
+function silibs.has_item(item_name, bags_to_search, is_temp_item)
+  if item_name and item_name ~= '' then
+    local bags
+    if is_temp_item then
+      bags = L{'temporary'}
+    else
+      bags = bags_to_search or L{'inventory','safe','storage','locker',
+          'satchel','sack','case','wardrobe','safe2','wardrobe2','wardrobe3',
+          'wardrobe4','wardrobe5','wardrobe6','wardrobe7','wardrobe8'}
+    end
+    for bag,_ in bags:it() do
+      if player[bag] and player[bag][item_name] then
+        return true
+      end
     end
   end
+  
   return false
 end
 
@@ -524,10 +538,10 @@ function silibs.use_sneak()
   if not cmd
     and silibs.can_access_spell("Monomi: Ichi")
     and silibs.can_recast_spell("Monomi: Ichi", 5)
-    and silibs.has_item('Inventory', 'Sanjaku-Tenugui') then
+    and silibs.has_item('Sanjaku-Tenugui', L{'inventory'}) then
       cmd = 'input /ma "Monomi: Ichi" <me>'
   end
-  if not cmd and silibs.has_item('Inventory','Silent Oil') then
+  if not cmd and silibs.has_item('Silent Oil', L{'inventory'}) then
     cmd = 'input /item "Silent Oil" <me>'
   end
 
@@ -552,16 +566,16 @@ function silibs.use_invisible()
   if not cmd
     and silibs.can_access_spell("Tonko: Ni")
     and silibs.can_recast_spell("Tonko: Ni")
-    and silibs.has_item('Inventory', 'Shinobi-Tabi') then
+    and silibs.has_item('Shinobi-Tabi', L{'inventory'}) then
       cmd = 'input /ma "Tonko: Ni" <me>'
   end
   if not cmd
     and silibs.can_access_spell("Tonko: Ichi")
     and silibs.can_recast_spell("Tonko: Ichi")
-    and silibs.has_item('Inventory', 'Shinobi-Tabi') then
+    and silibs.has_item('Shinobi-Tabi', L{'inventory'}) then
       cmd = 'input /ma "Tonko: Ichi" <me>'
   end
-  if not cmd and silibs.has_item('Inventory','Prism Powder') then
+  if not cmd and silibs.has_item('Prism Powder', L{'inventory'}) then
     cmd = 'input /item "Prism Powder" <me>'
   end
 
@@ -573,11 +587,11 @@ function silibs.use_key()
     if player.target.name == 'Sturdy Pyxis' then
       send_command('@input /item "Forbidden Key" <t>')
     elseif player.main_job == 'THF' then
-      if silibs.has_item('Inventory','Skeleton Key') then
+      if silibs.has_item('Skeleton Key', L{'inventory'}) then
         send_command('@input /item "Skeleton Key" <t>')
-      elseif silibs.has_item('Inventory','Living Key') then
+      elseif silibs.has_item('Living Key', L{'inventory'}) then
         send_command('@input /item "Living Key" <t>')
-      elseif silibs.has_item('Inventory','Thief\'s Tools') then
+      elseif silibs.has_item('Thief\'s Tools', L{'inventory'}) then
         send_command('@input /item "Thief\'s Tools" <t>')
       end
     end
@@ -1123,6 +1137,189 @@ function silibs.get_orpheus_multiplier(spell_element, distance)
   return multiplier
 end
 
+-- Check for proper ammo when shooting or weaponskilling
+function silibs.equip_ammo(spell)
+  -- If throwing weapon, return empty as ammo
+  if player.equipment.range and player.equipment.range ~= 'empty' then
+    local weapon_stats = res.items:with('en', player.equipment.range)
+    if weapon_stats.skill == 27 then
+      equip({ammo='empty'})
+      return
+    end
+  end
+
+  local swapped_ammo = nil
+  local default_ammo
+  local magic_ammo
+  local acc_ammo
+  local ws_ammo
+  if player.main_job == 'RNG' or player.main_job == 'THF' then
+    default_ammo = player.equipment.range and DefaultAmmo[player.equipment.range]
+    magic_ammo = player.equipment.range and MagicAmmo[player.equipment.range]
+    acc_ammo = player.equipment.range and AccAmmo[player.equipment.range]
+    ws_ammo = player.equipment.range and WSAmmo[player.equipment.range]
+    qd_ammo = 'empty'
+  elseif player.main_job == 'COR' then
+    default_ammo = gear.RAbullet
+    magic_ammo = gear.MAbullet
+    acc_ammo = gear.RAccbullet
+    ws_ammo = gear.WSbullet
+    qd_ammo = gear.QDbullet
+  end
+
+  if spell.action_type == 'Ranged Attack' then
+    -- If in ranged acc mode, use acc bullet (fall back to default bullet if out of acc ammo)
+    if state.RangedMode.value ~= 'Normal' then
+      if acc_ammo and silibs.has_item(acc_ammo, silibs.equippable_bags) then
+        swapped_ammo = acc_ammo
+        equip({ammo=swapped_ammo})
+      elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+        -- Fall back to default ammo, if there is any
+        swapped_ammo = default_ammo
+        equip({ammo=swapped_ammo})
+        add_to_chat(3,"Acc ammo unavailable. Falling back to default ammo.")
+      else
+        -- If neither is available, empty the ammo slot
+        swapped_ammo = empty
+        equip({ammo=swapped_ammo})
+        cancel_spell()
+        add_to_chat(123, '** Action Canceled: [ Acc & default ammo unavailable. ] **')
+        return
+      end
+    elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+      swapped_ammo = default_ammo
+      equip({ammo=swapped_ammo})
+    else
+      swapped_ammo = empty
+      equip({ammo=swapped_ammo})
+      cancel_spell()
+      add_to_chat(123, '** Action Canceled: [ Default ammo unavailable. ] **')
+      return
+    end
+  elseif spell.type == 'WeaponSkill' then
+    -- Ranged WS
+    if spell.skill == 'Marksmanship' or spell.skill == 'Archery' then
+      -- ranged magical weaponskills
+      if elemental_ws:contains(spell.english) then
+        if magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
+          swapped_ammo = magic_ammo
+          equip({ammo=swapped_ammo})
+        elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+          swapped_ammo = default_ammo
+          equip({ammo=swapped_ammo})
+          add_to_chat(3,"Magic ammo unavailable. Using default ammo.")
+        else
+          swapped_ammo = empty
+          equip({ammo=swapped_ammo})
+          cancel_spell()
+          add_to_chat(123, '** Action Canceled: [ Magic & default ammo unavailable. ] **')
+          return
+        end
+      else -- ranged physical weaponskills
+        if state.RangedMode.value ~= 'Normal' then
+          if acc_ammo and silibs.has_item(acc_ammo, silibs.equippable_bags) then
+            swapped_ammo = acc_ammo
+            equip({ammo=swapped_ammo})
+          elseif ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
+            swapped_ammo = ws_ammo
+            equip({ammo=swapped_ammo})
+            add_to_chat(3,"Acc ammo unavailable. Using WS ammo.")
+          elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+            swapped_ammo = default_ammo
+            equip({ammo=swapped_ammo})
+            add_to_chat(3,"Acc & WS ammo unavailable. Using default ammo.")
+          else
+            swapped_ammo = empty
+            equip({ammo=swapped_ammo})
+            cancel_spell()
+            add_to_chat(123, '** Action Canceled: [ Acc, WS, & default ammo unavailable. ] **')
+            return
+          end
+        else
+          if ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
+            swapped_ammo = ws_ammo
+            equip({ammo=swapped_ammo})
+          elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
+            swapped_ammo = default_ammo
+            equip({ammo=swapped_ammo})
+            add_to_chat(3,"WS ammo unavailable. Using default ammo.")
+          else
+            swapped_ammo = empty
+            equip({ammo=swapped_ammo})
+            cancel_spell()
+            add_to_chat(123, '** Action Canceled: [ WS & default ammo unavailable. ] **')
+            return
+          end
+        end
+      end
+    else -- Melee WS
+      -- melee magical weaponskills
+      if elemental_ws:contains(spell.english) then
+        -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
+        local rweapon = player.equipment.range
+        if rweapon and rweapon == 'Accipiter' or (rweapon:length() >= 11 and rweapon:startswith('Sparrowhawk'))
+            and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+          swapped_ammo = 'Hauksbok Arrow'
+          equip({ammo=swapped_ammo})
+        elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
+          swapped_ammo = magic_ammo
+          equip({ammo=swapped_ammo})
+        elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+          swapped_ammo = default_ammo
+          equip({ammo=swapped_ammo})
+          add_to_chat(3,"Magic ammo unavailable. Using default ammo.")
+        else
+          swapped_ammo = empty
+          equip({ammo=swapped_ammo})
+          cancel_spell()
+          add_to_chat(123, '** Action Canceled: [ Magic & default ammo unavailable. ] **')
+          return
+        end
+      else -- melee physical weaponskills
+        -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
+        local rweapon = player.equipment.range
+        if rweapon and rweapon == 'Accipiter' or (rweapon:length() >= 11 and rweapon:startswith('Sparrowhawk'))
+            and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+          swapped_ammo = 'Hauksbok Arrow'
+          equip({ammo=swapped_ammo})
+        end
+      end
+    end
+  elseif spell.type == 'CorsairShot' then
+    if qd_ammo and silibs.has_item(qd_ammo, silibs.equippable_bags) then
+      swapped_ammo = qd_ammo
+      equip({ammo=swapped_ammo})
+    elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
+      swapped_ammo = default_ammo
+      equip({ammo=swapped_ammo})
+      add_to_chat(3,"QD ammo unavailable. Using default ammo.")
+    else
+      swapped_ammo = empty
+      equip({ammo=swapped_ammo})
+      cancel_spell()
+      add_to_chat(123, '** Action Canceled: [ QD & default ammo unavailable. ] **')
+      return
+    end
+  elseif spell.english == "Shadowbind" or spell.english == "Bounty Shot" or spell.english == "Eagle Eye Shot" then
+    if silibs.has_item(default_ammo, silibs.equippable_bags) then
+      swapped_ammo = default_ammo
+      equip({ammo=swapped_ammo})
+    else
+      swapped_ammo = empty
+      equip({ammo=swapped_ammo})
+      cancel_spell()
+      add_to_chat(123, '** Action Canceled: [ Default ammo unavailable. ] **')
+      return
+    end
+  end
+  local swapped_item = get_item(swapped_ammo)
+  if player.equipment.ammo ~= 'empty' and swapped_item ~= nil and swapped_item.count < options.ammo_warning_limit
+      and not S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(swapped_item.shortname) then
+    add_to_chat(39,"*** Ammo '"..swapped_item.shortname.."' running low! *** ("..swapped_item.count..")")
+  end
+end
+
+
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
 -------------------------------------------------------------------------------
@@ -1267,10 +1464,19 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         and spell.target.type == 'MONSTER'
         and not info.tagged_mobs[spell.target.id])
     then
-      if sets.TreasureHunter then
-        equip(sets.TreasureHunter)
+      -- If using RA, use RA TH set if it exists
+      if player.equipment.range and player.equipment.range ~= 'empty' then
+        if sets.TreasureHunter.RA then
+          equip(sets.TreasureHunter.RA)
+        else
+          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter.RA not found.')
+        end
       else
-        windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+        if sets.TreasureHunter then
+          equip(sets.TreasureHunter)
+        else
+          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+        end
       end
     -- Handle AoE actions separately
     elseif (not silibs.th_aoe_disabled and state.TreasureMode.value == 'Tag') then
@@ -1292,10 +1498,15 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
         local end_loop
         for k,v in pairs(enemies) do
           if not end_loop and not info.tagged_mobs[v.id] and v.hpp > 0 then
-            if sets.TreasureHunter then
-              equip(sets.TreasureHunter)
+            -- If using RA, use RA TH set if it exists
+            if player.equipment.range and player.equipment.range ~= 'empty' then
+              if sets.TreasureHunter.RA then
+                equip(sets.TreasureHunter.RA)
+              end
             else
-              windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+              if sets.TreasureHunter then
+                equip(sets.TreasureHunter)
+              end
             end
             end_loop = true
             -- To save us from having to process all this again in midcast, set a flag to tell
@@ -1337,7 +1548,20 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
         and not info.tagged_mobs[spell.target.id]) -- Single target tagging
       or spell.use_th_midcast -- AoE tagging
     then
-      equip(sets.TreasureHunter)
+      -- If using RA, use RA TH set if it exists
+      if player.equipment.range and player.equipment.range ~= 'empty' then
+        if sets.TreasureHunter.RA then
+          equip(sets.TreasureHunter.RA)
+        else
+          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter.RA not found.')
+        end
+      else
+        if sets.TreasureHunter then
+          equip(sets.TreasureHunter)
+        else
+          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+        end
+      end
     end
   end
 end
@@ -1366,7 +1590,16 @@ function silibs.customize_melee_set(meleeSet)
         and is_target_enemy
         and not info.tagged_mobs[current_target.id])
     then
-      meleeSet = set_combine(meleeSet, sets.TreasureHunter)
+      -- If using RA, use RA TH set if it exists
+      if player.equipment.range and player.equipment.range ~= 'empty' then
+        if sets.TreasureHunter.RA then
+          meleeSet = set_combine(meleeSet, sets.TreasureHunter.RA)
+        end
+      else
+        if sets.TreasureHunter then
+          meleeSet = set_combine(meleeSet, sets.TreasureHunter)
+        end
+      end
     end
   end
   return meleeSet
