@@ -1,4 +1,4 @@
--- Version 2022.JAN.08.002
+-- Version 2022.AUG.15.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -1085,24 +1085,49 @@ function silibs.get_day_weather_multiplier(spell_element, is_obi_equipped, has_i
   end)
   local row = silibs.day_weather_bns[row_index]
 
-  local day_proc_rate = 1/5
-  local weather_proc_rate = 1/3
+  -- Base proc rates
+  local d_rate = 1/5
+  local w_rate = 1/3
+  local i_rate = 1/3
+
   -- Obi makes both weather and day proc chance 100%
-  if (is_obi_equipped) then
-    day_proc_rate = 1
-    weather_proc_rate = 1
+  if (is_obi_equipped and has_iridescence) then
+    d_rate = 1
+    w_rate = 1
+    i_rate = 1
+  elseif (is_obi_equipped and not has_iridescence) then
+    d_rate = 1
+    w_rate = 1
+    i_rate = 0
+  elseif (not is_obi_equipped and has_iridescence) then
+    i_rate = 1
   end
+
+  -- Retrieve potencies based on current day and weather
+  local d_pot = row.base_day_bn
+  local w_pot = row.base_weather_bn
+  local i_pot = row.iridescence_bn
 
   -- Compute average value of day and weather effects based on proc rate
-  local day_bn = row.base_day_bn * day_proc_rate
-  local weather_bn = row.base_weather_bn * weather_proc_rate
-  if (has_iridescence) then
-    weather_bn = weather_bn + (row.iridescence_bn * weather_proc_rate)
-  end
-  local total_bn = day_bn + weather_bn
+  -- Two possible formulas based on whether iridescence is present or not
+  local dwi_rate = d_rate * w_rate * i_rate
+  local dw_rate = (d_rate * w_rate) - dwi_rate
+  local wi_rate = (w_rate * i_rate) - dwi_rate
+  local di_rate = (d_rate * i_rate) - dwi_rate
+  local d_only_rate = d_rate - dw_rate - di_rate - dwi_rate
+  local w_only_rate = w_rate - dw_rate - wi_rate - dwi_rate
+  local i_only_rate = i_rate - wi_rate - di_rate - dwi_rate
+
+  local total_avg_bonus = (dwi_rate * (d_pot + w_pot + i_pot))
+      + (dw_rate * (d_pot + w_pot))
+      + (wi_rate * (w_pot + i_pot))
+      + (di_rate * (d_pot + i_pot))
+      + (d_only_rate * d_pot)
+      + (w_only_rate * w_pot)
+      + (i_only_rate * i_pot)
 
   -- Convert bonus (percentage) into multiplier (decimal)
-  local multiplier = 1 + (total_bn / 100)
+  local multiplier = 1 + (total_avg_bonus / 100)
   return multiplier
 end
 
@@ -1339,7 +1364,7 @@ function silibs.enable_auto_lockstyle(set_number)
   if set_number then
     silibs.lockstyle_set = set_number
     silibs.auto_lockstyle_enabled = true
-    silibs.set_lockstyle(set_number)
+    silibs.set_lockstyle()
   end
 end
 
