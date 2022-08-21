@@ -1296,8 +1296,6 @@ function silibs.equip_ammo(spell)
         else
           swapped_ammo = empty
           equip({ammo=swapped_ammo})
-          cancel_spell()
-          add_to_chat(123, '** Action Canceled: [ Magic & default ammo unavailable. ] **')
           return
         end
       else -- melee physical weaponskills
