@@ -1462,6 +1462,7 @@ end
 -- Gearswap lifecycle hooks
 -------------------------------------------------------------------------------
 function silibs.user_setup_hook()
+  silibs.locked_style = false -- Lockstyle unlocks on subjob change
   silibs.set_lockstyle()
 end
 
