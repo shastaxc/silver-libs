@@ -1,4 +1,4 @@
--- Version 2022.AUG.21.001
+-- Version 2022.AUG.27.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -801,7 +801,7 @@ end
 --
 -- This function removes mobs from our tracking table when they die.
 function silibs.on_incoming_chunk_for_th(id, data, modified, injected, blocked)
-  if id == 0x29 then
+  if id == 0x29 and silibs.th_enabled then
       local target_id = data:unpack('I',0x09)
       local message_id = data:unpack('H',0x19)%32768
 
