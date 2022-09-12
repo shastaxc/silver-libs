@@ -1,4 +1,4 @@
--- Version 2022.SEP.12.001
+-- Version 2022.SEP.12.002
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -1475,7 +1475,7 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
   end
 
   -- Use special FC set if subbing RDM
-  if player.sub_job == 'RDM' and spell.action_type == 'Magic' and sets.precast.FC then
+  if spell.action_type == 'Magic' and player.sub_job == 'RDM' and player.sub_job_level > 0 and sets.precast.FC then
     local customEquipSet = select_specific_set(sets.precast.FC, spell, spellMap)
     -- Add optional casting mode
     if customEquipSet[state.CastingMode.current] then
