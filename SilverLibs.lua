@@ -1,4 +1,4 @@
--- Version 2022.AUG.27.001
+-- Version 2022.SEP.12.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -1472,6 +1472,19 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
   end
   if silibs.cancel_on_blocking_status_enabled then
     silibs.cancel_on_blocking_status(spell, eventArgs)
+  end
+
+  -- Use special FC set if subbing RDM
+  if player.sub_job == 'RDM' and spell.action_type == 'Magic' and sets.precast.FC then
+    local customEquipSet = select_specific_set(sets.precast.FC, spell, spellMap)
+    -- Add optional casting mode
+    if customEquipSet[state.CastingMode.current] then
+      customEquipSet = customEquipSet[state.CastingMode.current]
+    end
+    if customEquipSet['RDM'] then
+      equip(customEquipSet['RDM'])
+      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+    end
   end
 end
 
