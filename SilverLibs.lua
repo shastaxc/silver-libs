@@ -1,4 +1,4 @@
--- Version 2022.SEP.12.002
+-- Version 2022.SEP.16.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -169,6 +169,22 @@ silibs.range_mult = {
   [10] = 1.45,
   [11] = 1.454545454545455,
   [12] = 1.666666666666667,
+}
+
+silibs.quick_magic_spells = {
+  ['WhiteMagic'] = S{'Banish', 'Banish II', 'Banish III', 'Banishga', 'Banishga II', 'Arise', 'Raise', 'Raise II', 'Raise III',
+                      'Reraise', 'Reraise II', 'Reraise III', 'Reraise IV', 'Reraise V', 'Cure', 'Full Cure', 'Recall-Jugner',
+                      'Recall-Meriph', 'Recall-Pashh', 'Teleport-Altep', 'Teleport-Dem', 'Teleport-Holla', 'Teleport-Mea',
+                      'Teleport-Vahzl', 'Teleport-Yhoat'},
+  ['BlackMagic'] = S{'Tractor', 'Escape', 'Retrace', 'Warp', 'Warp II'},
+  ['BardSong'] = S{},
+  ['Ninjutsu'] = S{'Myoshu: Ichi', 'Gekka: Ichi', 'Yain: Ichi', 'Kakka: Ichi'},
+  ['SummonerPact'] = S{'Carbuncle', 'Cait Sith', 'Alexander', 'Ifrit', 'Shiva', 'Garuda', 'Siren', 'Titan', 'Ramuh', 'Leviathan',
+                    'Fenrir', 'Diabolos', 'Odin'},
+  ['BlueMagic'] = S{'Cocoon', 'Feather Barrier', 'Memento Mori', 'Zephyr Mantle', 'Amplification', 'Triumphant Roar', 'Exuviation',
+                    'Osmosis', 'Fantod', 'Winds of Promy.', 'Barrier Tusk', 'O. Counterstance', 'Pyric Bulwark', 'Harden Shell'},
+  ['Geomancy'] = S{}, -- No geo spells should be quick cast
+  ['Trust'] = S{}, -- Implement special logic for all trusts to quick cast rather than enumerating them
 }
 
 silibs.action_type_blockers = {
@@ -1474,16 +1490,49 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
     silibs.cancel_on_blocking_status(spell, eventArgs)
   end
 
-  -- Use special FC set if subbing RDM
-  if spell.action_type == 'Magic' and player.sub_job == 'RDM' and player.sub_job_level > 0 and sets.precast.FC then
+  -- Use special FC set under certain conditions.
+  -- SCH can use sets.precast.FC.QuickMagic.RDM.Grimoire for example. Really, any combination of
+  -- QuickMagic, RDM, and Grimoire (or LightArts or DarkArts) as long as it's in that order
+  if spell.action_type == 'Magic' and sets.precast.FC then
     local customEquipSet = select_specific_set(sets.precast.FC, spell, spellMap)
     -- Add optional casting mode
     if customEquipSet[state.CastingMode.current] then
       customEquipSet = customEquipSet[state.CastingMode.current]
     end
-    if customEquipSet['RDM'] then
-      equip(customEquipSet['RDM'])
+    -- If spell is on the quick magic list, and user has a quick magic set, use it
+    if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.quick_magic_spells[spell.type]:contains(spell.en)) then
+      customEquipSet = customEquipSet['QuickMagic']
+      equip(customEquipSet)
       eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+    end
+    if player.sub_job == 'RDM' and player.sub_job_level > 0 and customEquipSet['RDM'] then
+      customEquipSet = customEquipSet['RDM']
+      equip(customEquipSet)
+      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+    end
+    if player.main_job == 'SCH' then
+      if spell.type == 'WhiteMagic' and (buffactive['Light Arts'] or buffactive['Addendum: White']) then
+        if customEquipSet['Grimoire'] then
+          customEquipSet = customEquipSet['Grimoire']
+          equip(customEquipSet)
+          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+        elseif customEquipSet['LightArts'] then
+          customEquipSet = customEquipSet['LightArts']
+          equip(customEquipSet)
+          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+        end
+      elseif spell.type == 'BlackMagic' and (buffactive['Dark Arts'] or buffactive['Addendum: Black']) then
+        -- Add Grimoire set if exists
+        if customEquipSet['Grimoire'] then
+          customEquipSet = customEquipSet['Grimoire']
+          equip(customEquipSet)
+          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+        elseif customEquipSet['DarkArts'] then
+          customEquipSet = customEquipSet['DarkArts']
+          equip(customEquipSet)
+          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+        end
+      end
     end
   end
 end
