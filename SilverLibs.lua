@@ -1,4 +1,4 @@
--- Version 2022.SEP.16.001
+-- Version 2022.SEP.16.002
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -56,19 +56,6 @@ state = state or {}
 info = info or {}
 info.tagged_mobs = T{}
 state.TreasureMode = M{['description']='Treasure Mode'}
-
-
--------------------------------------------------------------------------------
--- Flags to enable/disable features and store user settings
--------------------------------------------------------------------------------
-silibs.cancel_outranged_ws_enabled = false
-silibs.cancel_on_blocking_status_enabled = false
-silibs.weapon_rearm_enabled = false
-silibs.auto_lockstyle_enabled = false
-silibs.premade_commands_enabled = false
-silibs.force_lower_cmd = false
-silibs.th_enabled = false
-silibs.th_aoe_disabled = false
 
 
 -------------------------------------------------------------------------------
@@ -171,7 +158,7 @@ silibs.range_mult = {
   [12] = 1.666666666666667,
 }
 
-silibs.quick_magic_spells = {
+silibs.quick_magic_spells = T{
   ['WhiteMagic'] = S{'Banish', 'Banish II', 'Banish III', 'Banishga', 'Banishga II', 'Arise', 'Raise', 'Raise II', 'Raise III',
                       'Reraise', 'Reraise II', 'Reraise III', 'Reraise IV', 'Reraise V', 'Cure', 'Full Cure', 'Recall-Jugner',
                       'Recall-Meriph', 'Recall-Pashh', 'Teleport-Altep', 'Teleport-Dem', 'Teleport-Holla', 'Teleport-Mea',
@@ -184,7 +171,6 @@ silibs.quick_magic_spells = {
   ['BlueMagic'] = S{'Cocoon', 'Feather Barrier', 'Memento Mori', 'Zephyr Mantle', 'Amplification', 'Triumphant Roar', 'Exuviation',
                     'Osmosis', 'Fantod', 'Winds of Promy.', 'Barrier Tusk', 'O. Counterstance', 'Pyric Bulwark', 'Harden Shell'},
   ['Geomancy'] = S{}, -- No geo spells should be quick cast
-  ['Trust'] = S{}, -- Implement special logic for all trusts to quick cast rather than enumerating them
 }
 
 silibs.action_type_blockers = {
@@ -252,6 +238,20 @@ end
 
 
 -------------------------------------------------------------------------------
+-- Flags to enable/disable features and store user settings, initial values on first load
+-------------------------------------------------------------------------------
+silibs.cancel_outranged_ws_enabled = false
+silibs.cancel_on_blocking_status_enabled = false
+silibs.weapon_rearm_enabled = false
+silibs.auto_lockstyle_enabled = false
+silibs.premade_commands_enabled = false
+silibs.force_lower_cmd = false
+silibs.th_enabled = false
+silibs.th_aoe_disabled = false
+silibs.custom_quick_magic_spells = silibs.quick_magic_spells:copy()
+
+
+-------------------------------------------------------------------------------
 -- Functions
 -------------------------------------------------------------------------------
 
@@ -264,6 +264,7 @@ function silibs.init_settings()
   silibs.force_lower_cmd = false
   silibs.th_enabled = false
   silibs.th_aoe_disabled = false
+  silibs.custom_quick_magic_spells = silibs.quick_magic_spells:copy()
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -1473,6 +1474,28 @@ function silibs.enable_ui(feature_config)
   end
 end
 
+function silibs.customize_quick_magic_spells(custom_quick_magic_spells)
+  local is_input_valid = true
+  local spell_types = S{'WhiteMagic', 'BlackMagic', 'BardSong', 'Ninjutsu', 'SummonerPact', 'BlueMagic', 'Geomancy'}
+
+  -- If input is valid, customize spell list
+  if custom_quick_magic_spells and type(custom_quick_magic_spells) == 'table' then
+    for spell_type, _ in spell_types:it() do
+      if custom_quick_magic_spells[spell_type] then
+        if type(custom_quick_magic_spells[spell_type]) == 'table' then
+          silibs.custom_quick_magic_spells[spell_type] = S(custom_quick_magic_spells[spell_type])
+        else
+          is_input_valid = false
+        end
+      end
+    end
+  end
+
+  if not is_input_valid then
+    print('Silibs: customize_quick_magic_spells input is not a valid format.')
+  end
+end
+
 
 -------------------------------------------------------------------------------
 -- Gearswap lifecycle hooks
@@ -1500,7 +1523,7 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
       customEquipSet = customEquipSet[state.CastingMode.current]
     end
     -- If spell is on the quick magic list, and user has a quick magic set, use it
-    if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.quick_magic_spells[spell.type]:contains(spell.en)) then
+    if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.custom_quick_magic_spells[spell.type]:contains(spell.en)) then
       customEquipSet = customEquipSet['QuickMagic']
       equip(customEquipSet)
       eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
