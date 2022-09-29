@@ -1,4 +1,4 @@
--- Version 2022.SEP.16.002
+-- Version 2022.SEP.28.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -1299,9 +1299,12 @@ function silibs.equip_ammo(spell)
       if elemental_ws:contains(spell.english) then
         -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
         local rweapon = player.equipment.range
-        if rweapon and rweapon == 'Accipiter' or (rweapon:length() >= 11 and rweapon:startswith('Sparrowhawk'))
-            and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+        local range_type = res.items:with('en', rweapon).range_type
+        if rweapon and range_type == 'Bow' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
           swapped_ammo = 'Hauksbok Arrow'
+          equip({ammo=swapped_ammo})
+        elseif rweapon and range_type == 'Gun' and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
+          swapped_ammo = 'Hauksbok Bullet'
           equip({ammo=swapped_ammo})
         elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
           swapped_ammo = magic_ammo
@@ -1318,8 +1321,8 @@ function silibs.equip_ammo(spell)
       else -- melee physical weaponskills
         -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
         local rweapon = player.equipment.range
-        if rweapon and rweapon == 'Accipiter' or (rweapon:length() >= 11 and rweapon:startswith('Sparrowhawk'))
-            and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+        local range_type = res.items:with('en', rweapon).range_type
+        if rweapon and range_type == 'Bow' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
           swapped_ammo = 'Hauksbok Arrow'
           equip({ammo=swapped_ammo})
         end
