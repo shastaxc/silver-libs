@@ -1,4 +1,4 @@
--- Version 2022.SEP.28.001
+-- Version 2022.SEP.28.002
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -1207,6 +1207,29 @@ function silibs.equip_ammo(spell)
     acc_ammo = gear.RAccbullet
     ws_ammo = gear.WSbullet
     qd_ammo = gear.QDbullet
+  end
+
+  -- Protect against shooting hauksbok ammo
+  if S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(default_ammo) then
+    swapped_ammo = empty
+    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "default ammo". **')
+    return
+  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(magic_ammo) then
+    swapped_ammo = empty
+    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "magic ammo". **')
+    return
+  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(acc_ammo) then
+    swapped_ammo = empty
+    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "accuracy ammo". **')
+    return
+  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(ws_ammo) then
+    swapped_ammo = empty
+    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "weaponskill ammo". **')
+    return
   end
 
   if spell.action_type == 'Ranged Attack' then
