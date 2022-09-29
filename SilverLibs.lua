@@ -1,4 +1,4 @@
--- Version 2022.SEP.28.002
+-- Version 2022.SEP.29.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -1180,7 +1180,17 @@ function silibs.get_orpheus_multiplier(spell_element, distance)
 end
 
 -- Check for proper ammo when shooting or weaponskilling
-function silibs.equip_ammo(spell)
+-- RNG and THF job luas should contain a map of weapon-to-ammo for DefaultAmmo,
+-- MagicAmmo, AccAmmo, and WSAmmo in this format:
+--   DefaultAmmo = {
+--     ['Gastraphetes'] = "Quelling Bolt",
+--     ['Fomalhaut'] = "Chrono Bullet",
+--   }
+--
+-- COR job lua should contain a series of variables defining ammo for gear.RAbullet,
+-- gear.MAbullet, gear.RAccbullet, gear.WSbullet, and gear.QDbullet in the following format:
+--   gear.RAbullet = 'Chrono Bullet'
+function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   -- If throwing weapon, return empty as ammo
   if player.equipment.range and player.equipment.range ~= 'empty' then
     local weapon_stats = res.items:with('en', player.equipment.range)
@@ -1210,24 +1220,28 @@ function silibs.equip_ammo(spell)
   end
 
   -- Protect against shooting hauksbok ammo
-  if S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(default_ammo) then
+  if S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(default_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
+    eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "default ammo". **')
     return
-  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(magic_ammo) then
+  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(magic_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
+    eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "magic ammo". **')
     return
-  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(acc_ammo) then
+  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(acc_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
+    eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "accuracy ammo". **')
     return
-  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(ws_ammo) then
+  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(ws_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
+    eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "weaponskill ammo". **')
     return
   end
@@ -1249,6 +1263,7 @@ function silibs.equip_ammo(spell)
         equip({ammo=swapped_ammo})
         cancel_spell()
         add_to_chat(123, '** Action Canceled: [ Acc & default ammo unavailable. ] **')
+        eventArgs.cancel = true
         return
       end
     elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
@@ -1259,6 +1274,7 @@ function silibs.equip_ammo(spell)
       equip({ammo=swapped_ammo})
       cancel_spell()
       add_to_chat(123, '** Action Canceled: [ Default ammo unavailable. ] **')
+      eventArgs.cancel = true
       return
     end
   elseif spell.type == 'WeaponSkill' then
@@ -1278,6 +1294,7 @@ function silibs.equip_ammo(spell)
           equip({ammo=swapped_ammo})
           cancel_spell()
           add_to_chat(123, '** Action Canceled: [ Magic & default ammo unavailable. ] **')
+          eventArgs.cancel = true
           return
         end
       else -- ranged physical weaponskills
@@ -1298,6 +1315,7 @@ function silibs.equip_ammo(spell)
             equip({ammo=swapped_ammo})
             cancel_spell()
             add_to_chat(123, '** Action Canceled: [ Acc, WS, & default ammo unavailable. ] **')
+            eventArgs.cancel = true
             return
           end
         else
@@ -1313,6 +1331,7 @@ function silibs.equip_ammo(spell)
             equip({ammo=swapped_ammo})
             cancel_spell()
             add_to_chat(123, '** Action Canceled: [ WS & default ammo unavailable. ] **')
+            eventArgs.cancel = true
             return
           end
         end
@@ -1339,6 +1358,7 @@ function silibs.equip_ammo(spell)
         else
           swapped_ammo = empty
           equip({ammo=swapped_ammo})
+          -- Return from function without ammo but don't cancel action. Ammo not needed for melee WS.
           return
         end
       else -- melee physical weaponskills
@@ -1364,6 +1384,7 @@ function silibs.equip_ammo(spell)
       equip({ammo=swapped_ammo})
       cancel_spell()
       add_to_chat(123, '** Action Canceled: [ QD & default ammo unavailable. ] **')
+      eventArgs.cancel = true
       return
     end
   elseif spell.english == "Shadowbind" or spell.english == "Bounty Shot" or spell.english == "Eagle Eye Shot" then
@@ -1375,12 +1396,13 @@ function silibs.equip_ammo(spell)
       equip({ammo=swapped_ammo})
       cancel_spell()
       add_to_chat(123, '** Action Canceled: [ Default ammo unavailable. ] **')
+      eventArgs.cancel = true
       return
     end
   end
   local swapped_item = get_item(swapped_ammo)
   if player.equipment.ammo ~= 'empty' and swapped_item ~= nil and swapped_item.count < options.ammo_warning_limit
-      and not S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(swapped_item.shortname) then
+      and not S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(swapped_item.shortname:lower()) then
     add_to_chat(39,"*** Ammo '"..swapped_item.shortname.."' running low! *** ("..swapped_item.count..")")
   end
 end
