@@ -521,10 +521,10 @@ function silibs.self_command(cmdParams, eventArgs)
     elseif lowerCmdParams[1] == 'invis' or lowerCmdParams[1] == 'invisible' then
       silibs.use_invisible()
       eventArgs.handled = true
-    elseif lowerCmdParams[1] == 'usekey' or lowerCmdParams[1] == 'noinvis' then
+    elseif lowerCmdParams[1] == 'interact' or lowerCmdParams[1] == 'noinvis' then
       send_command('cancel Invisible; cancel Hide; cancel Gestation; cancel Camouflage')
-      if lowerCmdParams[1] == 'usekey' then
-        silibs.use_key()
+      if lowerCmdParams[1] == 'interact' then
+        silibs.interact()
       end
       eventArgs.handled = true
     elseif lowerCmdParams[1] == 'faceaway' then
@@ -599,9 +599,18 @@ function silibs.use_invisible()
   send_command(cmd)
 end
 
-function silibs.use_key()
+function silibs.interact()
+  local t = (player and player.target and player.target.name) or nil
   if player.target.type ~= 'NONE' then
-    if player.target.name == 'Sturdy Pyxis' then
+    -- Handle gathering points
+    if t == 'Logging Point' then
+      send_command('@input /item "Hatchet" <t>')
+    elseif t == 'Harvesting Point' then
+      send_command('@input /item "Sickle" <t>')
+    elseif t == 'Mining Point' then
+      send_command('@input /item "Pickaxe" <t>')
+    -- Handle keys
+    elseif t == 'Sturdy Pyxis' then
       send_command('@input /item "Forbidden Key" <t>')
     elseif player.main_job == 'THF' then
       if silibs.has_item('Skeleton Key', L{'inventory'}) then
@@ -610,6 +619,8 @@ function silibs.use_key()
         send_command('@input /item "Living Key" <t>')
       elseif silibs.has_item('Thief\'s Tools', L{'inventory'}) then
         send_command('@input /item "Thief\'s Tools" <t>')
+      else
+        windower.ffxi.add_to_chat(123, 'Out of lockpicking tools!')
       end
     end
   end
