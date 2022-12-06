@@ -1,4 +1,4 @@
--- Version 2022.OCT.21.001
+-- Version 2022.DEC.06.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -248,6 +248,7 @@ silibs.premade_commands_enabled = false
 silibs.force_lower_cmd = false
 silibs.th_enabled = false
 silibs.th_aoe_disabled = false
+silibs.equip_loop_enabled = false
 silibs.custom_quick_magic_spells = silibs.quick_magic_spells:copy()
 
 
@@ -264,6 +265,7 @@ function silibs.init_settings()
   silibs.force_lower_cmd = false
   silibs.th_enabled = false
   silibs.th_aoe_disabled = false
+  silibs.equip_loop_enabled = false
   silibs.custom_quick_magic_spells = silibs.quick_magic_spells:copy()
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
@@ -530,6 +532,11 @@ function silibs.self_command(cmdParams, eventArgs)
     elseif lowerCmdParams[1] == 'faceaway' then
       windower.ffxi.turn(player.facing - math.pi);
       eventArgs.handled = true
+    elseif lowerCmdParams[1] == 'pause' then
+      silibs.equip_loop_enabled = not silibs.equip_loop_enabled
+      windower.add_to_chat(001, string.char(0x1F, 207)..'SilverLibs: '
+          ..(silibs.equip_loop_enabled and 'Unpaused' or 'Paused')
+          ..' equip loop.')
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
@@ -1555,6 +1562,10 @@ function silibs.customize_quick_magic_spells(custom_quick_magic_spells)
   end
 end
 
+function silibs.enable_equip_loop()
+  silibs.equip_loop_enabled = true
+end
+
 
 -------------------------------------------------------------------------------
 -- Gearswap lifecycle hooks
@@ -1791,6 +1802,20 @@ windower.register_event('prerender',function()
         silibs.update_and_rearm_weapons()
       end
     end
+    
+    -- Use frame count to limit execution rate
+    -- Every 15 frames (roughly 0.5 seconds depending on FPS)
+    if frame_count%15 == 0 then
+      if silibs.equip_loop_enabled
+          and not midaction()
+          and not ((player.main_job == 'SMN'
+            or player.main_job == 'BST'
+            or player.main_job == 'PUP')
+            and pet_midaction()) then
+        job_update()
+      end
+    end
+
     -- Every 600 frames (roughly 10-20 seconds depending on FPS)
     if frame_count%600 == 0 then
       if state.TreasureMode.value ~= 'None' then
