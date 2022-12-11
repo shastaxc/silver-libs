@@ -1,4 +1,4 @@
--- Version 2022.DEC.10.001
+-- Version 2022.DEC.11.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -39,9 +39,9 @@ silibs = {} -- Initialize library namespace
 -------------------------------------------------------------------------------
 -- Includes/imports
 -------------------------------------------------------------------------------
-res = require('resources')
-packets = require('packets')
-chars = require('chat/chars')
+res = include('resources')
+packets = include('packets')
+chars = include('chat/chars')
 
 
 -------------------------------------------------------------------------------
@@ -291,6 +291,7 @@ function silibs.init_settings()
     show_self = false,
     show_others = false,
   }
+  silibs.haste_info_enabled = false
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -328,6 +329,7 @@ function silibs.init_settings()
     bg = { alpha=0, },
     stroke = { width=2, alpha=192 },
   })
+  silibs.dw_needed = 0
 
 end
 
@@ -496,7 +498,7 @@ function silibs.set_lockstyle()
 end
 
 function silibs.self_command(cmdParams, eventArgs)
-  if silibs.premade_commands_enabled  then
+  if silibs.premade_commands_enabled then
     local lowerCmdParams = T{}
     -- Make all cmdParams lowercase
     for i,j in ipairs(cmdParams) do
@@ -525,6 +527,14 @@ function silibs.self_command(cmdParams, eventArgs)
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
+    end
+  end
+  if silibs.haste_info_enabled then
+    if cmdParams[1] == 'hasteinfo' then
+      silibs.dw_needed = tonumber(cmdParams[2])
+      if not midaction() then
+        handle_equipping_gear(player.status)
+      end
     end
   end
 end
@@ -906,6 +916,24 @@ function silibs.display_roll_info(act)
         ' (Luck: '..string.char(31,204)..roll_info.lucky..string.char(31,001)..
                '/'..string.char(31,167)..roll_info.unlucky..string.char(31,001)..
         '): '..roll_size..members_affected_str)
+  end
+end
+
+function silibs.update_combat_form()
+  if silibs.get_dual_wield_needed() <= 0 or not silibs.is_dual_wielding() then
+    state.CombatForm:reset()
+  else
+    if silibs.get_dual_wield_needed() > 0 and silibs.get_dual_wield_needed() <= 11 then
+      state.CombatForm:set('LowDW')
+    elseif silibs.get_dual_wield_needed() > 11 and silibs.get_dual_wield_needed() <= 18 then
+      state.CombatForm:set('MidDW')
+    elseif silibs.get_dual_wield_needed() > 18 and silibs.get_dual_wield_needed() <= 31 then
+      state.CombatForm:set('HighDW')
+    elseif silibs.get_dual_wield_needed() > 31 and silibs.get_dual_wield_needed() <= 42 then
+      state.CombatForm:set('SuperDW')
+    elseif silibs.get_dual_wield_needed() > 42 then
+      state.CombatForm:set('MaxDW')
+    end
   end
 end
 
@@ -1476,6 +1504,33 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   end
 end
 
+function silibs.get_dual_wield_needed()
+  if silibs.haste_info_enabled then
+    return silibs.dw_needed
+  end
+end
+
+-- Check sub slot to see if you currently have equipped weapons in a dual wielding configuration
+function silibs.is_dual_wielding()
+  local sub_weapon_name = player and player.equipment and player.equipment.sub
+  if sub_weapon_name then
+    local item = res.items:with('en', sub_weapon_name)
+    if item and item.category == 'Weapon' then
+      return true
+    end
+  end
+  return false
+end
+
+function silibs.can_dual_wield()
+  local abilities = windower.ffxi.get_abilities()
+  local traits = S(abilities.job_traits)
+  if traits:contains(18) then
+    return true
+  end
+  return false
+end
+
 
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
@@ -1623,6 +1678,11 @@ function silibs.enable_custom_roll_text(hide_others_rolls)
   if hide_others_rolls then
     silibs.custom_roll_text_enabled.show_others = false
   end
+end
+
+function silibs.enable_haste_info()
+  silibs.haste_info_enabled = true
+  send_command('hi report')
 end
 
 
@@ -1872,7 +1932,7 @@ windower.register_event('prerender',function()
             or player.main_job == 'BST'
             or player.main_job == 'PUP')
             and pet_midaction()) then
-        job_update()
+        handle_equipping_gear(player.status)
       end
     end
 
@@ -1895,16 +1955,8 @@ windower.register_event('prerender',function()
   end
 end)
 
--- Hook into job/subjob change event (happens BEFORE job starts changing)
 windower.raw_register_event('outgoing chunk', function(id, data, modified, injected, blocked)
-  if id == 0x100 then -- Sending job change command to server
-    -- Re-init settings if changing main
-    local newmain = data:byte(5)
-    local newsub = data:byte(6)
-    if res.jobs[newmain] and newmain ~= 0 and newmain ~= player.main_job_id then
-      silibs.init_settings()
-    end
-  elseif id == 0x053 then -- Send lockstyle command to server
+  if id == 0x053 then -- Send lockstyle command to server
     local type = data:unpack("I",0x05)
     if type == 0 then -- This is lockstyle 'disable' command
       silibs.locked_style = false
