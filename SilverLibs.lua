@@ -1,4 +1,4 @@
--- Version 2022.DEC.06.001
+-- Version 2022.DEC.10.001
 -- Copyright © 2021-2022, Shasta
 -- All rights reserved.
 
@@ -39,8 +39,9 @@ silibs = {} -- Initialize library namespace
 -------------------------------------------------------------------------------
 -- Includes/imports
 -------------------------------------------------------------------------------
-res = include('resources')
-packets = include('packets')
+res = require('resources')
+packets = require('packets')
+chars = require('chat/chars')
 
 
 -------------------------------------------------------------------------------
@@ -86,7 +87,7 @@ if player.main_job == 'THF' then
 else
     state.TreasureMode:options('None','Tag')
 end
-silibs.th_aoe_actions = {
+silibs.default_th_aoe_actions = {
   weaponskills = {
     ["Aeolian Edge"] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32,aoe_range=10,aoe_center_self=false},
     ["Cyclone"] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
@@ -158,7 +159,7 @@ silibs.range_mult = {
   [12] = 1.666666666666667,
 }
 
-silibs.quick_magic_spells = T{
+silibs.default_quick_magic_spells = T{
   ['WhiteMagic'] = S{'Banish', 'Banish II', 'Banish III', 'Banishga', 'Banishga II', 'Arise', 'Raise', 'Raise II', 'Raise III',
                       'Reraise', 'Reraise II', 'Reraise III', 'Reraise IV', 'Reraise V', 'Cure', 'Full Cure', 'Recall-Jugner',
                       'Recall-Meriph', 'Recall-Pashh', 'Teleport-Altep', 'Teleport-Dem', 'Teleport-Holla', 'Teleport-Mea',
@@ -227,6 +228,40 @@ silibs.day_weather_bns = T{
 silibs.equippable_bags = L{'inventory','wardrobe','wardrobe2','wardrobe3',
 'wardrobe4','wardrobe5','wardrobe6','wardrobe7','wardrobe8'}
 
+silibs.roll_info = {
+  [ 98] = {id=98, name="Fighter's Roll", lucky=5, unlucky=9, effect="Double Attack Rate"},
+  [ 99] = {id=99, name="Monk's Roll", lucky=3, unlucky=7, effect="Subtle Blow"},
+  [100] = {id=100, name="Healer's Roll", lucky=3, unlucky=7, effect="Cure Potency Received"},
+  [101] = {id=101, name="Wizard's Roll", lucky=5, unlucky=9, effect="Magic Attack"},
+  [102] = {id=102, name="Warlock's Roll", lucky=4, unlucky=8, effect="Magic Accuracy"},
+  [103] = {id=103, name="Rogue's Roll", lucky=5, unlucky=9, effect="Critical Hit Rate"},
+  [104] = {id=104, name="Gallant's Roll", lucky=3, unlucky=7, effect="Defense"},
+  [105] = {id=105, name="Chaos Roll", lucky=4, unlucky=8, effect="Attack"},
+  [106] = {id=106, name="Beast Roll", lucky=4, unlucky=8, effect="Pet Attack"},
+  [107] = {id=107, name="Choral Roll", lucky=2, unlucky=6, effect="Spell Interruption Rate"},
+  [108] = {id=108, name="Hunter's Roll", lucky=4, unlucky=8, effect="Accuracy"},
+  [109] = {id=109, name="Samurai Roll", lucky=2, unlucky=6, effect="Store TP"},
+  [110] = {id=110, name="Ninja Roll", lucky=4, unlucky=8, effect="Evasion"},
+  [111] = {id=111, name="Drachen Roll", lucky=4, unlucky=8, effect="Pet Magic Accuracy/Attack"},
+  [112] = {id=112, name="Evoker's Roll", lucky=5, unlucky=9, effect="Refresh"},
+  [113] = {id=113, name="Magus's Roll", lucky=2, unlucky=6, effect="Magic Defense"},
+  [114] = {id=114, name="Corsair's Roll", lucky=5, unlucky=9, effect="Experience Points"},
+  [115] = {id=115, name="Puppet Roll", lucky=3, unlucky=7, effect="Pet Magic Attack/Accuracy"},
+  [116] = {id=116, name="Dancer's Roll", lucky=3, unlucky=7, effect="Regen"},
+  [117] = {id=117, name="Scholar's Roll", lucky=2, unlucky=6, effect="Conserve MP"},
+  [118] = {id=118, name="Bolter's Roll", lucky=3, unlucky=9, effect="Movement Speed"},
+  [119] = {id=119, name="Caster's Roll", lucky=2, unlucky=7, effect="Fast Cast"},
+  [120] = {id=120, name="Courser's Roll", lucky=3, unlucky=9, effect="Snapshot"},
+  [121] = {id=121, name="Blitzer's Roll", lucky=4, unlucky=9, effect="Attack Delay"},
+  [122] = {id=122, name="Tactician's Roll", lucky=5, unlucky=8, effect="Regain"},
+  [302] = {id=302, name="Allies' Roll", lucky=3, unlucky=10, effect="Skillchain Damage"},
+  [303] = {id=303, name="Miser's Roll", lucky=5, unlucky=7, effect="Save TP"},
+  [304] = {id=304, name="Companion's Roll", lucky=2, unlucky=10, effect="Pet Regain and Regen"},
+  [305] = {id=305, name="Avenger's Roll", lucky=4, unlucky=8, effect="Counter Rate"},
+  [390] = {id=390, name="Naturalist's Roll", lucky=3, unlucky=7, effect="Enh. Magic Duration"},
+  [391] = {id=391, name="Runeist's Roll", lucky=4, unlucky=8, effect="Magic Evasion"},
+}
+
 
 -------------------------------------------------------------------------------
 -- Fix Mote's mistakes
@@ -235,21 +270,6 @@ silibs.equippable_bags = L{'inventory','wardrobe','wardrobe2','wardrobe3',
 -- Overwrite Mote's implementation of setting elemental gear (it's outdated)
 function set_elemental_gear(spell)
 end
-
-
--------------------------------------------------------------------------------
--- Flags to enable/disable features and store user settings, initial values on first load
--------------------------------------------------------------------------------
-silibs.cancel_outranged_ws_enabled = false
-silibs.cancel_on_blocking_status_enabled = false
-silibs.weapon_rearm_enabled = false
-silibs.auto_lockstyle_enabled = false
-silibs.premade_commands_enabled = false
-silibs.force_lower_cmd = false
-silibs.th_enabled = false
-silibs.th_aoe_disabled = false
-silibs.equip_loop_enabled = false
-silibs.custom_quick_magic_spells = silibs.quick_magic_spells:copy()
 
 
 -------------------------------------------------------------------------------
@@ -266,7 +286,11 @@ function silibs.init_settings()
   silibs.th_enabled = false
   silibs.th_aoe_disabled = false
   silibs.equip_loop_enabled = false
-  silibs.custom_quick_magic_spells = silibs.quick_magic_spells:copy()
+  silibs.quick_magic_spells = silibs.default_quick_magic_spells:copy()
+  silibs.custom_roll_text_enabled = {
+    show_self = false,
+    show_others = false,
+  }
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -290,46 +314,7 @@ function silibs.init_settings()
   else
       state.TreasureMode:options('None','Tag')
   end
-  silibs.th_aoe_actions = {
-    weaponskills = {
-      ["Aeolian Edge"] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32,aoe_range=10,aoe_center_self=false},
-      ["Cyclone"] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
-      ["Shockwave"] = {id=52,en="Shockwave",ja="ショックウェーブ",element=7,icon_id=604,prefix="/weaponskill",range=2,skill=4,skillchain_a="Reverberation",skillchain_b="",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
-      ["Earth Crusher"] = {id=178,en="Earth Crusher",ja="アースクラッシャー",element=3,icon_id=632,prefix="/weaponskill",range=2,skill=12,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=5,aoe_center_self=false},
-      ["Cataclysm"] = {id=189,en="Cataclysm",ja="カタクリスム",element=7,icon_id=633,prefix="/weaponskill",range=2,skill=12,skillchain_a="Compression",skillchain_b="Reverberation",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
-    },
-    spells = {
-      ["Diaga"] = {id=33,en="Diaga",ja="ディアガ",cast_time=1.5,element=6,icon_id=101,icon_id_nq=6,levels={[3]=18,[5]=15},mp_cost=12,prefix="/magic",range=12,recast=6,recast_id=33,requirements=0,skill=35,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
-      ["Banishga"] = {id=38,en="Banishga",ja="バニシュガ",cast_time=2.75,element=6,icon_id=112,icon_id_nq=6,levels={[3]=15,[7]=30},mp_cost=41,prefix="/magic",range=12,recast=15,recast_id=38,requirements=0,skill=32,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
-      ["Firaga"] = {id=174,en="Firaga",ja="ファイガ",cast_time=2,element=0,icon_id=245,icon_id_nq=8,levels={[4]=28},mp_cost=57,prefix="/magic",range=12,recast=5,recast_id=174,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Blizzaga"] = {id=179,en="Blizzaga",ja="ブリザガ",cast_time=2,element=1,icon_id=274,icon_id_nq=9,levels={[4]=32},mp_cost=80,prefix="/magic",range=12,recast=5,recast_id=179,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Aeroga"] = {id=184,en="Aeroga",ja="エアロガ",cast_time=2,element=2,icon_id=285,icon_id_nq=10,levels={[4]=23},mp_cost=45,prefix="/magic",range=12,recast=5,recast_id=184,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Stonega"] = {id=189,en="Stonega",ja="ストンガ",cast_time=2,element=3,icon_id=215,icon_id_nq=11,levels={[4]=15},mp_cost=24,prefix="/magic",range=12,recast=5,recast_id=189,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Thundaga"] = {id=194,en="Thundaga",ja="サンダガ",cast_time=2,element=4,icon_id=265,icon_id_nq=12,levels={[4]=36},mp_cost=105,prefix="/magic",range=12,recast=5,recast_id=194,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Waterga"] = {id=199,en="Waterga",ja="ウォタガ",cast_time=2,element=5,icon_id=254,icon_id_nq=13,levels={[4]=19},mp_cost=34,prefix="/magic",range=12,recast=5,recast_id=199,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Poisonga"] = {id=225,en="Poisonga",ja="ポイゾガ",cast_time=2,element=5,icon_id=228,icon_id_nq=13,levels={[4]=24,[8]=26},mp_cost=44,prefix="/magic",range=12,recast=10,recast_id=225,requirements=0,skill=35,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-      ["Venom Shell"] = {id=513,en="Venom Shell",ja="ベノムシェル",blu_points=3,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=42},mp_cost=86,prefix="/magic",range=4,recast=45,recast_id=513,requirements=0,skill=43,status=41,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Mysterious Light"] = {id=534,en="Mysterious Light",ja="神秘の光",blu_points=4,cast_time=3.75,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=40},mp_cost=73,prefix="/magic",range=4,recast=24.5,recast_id=534,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Stinking Gas"] = {id=537,en="Stinking Gas",ja="スティンキングガス",blu_points=2,cast_time=4,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=44},mp_cost=37,prefix="/magic",range=4,recast=60,recast_id=537,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Blood Saber"] = {id=541,en="Blood Saber",ja="ブラッドセイバー",blu_points=2,cast_time=4,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=48},mp_cost=25,prefix="/magic",range=4,recast=26,recast_id=541,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Cursed Sphere"] = {id=544,en="Cursed Sphere",ja="カースドスフィア",blu_points=2,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=19.5,recast_id=544,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
-      ["Sound Blast"] = {id=572,en="Sound Blast",ja="サウンドブラスト",blu_points=1,cast_time=4,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=32},mp_cost=25,prefix="/magic",range=4,recast=30,recast_id=572,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Sheep Song"] = {id=584,en="Sheep Song",ja="シープソング",blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix="/magic",range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
-      ["Soporific"] = {id=598,en="Soporific",ja="サペリフィック",blu_points=4,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=24},mp_cost=38,prefix="/magic",range=4,recast=26,recast_id=598,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
-      ["Geist Wall"] = {id=605,en="Geist Wall",ja="ガイストウォール",blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix="/magic",range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
-      ["Blastbomb"] = {id=618,en="Blastbomb",ja="炸裂弾",blu_points=2,cast_time=2.25,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=15,recast_id=618,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
-      ["Battledance"] = {id=620,en="Battle Dance",ja="バトルダンス",blu_points=3,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=12},mp_cost=12,prefix="/magic",range=4,recast=10,recast_id=620,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Grand Slam"] = {id=622,en="Grand Slam",ja="グランドスラム",blu_points=2,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=30},mp_cost=24,prefix="/magic",range=4,recast=14.25,recast_id=622,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-      ["Bomb Toss"] = {id=626,en="Bomb Toss",ja="爆弾投げ",blu_points=3,cast_time=3.75,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=28},mp_cost=42,prefix="/magic",range=9,recast=24.5,recast_id=626,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
-      ["Fira"] = {id=828,en="Fira",ja="ファイラ",cast_time=1.5,element=0,icon_id=245,icon_id_nq=8,levels={[21]=40},mp_cost=93,prefix="/magic",range=8,recast=5,recast_id=828,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-      ["Blizzara"] = {id=830,en="Blizzara",ja="ブリザラ",cast_time=1.5,element=1,icon_id=274,icon_id_nq=9,levels={[21]=45},mp_cost=108,prefix="/magic",range=8,recast=5,recast_id=830,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-      ["Aera"] = {id=832,en="Aera",ja="エアロラ",cast_time=1.5,element=2,icon_id=285,icon_id_nq=10,levels={[21]=35},mp_cost=79,prefix="/magic",range=8,recast=5,recast_id=832,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-      ["Stonera"] = {id=834,en="Stonera",ja="ストンラ",cast_time=1.5,element=3,icon_id=215,icon_id_nq=11,levels={[21]=25},mp_cost=54,prefix="/magic",range=8,recast=5,recast_id=834,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-      ["Thundara"] = {id=836,en="Thundara",ja="サンダラ",cast_time=1.5,element=4,icon_id=265,icon_id_nq=12,levels={[21]=50},mp_cost=123,prefix="/magic",range=8,recast=5,recast_id=836,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-      ["Watera"] = {id=838,en="Watera",ja="ウォタラ",cast_time=1.5,element=5,icon_id=254,icon_id_nq=13,levels={[21]=30},mp_cost=66,prefix="/magic",range=8,recast=5,recast_id=838,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-    },
-    abilities = {}
-  }
+  silibs.th_aoe_actions = table.copy(silibs.default_th_aoe_actions)
   
   silibs.last_indi = nil
   silibs.last_geo = nil
@@ -856,6 +841,72 @@ end
 function silibs.on_zone_change_for_th(new_zone, old_zone)
   if _settings.debug_mode then add_to_chat(123,'Zoning. Clearing tagged mobs table.') end
   info.tagged_mobs:clear()
+end
+
+function silibs.on_action_for_rolls(act)
+  if silibs.custom_roll_text_enabled.show_self then
+    -- Detect roll actions used by self in order to display results
+    if act and act.category == 6 and silibs.roll_info[act.param] then
+      local do_printout
+      if act.actor_id == player.id then -- This is your own roll
+        do_printout = true
+      elseif silibs.custom_roll_text_enabled.show_others then -- Check if we wanna display rolls from other players
+        for i=1,#act.targets do
+          if act.targets[i].id == player.id then
+            do_printout = true
+            break
+          end
+        end
+      end
+
+      if do_printout then
+        silibs.display_roll_info(act)
+      end
+    end
+  end
+end
+
+function silibs.display_roll_info(act)
+  --This is used later to allow/disallow busting
+  --If you are not the rollActor you will not be disallowed to bust.
+  local actor_is_self = act.actor_id == player.id
+  local roll_id = act.param
+  local roll_result = act.targets[1].actions[1].param
+  local roll_char = chars['circle'..roll_result]
+  local roll_size = (actor_is_self and state.LuzafRing and state.LuzafRing.value and chars.circlejot..' ') or ''
+  local roll_info = silibs.roll_info[roll_id]
+  local source_char = actor_is_self and '' or chars.implies..' '
+  local members_affected = {}
+
+  local party = windower.ffxi.get_party()
+  for member in pairs(party) do
+    for affected_target = 1, #act.targets do
+      --if mob is nil then the party member is not in zone, will fire an error.
+      if type(party[member]) == 'table' and party[member].mob and act.targets[affected_target].id == party[member].mob.id then
+        members_affected[affected_target] = party[member].name
+      end
+    end
+  end
+
+  local members_affected_str = table.concat(members_affected, ', ')
+  local is_busted
+  if roll_result == roll_info.lucky or roll_result == 11 then -- Make result green
+    roll_char = string.char(31,204)..roll_char
+  elseif roll_result == roll_info.unlucky then
+    roll_char = string.char(31,167)..roll_char -- Make result red
+  elseif roll_result == 12 and #members_affected > 0 then -- Busted
+    roll_char = string.char(31,167)..chars.times -- Make result red
+    is_busted = true
+  end
+
+  if is_busted then
+    add_to_chat(001, source_char..roll_char..' Bust '..roll_char..' '..string.char(0x1E, 6)..roll_info.name..string.char(31,167))
+  else
+    add_to_chat(001, source_char..roll_char..' '..string.char(0x1E, 6)..roll_info.name..string.char(31,001)..
+        ' (Luck: '..string.char(31,204)..roll_info.lucky..string.char(31,001)..
+               '/'..string.char(31,167)..roll_info.unlucky..string.char(31,001)..
+        '): '..roll_size..members_affected_str)
+  end
 end
 
 
@@ -1549,7 +1600,7 @@ function silibs.customize_quick_magic_spells(custom_quick_magic_spells)
     for spell_type, _ in spell_types:it() do
       if custom_quick_magic_spells[spell_type] then
         if type(custom_quick_magic_spells[spell_type]) == 'table' then
-          silibs.custom_quick_magic_spells[spell_type] = S(custom_quick_magic_spells[spell_type])
+          silibs.quick_magic_spells[spell_type] = S(custom_quick_magic_spells[spell_type])
         else
           is_input_valid = false
         end
@@ -1564,6 +1615,14 @@ end
 
 function silibs.enable_equip_loop()
   silibs.equip_loop_enabled = true
+end
+
+function silibs.enable_custom_roll_text(hide_others_rolls)
+  silibs.custom_roll_text_enabled.show_self = true
+  silibs.custom_roll_text_enabled.show_others = true
+  if hide_others_rolls then
+    silibs.custom_roll_text_enabled.show_others = false
+  end
 end
 
 
@@ -1593,7 +1652,7 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
       customEquipSet = customEquipSet[state.CastingMode.current]
     end
     -- If spell is on the quick magic list, and user has a quick magic set, use it
-    if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.custom_quick_magic_spells[spell.type]:contains(spell.en)) then
+    if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.quick_magic_spells[spell.type]:contains(spell.en)) then
       customEquipSet = customEquipSet['QuickMagic']
       equip(customEquipSet)
       eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
@@ -1788,6 +1847,7 @@ function silibs.customize_defense_set(defenseSet)
   return defenseSet
 end
 
+
 -------------------------------------------------------------------------------
 -- Event hooks
 -------------------------------------------------------------------------------
@@ -1886,10 +1946,26 @@ end)
 
 windower.raw_register_event('action', function(action)
   silibs.on_action_for_th(action)
+  silibs.on_action_for_rolls(action)
 end)
 
 windower.raw_register_event('zone change', function(new_zone, old_zone)
   silibs.on_zone_change_for_th(new_zone, old_zone)
 end)
 
+windower.register_event('incoming text', function(old, new, color)
+  -- Hides Battlemod roll output
+  if old:match("Roll.* The total.*") or old:match('.*Roll.*' .. string.char(0x81, 0xA8)) or old:match('.*uses Double.*The total') and color ~= 123 then
+      return true
+  end
+
+  --Hides Vanilla roll output
+  if old:match('.* receives the effect of .* Roll.') ~= nil then
+      return true
+  end
+
+  return new, color
+end)
+
+silibs.init_settings()
 return silibs
