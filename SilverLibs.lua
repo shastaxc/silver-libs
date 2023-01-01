@@ -1,5 +1,5 @@
--- Version 2022.DEC.11.001
--- Copyright © 2021-2022, Shasta
+-- Version 2023.JAN.01.001
+-- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
 -- Redistribution and use in source and binary forms, with or without
@@ -414,7 +414,7 @@ end
 --    send_command('bind @w gs c toggle RearmingLock')
 function silibs.update_and_rearm_weapons()
   -- Save state of any equipped weapons
-  if player.equipment.main ~= "empty" and player.equipment.main ~= nil then
+  if player.equipment.main ~= "empty" and player.equipment.main ~= '' and player.equipment.main ~= nil then
     if not is_encumbered('main') then
       silibs.most_recent_weapons.main = player.equipment.main
     end
@@ -422,8 +422,8 @@ function silibs.update_and_rearm_weapons()
       silibs.most_recent_weapons.sub = player.equipment.sub
     end
   end
-  if player.equipment.ammo == "empty" or player.equipment.ammo == nil then
-    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
+  if player.equipment.ammo == "empty" or player.equipment.ammo == '' or player.equipment.ammo == nil then
+    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= '' and player.equipment.ranged ~= nil then
       -- Only save if ranged is a combat item
       local rangedItem = res.items:with('name', player.equipment.ranged)
       if res.skills[rangedItem.skill].category == 'Combat' then
@@ -438,7 +438,7 @@ function silibs.update_and_rearm_weapons()
   -- If ammo is an ammunition (like bullet), update ranged if not empty
   elseif res.items:with('en', player.equipment.ammo).skill ~= nil and
       res.items:with('en', player.equipment.ammo).skill > 0 then
-    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= nil then
+    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= '' and player.equipment.ranged ~= nil then
       -- Only save if ranged is a combat item
       local rangedItem = res.items:with('name', player.equipment.ranged)
       if res.skills[rangedItem.skill].category == 'Combat' then
@@ -466,16 +466,16 @@ function silibs.update_and_rearm_weapons()
   -- 1 cycle longer which will result in the main hand re-equipping but not the sub
   -- Also, if the sub is a shield, it will stay on even if main hand is removed.
   local is_sub_armor
-  if player.equipment.sub and player.equipment.sub ~= 'empty' then
+  if player.equipment.sub and player.equipment.sub ~= '' and player.equipment.sub ~= 'empty' then
     is_sub_armor = res.items:with('en', player.equipment.sub).category == 'Armor'
   else
     is_sub_armor = false
   end
-  if ((player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and player.equipment.sub == "empty")
-      or (player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and is_sub_armor)
-      or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty"))
+  if ((player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and silibs.most_recent_weapons.main ~= "" and player.equipment.sub == "empty")
+      or (player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and silibs.most_recent_weapons.main ~= "" and is_sub_armor)
+      or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty" and silibs.most_recent_weapons.ranged ~= ""))
       and (state.RearmingLock == nil or state.RearmingLock.value == false) then
-    equip(silibs.most_recent_weapons)
+    send_command('gs c rearm')
   end
 end
 
@@ -536,6 +536,9 @@ function silibs.self_command(cmdParams, eventArgs)
         handle_equipping_gear(player.status)
       end
     end
+  end
+  if cmdParams[1] == 'rearm' then
+    equip(silibs.most_recent_weapons)
   end
 end
 
@@ -746,6 +749,7 @@ end
 
 -- On any action event, mark mobs that we tag with TH.  Also, update the last time tagged mobs were acted on.
 function silibs.on_action_for_th(action)
+  if type(action) ~= 'table' then return end
   local action_details
   local action_category = action and silibs.action_categories[action.category]
   local resource
@@ -1913,7 +1917,7 @@ end
 -------------------------------------------------------------------------------
 -- Executes on every frame. This is just a way to create a perpetual loop.
 frame_count=1
-windower.register_event('prerender',function()
+windower.raw_register_event('prerender',function()
   if windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
     -- Use frame count to limit execution rate
     -- Every 10 frames (roughly 0.16-0.33 seconds depending on FPS)
@@ -1932,7 +1936,7 @@ windower.register_event('prerender',function()
             or player.main_job == 'BST'
             or player.main_job == 'PUP')
             and pet_midaction()) then
-        handle_equipping_gear(player.status)
+        send_command('gs c update')
       end
     end
 
@@ -2005,7 +2009,7 @@ windower.raw_register_event('zone change', function(new_zone, old_zone)
   silibs.on_zone_change_for_th(new_zone, old_zone)
 end)
 
-windower.register_event('incoming text', function(old, new, color)
+windower.raw_register_event('incoming text', function(old, new, color)
   -- Hides Battlemod roll output
   if old:match("Roll.* The total.*") or old:match('.*Roll.*' .. string.char(0x81, 0xA8)) or old:match('.*uses Double.*The total') and color ~= 123 then
       return true
