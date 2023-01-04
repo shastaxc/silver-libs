@@ -1,4 +1,4 @@
--- Version 2023.JAN.01.001
+-- Version 2023.JAN.03.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -625,7 +625,7 @@ function silibs.interact()
       elseif silibs.has_item('Thief\'s Tools', L{'inventory'}) then
         send_command('@input /item "Thief\'s Tools" <t>')
       else
-        windower.ffxi.add_to_chat(123, 'Out of lockpicking tools!')
+        add_to_chat(123, 'Out of lockpicking tools!')
       end
     end
   end
