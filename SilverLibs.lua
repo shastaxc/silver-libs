@@ -1,4 +1,4 @@
--- Version 2023.JAN.03.001
+-- Version 2023.JAN.06.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1318,6 +1318,11 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     acc_ammo = gear.RAccbullet
     ws_ammo = gear.WSbullet
     qd_ammo = gear.QDbullet
+  end
+  if not default_ammo then
+    add_to_chat(123, 'Default ammo is undefined.')
+    equip({ammo='empty'})
+    return
   end
 
   -- Protect against shooting hauksbok ammo
