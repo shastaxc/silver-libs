@@ -1,4 +1,4 @@
--- Version 2023.JAN.06.001
+-- Version 2023.FEB.21.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -567,7 +567,11 @@ function silibs.use_sneak()
     cmd = 'input /item "Silent Oil" <me>'
   end
 
-  send_command(cmd)
+  if not cmd then
+    add_to_chat(123, 'No form of Sneak available!')
+  else
+    send_command(cmd)
+  end
 end
 
 function silibs.use_invisible()
@@ -601,7 +605,11 @@ function silibs.use_invisible()
     cmd = 'input /item "Prism Powder" <me>'
   end
 
-  send_command(cmd)
+  if not cmd then
+    add_to_chat(123, 'No form of Invisible available!')
+  else
+    send_command(cmd)
+  end
 end
 
 function silibs.interact()
