@@ -1,4 +1,4 @@
--- Version 2023.FEB.21.001
+-- Version 2023.MAR.25.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -524,6 +524,14 @@ function silibs.self_command(cmdParams, eventArgs)
       windower.add_to_chat(001, string.char(0x1F, 207)..'SilverLibs: '
           ..(silibs.equip_loop_enabled and 'Unpaused' or 'Paused')
           ..' equip loop.')
+    elseif lowerCmdParams[1] == 'soultrapper' then
+      if lowerCmdParams[2] ~= 'stop' then
+        -- loop
+        local cooldown = silibs.trap_soul()
+        if cooldown then
+          send_command:schedule(cooldown + 5, 'gs c soultrapper')
+        end
+      end
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
@@ -635,7 +643,42 @@ function silibs.interact()
       else
         add_to_chat(123, 'Out of lockpicking tools!')
       end
+    elseif t == 'Sanraku' then
+      send_command('@input /item "Soul Plate" <t>')
     end
+  end
+end
+
+function silibs.trap_soul()
+  -- Check if inventory is full
+  local inv_info = windower.ffxi.get_bag_info(0)
+  local is_inv_full = inv_info and inv_info.count == inv_info.max
+  if is_inv_full then
+    add_to_chat(123, 'Cannot use soultrapper. Inventory is full.')
+    return
+  end
+  local selected_trapper = player.equipment.range == 'Soultrapper 2000' and 'Soultrapper 2000'
+      or player.equipment.range == 'Soultrapper' and 'Soultrapper'
+  if selected_trapper then
+    local selected_ammo = silibs.has_item('Blank High-Speed Soul Plate', silibs.equippable_bags) and 'Blank High-Speed Soul Plate'
+        or silibs.has_item('Blank Soulplate', silibs.equippable_bags) and 'Blank Soulplate'
+    if selected_ammo then
+      -- Check if ammo is already equipped and equip it if not
+      if player.equipment.ammo ~= selected_ammo then
+        equip({ammo=selected_ammo})
+        send_command('gs c update') -- Call the update command to force gear change
+      end
+      -- Trap soul by using soultrapper item
+      send_command('input /item "'..selected_trapper..'" <t>')
+      -- Return cooldown
+      return selected_trapper == 'Soultrapper' and 60 or selected_trapper == 'Soultrapper 2000' and 30
+    else
+      add_to_chat(123, 'Out of soul plates.')
+      return
+    end
+  else
+    add_to_chat(123, 'Soultrapper not equipped.')
+    return
   end
 end
 
