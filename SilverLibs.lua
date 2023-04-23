@@ -1,4 +1,4 @@
--- Version 2023.MAR.25.001
+-- Version 2023.APR.23.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -911,7 +911,7 @@ end
 function silibs.on_action_for_rolls(act)
   if silibs.custom_roll_text_enabled.show_self then
     -- Detect roll actions used by self in order to display results
-    if act and act.category == 6 and silibs.roll_info[act.param] then
+    if act and type(act) == 'table' and act.category == 6 and silibs.roll_info[act.param] then
       local do_printout
       if act.actor_id == player.id then -- This is your own roll
         do_printout = true
