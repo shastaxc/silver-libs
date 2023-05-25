@@ -1,4 +1,4 @@
--- Version 2023.APR.23.001
+-- Version 2023.MAY.24.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -260,6 +260,106 @@ silibs.roll_info = {
   [305] = {id=305, name="Avenger's Roll", lucky=4, unlucky=8, effect="Counter Rate"},
   [390] = {id=390, name="Naturalist's Roll", lucky=3, unlucky=7, effect="Enh. Magic Duration"},
   [391] = {id=391, name="Runeist's Roll", lucky=4, unlucky=8, effect="Magic Evasion"},
+}
+
+silibs.elements = {
+  list = S{'Light','Dark','Fire','Ice','Wind','Earth','Lightning','Water'},
+  weak_to = {
+    ['Light']='Dark',
+    ['Dark']='Light',
+    ['Fire']='Ice',
+    ['Ice']='Wind',
+    ['Wind']='Earth',
+    ['Earth']='Lightning',
+    ['Lightning']='Water',
+    ['Water']='Fire'
+  },
+  strong_to = {
+    ['Light']='Dark',
+    ['Dark']='Light',
+    ['Fire']='Water',
+    ['Ice']='Fire',
+    ['Wind']='Ice',
+    ['Earth']='Wind',
+    ['Lightning']='Earth',
+    ['Water']='Lightning'
+  },
+  storm_of = {
+    ['Light']='Aurorastorm',
+    ['Dark']='Voidstorm',
+    ['Fire']='Firestorm',
+    ['Ice']='Hailstorm',
+    ['Wind']='Windstorm',
+    ['Earth']='Sandstorm',
+    ['Lightning']='Thunderstorm',
+    ['Water']='Rainstorm'
+  },
+  nuke_of = {
+    ['Light']='Banish',
+    ['Dark']='Bio',
+    ['Fire']='Fire',
+    ['Ice']='Blizzard',
+    ['Wind']='Aero',
+    ['Earth']='Stone',
+    ['Lightning']='Thunder',
+    ['Water']='Water',
+  },
+  helix_of = {
+    ['Light']='Lumino',
+    ['Dark']='Nocto',
+    ['Fire']='Pyro',
+    ['Ice']='Cryo',
+    ['Wind']='Anemo',
+    ['Earth']='Geo',
+    ['Lightning']='Iono',
+    ['Water']='Hydro'
+  },
+  nukera_of = {
+    ['Fire']='Fi',
+    ['Ice']='Blizza',
+    ['Wind']='Ae',
+    ['Earth']='Stone',
+    ['Lightning']='Thunda',
+    ['Water']='Wate'
+  },
+  spirit_of = {
+    ['Light']='Light Spirit',
+    ['Dark']='Dark Spirit',
+    ['Fire']='Fire Spirit',
+    ['Ice']='Ice Spirit',
+    ['Wind']='Air Spirit',
+    ['Earth']='Earth Spirit',
+    ['Lightning']='Thunder Spirit',
+    ['Water']='Water Spirit'
+  },
+  rune_of = {
+    ['Light']='Lux',
+    ['Dark']='Tenebrae',
+    ['Fire']='Ignis',
+    ['Ice']='Gelus',
+    ['Wind']='Flabra',
+    ['Earth']='Tellus',
+    ['Lightning']='Sulpor',
+    ['Water']='Unda'
+  },
+  of_rune = {
+    ['Lux']='Light',
+    ['Tenebrae']='Dark',
+    ['Ignis']='Fire',
+    ['Gelus']='Ice',
+    ['Flabra']='Wind',
+    ['Tellus']='Earth',
+    ['Sulpor']='Lightning',
+    ['Unda']='Water'
+  },
+  enspell_of = {
+    ['Fire']='Enfire',
+    ['Ice']='Enblizzard',
+    ['Wind']='Enaero',
+    ['Earth']='Enstone',
+    ['Lightning']='Enthunder',
+    ['Water']='Enwater'
+  }
 }
 
 
@@ -999,12 +1099,12 @@ end
 function silibs.update_ui(frame_count)
   if frame_count%15 == 0 then
     if state.ShowLuopanUi.value then
-      update_ui_luopan_distance_tracker()
+      silibs.update_ui_luopan_distance_tracker()
     end
   end
 end
 
-function update_ui_luopan_distance_tracker()
+function silibs.update_ui_luopan_distance_tracker()
   local s = windower.ffxi.get_mob_by_target('me')
   local my_luopan
   if windower.ffxi.get_mob_by_target('pet') then
@@ -1231,7 +1331,7 @@ function silibs.get_day_weather_multiplier(spell_element, is_obi_equipped, has_i
   -- Same element = positive alignment
   if (spell_element == day_element) then
     day_align = 1
-  elseif (spell_element == elements.weak_to[day_element]) then
+  elseif (spell_element == silibs.elements.weak_to[day_element]) then
     day_align = -1
   end
 
@@ -1242,7 +1342,7 @@ function silibs.get_day_weather_multiplier(spell_element, is_obi_equipped, has_i
   -- Same element = positive alignment, 
   if (spell_element == weather_element) then
     weather_align = 1
-  elseif (spell_element == elements.weak_to[weather_element]) then
+  elseif (spell_element == silibs.elements.weak_to[weather_element]) then
     weather_align = -1
   end
   -- Double weather = x2 bonus
@@ -1589,6 +1689,97 @@ function silibs.can_dual_wield()
     return true
   end
   return false
+end
+
+-- Meant for use inside a job_self_command callback
+function silibs.handle_elemental(cmdParams)
+  if not cmdParams or not cmdParams[1] or not cmdParams[2] then
+    add_to_chat(123,'Error: No elemental command given.')
+    return
+  end
+
+  local target = '<t>'
+  if cmdParams[3] then
+    if tonumber(cmdParams[3]) then
+      target = cmdParams[3]
+    else
+      target = table.concat(cmdParams, ' ', 3)
+      target = get_closest_mob_id_by_name(target) or '<t>'
+    end
+  end
+
+  local command = cmdParams[2]:lower()
+  if command == 'storm' then
+    -- Determine tier of storm
+    local tier = (player.main_job == 'SCH' and player.job_points.sch.jp_spent > 100 and ' II') or ''
+    send_command('@input /ma "'..silibs.elements.storm_of[state.ElementalMode.value]..''..tier..' '..target..'')
+  elseif command:contains('tier') then
+    -- local spell_recasts = windower.ffxi.get_spell_recasts()
+    local tierlist = {['tier1']='',['tier2']=' II',['tier3']=' III',['tier4']=' IV',['tier5']=' V',['tier6']=' VI'}
+    send_command('@input /ma "'..silibs.elements.nuke_of[state.ElementalMode.value]..tierlist[command]..'" '..target..'')
+  elseif command == 'helix' then
+    send_command('@input /ma "'..silibs.elements.helix_of[state.ElementalMode.value]..'helix II" '..target..'')
+  elseif command == 'enspell' then
+    if state.ElementalMode.value ~= 'Light' and state.ElementalMode.value ~= 'Dark' then
+      send_command('@input /ma '..silibs.elements.enspell_of[state.ElementalMode.value]..' <me>')
+    else
+      add_to_chat(123, 'No corresponding Enspell for '..state.ElementalMode.value)
+    end
+  elseif command:contains('ara') then
+    if state.ElementalMode.value ~= 'Light' and state.ElementalMode.value ~= 'Dark' then
+      -- local spell_recasts = windower.ffxi.get_spell_recasts()
+      local tierkey = {'ara3','ara2','ara'}
+      local tierlist = {['ara3']='ra III',['ara2']='ra II',['ara']='ra'}
+      local nuke = silibs.elements.nukera_of[state.ElementalMode.value]
+      if command == 'ara' then
+        for i in ipairs(tierkey) do
+          if silibs.actual_cost(silibs.get_spell_table_by_name(nuke..tierlist[tierkey[i]]..'')) < player.mp then
+            send_command('@input /ma "'..nuke..tierlist[tierkey[i]]..'" '..target)
+            return
+          end
+        end
+      else
+        send_command('@input /ma "'..nuke..tierlist[command]..'" '..target)
+      end
+    else
+      add_to_chat(123, 'No corresponding -ara spell for '..state.ElementalMode.value)
+    end
+  else
+    add_to_chat(123,'Unrecognized elemental command.')
+  end
+end
+
+function silibs.get_spell_table_by_name(spell_name)
+	for k in pairs(res.spells) do
+		if res.spells[k][language] == spell_name then
+			return res.spells[k]
+		end
+	end
+	return false
+end
+
+function silibs.actual_cost(spell)
+  local cost = spell.mp_cost
+  if buffactive['Manafont'] or buffactive['Manawell'] then
+    return 0
+  elseif spell.type == 'WhiteMagic' then
+    if buffactive['Penury'] then
+      return cost * 0.5
+    elseif buffactive['Light Arts'] or buffactive['Addendum: White'] then
+      return cost * 0.9
+    elseif buffactive['Dark Arts'] or buffactive['Addendum: Black'] then
+      return cost * 1.1
+    end
+  elseif spell.type == 'BlackMagic' then
+    if buffactive['Parsimony'] then
+      return cost * 0.5
+    elseif buffactive['Dark Arts'] or buffactive['Addendum: Black'] then
+      return cost * 0.9
+    elseif buffactive['Light Arts'] or buffactive['Addendum: White'] then
+      return cost * 1.1
+    end
+  end
+  return cost
 end
 
 
