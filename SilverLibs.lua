@@ -1,4 +1,4 @@
--- Version 2023.MAY.24.001
+-- Version 2023.MAY.27.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -362,6 +362,29 @@ silibs.elements = {
   }
 }
 
+-- Credit to Rubenator for the ammo map
+silibs.ammo_map = T{}
+silibs.ammo_range_map = T{
+    ['Bullet'] = 'Gun',
+    ['Shell'] = 'Cannon',
+    ['Bolt'] = 'Crossbow',
+    ['Arrow'] = 'Bow',
+}
+-- Populate ammo_map
+gearswap.res.items:slots(function(x) return x and x:contains(3) end):map(function(item)
+    if not item.ammo_type or not silibs.ammo_range_map[item.ammo_type] then return end
+    local rtype = silibs.ammo_range_map[item.ammo_type]
+    silibs.ammo_map[item.en:lower()] = rtype
+    silibs.ammo_map[item.enl:lower()] = rtype
+end)
+setmetatable(silibs.ammo_map, {
+  __index = function(t, key)
+    if key and type(key) == 'string' then
+      key = key:lower()
+    end
+    return rawget(t, key)
+  end
+})
 
 -------------------------------------------------------------------------------
 -- Fix Mote's mistakes
@@ -438,7 +461,7 @@ end
 -- 't' is target object
 function silibs.is_ws_out_of_range(ws_range, s, t)
   if ws_range == nil or s == nil or t == nil then
-    print('Invalid params for is_ws_out_of_range.')
+    print('Silibs: Invalid params for is_ws_out_of_range.')
     return true
   end
 
@@ -1782,6 +1805,47 @@ function silibs.actual_cost(spell)
   return cost
 end
 
+-- Credit to Rubenator
+function silibs.get_equipped_item_data(slot)
+  local item = gearswap.items[gearswap.to_windower_bag_api(gearswap.res.bags[gearswap.items.equipment[slot].bag_id].en)][gearswap.items.equipment[slot].slot]
+  return player.equipment[slot] ~= empty and item and item.id and gearswap.res.items[item.id] or 'empty'
+end
+
+-- Sticking this at the end of job_post_precast() or job_post_midcast() will prevent range/ammo swaps that
+-- would drop your TP. Great to use inside a conditional such as "if in battle mode on RDM or BLU, don't drop TP"
+-- Credit to Rubenator for assistance on this one
+function silibs.prevent_ammo_tp_loss()
+  local cur_range = player.equipment.range
+  local new_range = gearswap.equip_list.range
+  new_range = (type(new_range)=='table' and new_range.name) or (type(new_range)=='string' and new_range) or 'empty'
+  local cur_ammo = player.equipment.ammo
+  local new_ammo = gearswap.equip_list.ammo
+  new_ammo = (type(new_ammo)=='table' and new_ammo.name) or (type(new_ammo)=='string' and new_ammo) or 'empty'
+
+  -- If ranged weapon is gonna change, stop it
+  local final_range
+  if cur_range ~= new_range then
+    final_range = cur_range
+    equip({range=""}) -- Prevent range swap from happening
+  end
+
+  -- Allow ammo swapping if there is not going to be a range weapon or no ammo
+  if not final_range or final_range == 'empty' or not new_ammo or new_ammo == 'empty' then
+    return
+  end
+
+  -- Check if new ammo will be compatible with the new range weapon and
+  -- prevent swap of ammo if incompatible
+  final_range = res.items:with('name', final_range)
+
+  -- If we cannot get stats for range weapon, allow ammo swap
+  if not final_range or not final_range.range_type then return end
+
+  if silibs.ammo_map[new_ammo] ~= final_range.range_type then
+    --add_to_chat(122, 'WARNING: %s is not the correct ammo type for %s.':format(ammo, range.english))
+    equip({ammo=""}) -- Prevent ammo swap from happening
+  end
+end
 
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
