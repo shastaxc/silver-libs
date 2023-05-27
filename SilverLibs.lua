@@ -1,4 +1,4 @@
--- Version 2023.MAY.27.001
+-- Version 2023.MAY.27.002
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1815,33 +1815,26 @@ end
 -- would drop your TP. Great to use inside a conditional such as "if in battle mode on RDM or BLU, don't drop TP"
 -- Credit to Rubenator for assistance on this one
 function silibs.prevent_ammo_tp_loss()
-  local cur_range = player.equipment.range
-  local new_range = gearswap.equip_list.range
-  new_range = (type(new_range)=='table' and new_range.name) or (type(new_range)=='string' and new_range) or 'empty'
-  local cur_ammo = player.equipment.ammo
+  equip({range=""}) -- Prevent range swap from happening. Unless it's an instrument, this always drops TP
+
+  local range = player.equipment.range
+  range = (type(range)=='table' and range.name) or (type(range)=='string' and range) or 'empty'
+
   local new_ammo = gearswap.equip_list.ammo
   new_ammo = (type(new_ammo)=='table' and new_ammo.name) or (type(new_ammo)=='string' and new_ammo) or 'empty'
 
-  -- If ranged weapon is gonna change, stop it
-  local final_range
-  if cur_range ~= new_range then
-    final_range = cur_range
-    equip({range=""}) -- Prevent range swap from happening
-  end
-
   -- Allow ammo swapping if there is not going to be a range weapon or no ammo
-  if not final_range or final_range == 'empty' or not new_ammo or new_ammo == 'empty' then
-    return
-  end
+  if not range or range == 'empty' or not new_ammo or new_ammo == 'empty' then return end
+
+  -- Pull more details about the range weapon (mainly so we can check its range type)
+  range = res.items:with('name', range)
+
+  -- If we cannot get stats for range weapon, allow ammo swap
+  if not range or not range.range_type then return end
 
   -- Check if new ammo will be compatible with the new range weapon and
   -- prevent swap of ammo if incompatible
-  final_range = res.items:with('name', final_range)
-
-  -- If we cannot get stats for range weapon, allow ammo swap
-  if not final_range or not final_range.range_type then return end
-
-  if silibs.ammo_map[new_ammo] ~= final_range.range_type then
+  if silibs.ammo_map[new_ammo] ~= range.range_type then
     --add_to_chat(122, 'WARNING: %s is not the correct ammo type for %s.':format(ammo, range.english))
     equip({ammo=""}) -- Prevent ammo swap from happening
   end
