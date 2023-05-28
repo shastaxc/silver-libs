@@ -1,4 +1,4 @@
--- Version 2023.MAY.27.002
+-- Version 2023.MAY.27.003
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -393,6 +393,8 @@ setmetatable(silibs.ammo_map, {
 -- Overwrite Mote's implementation of setting elemental gear (it's outdated)
 function set_elemental_gear(spell)
 end
+
+spell_maps['Aspir III'] = 'Aspir'
 
 
 -------------------------------------------------------------------------------
