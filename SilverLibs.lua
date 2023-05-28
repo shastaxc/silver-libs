@@ -1,4 +1,4 @@
--- Version 2023.MAY.27.003
+-- Version 2023.MAY.27.004
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -395,6 +395,8 @@ function set_elemental_gear(spell)
 end
 
 spell_maps['Aspir III'] = 'Aspir'
+spell_maps['Haste'] = 'Haste'
+spell_maps['Haste II'] = 'Haste'
 
 
 -------------------------------------------------------------------------------
