@@ -1,4 +1,4 @@
--- Version 2023.MAY.28.002
+-- Version 2023.MAY.28.003
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1457,7 +1457,7 @@ function silibs.get_orpheus_multiplier(spell_element, distance)
     local slope = -1 * (rise / run)
     distance_bn = (slope * distance) + 16.44083107497741644
   elseif distance > 13 then
-    distance_bn = 15
+    distance_bn = 1
   end
 
   -- Convert bonus (percentage) into multiplier (decimal)
