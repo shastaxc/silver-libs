@@ -1,4 +1,4 @@
--- Version 2023.MAY.27.005
+-- Version 2023.MAY.28.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -385,6 +385,13 @@ setmetatable(silibs.ammo_map, {
     return rawget(t, key)
   end
 })
+
+silibs.elemental_ws = S{'Aeolian Edge', 'Sanguine Blade', 'Cloudsplitter', 'Seraph Blade', 'Blade: Teki', 'Blade: To', 'Blade: Chi',
+    'Tachi: Jinpu', 'Tachi: Koki', 'Cataclysm', 'Wildfire', 'Trueflight', 'Leaden Salute', 'Primal Rend', 'Cyclone',
+    'Burning Blade', 'Red Lotus Blade', 'Shining Blade', 'Frostbite', 'Freezebite', 'Dark Harvest', 'Shadow of Death',
+    'Infernal Scythe', 'Thunder Thrust', 'Raiden Thrust', 'Blade: Ei', 'Blade: Yu', 'Tachi: Goten', 'Tachi: Kagero',
+    'Shining Strike', 'Seraph Strike', 'Flash Nova', 'Rock Crusher', 'Earth Crusher', 'Starburst', 'Sunburst', 'Vidohunir',
+    'Garland of Bliss', 'Omniscience', 'Flaming Arrow', 'Hot Shot'}
 
 -------------------------------------------------------------------------------
 -- Fix Mote's mistakes
@@ -1565,7 +1572,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     -- Ranged WS
     if spell.skill == 'Marksmanship' or spell.skill == 'Archery' then
       -- ranged magical weaponskills
-      if elemental_ws:contains(spell.english) then
+      if silibs.elemental_ws:contains(spell.english) then
         if magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
           swapped_ammo = magic_ammo
           equip({ammo=swapped_ammo})
@@ -1622,7 +1629,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       end
     else -- Melee WS
       -- melee magical weaponskills
-      if elemental_ws:contains(spell.english) then
+      if silibs.elemental_ws:contains(spell.english) then
         -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
         local rweapon = player.equipment.range
         local range_type = res.items:with('en', rweapon).range_type
@@ -1848,8 +1855,9 @@ end
 -- Input the parameters for spell, spell map, and boolean values for whether you
 -- actually possess the hachirin-no-obi and orpheus's sash.
 function silibs.handle_elemental_belts_precast(spell, spellMap, has_obi, has_orpheus)
-  -- Handle belts for elemental WS
-  if spell.type == 'WeaponSkill' and elemental_ws:contains(spell.english) then
+  -- Handle belts for elemental WS and cor shots
+  if (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
+      or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot')) then
     local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, false)
     local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
     local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance)
@@ -1877,6 +1885,7 @@ function silibs.handle_elemental_belts_midcast(spell, spellMap, has_obi, has_orp
       and not spellMap == 'Helix'
       and not spellMap == 'ElementalEnfeeble')
     or (spell.skill == 'Blue Magic' and spellMap == 'Magical')
+    or spellMap == 'ElementalNinjutsu'
     or spell.english == 'Kaustra'
     or spell.english == 'Holy' or spell.english == 'Holy II')
   then
