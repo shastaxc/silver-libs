@@ -1,4 +1,4 @@
--- Version 2023.MAY.28.001
+-- Version 2023.MAY.28.002
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1900,6 +1900,11 @@ function silibs.handle_elemental_belts_midcast(spell, spellMap, has_obi, has_orp
     elseif has_orpheus and (orpheus_mult > base_day_weather_mult) then
       -- Orpheus is better than obi and better than nothing
       equip({waist="Orpheus's Sash"})
+    end
+  elseif spell.english == 'Drain' or spell.english == 'Aspir' then
+    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
+    if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
+      equip({waist='Hachirin-no-Obi'})
     end
   end
 end
