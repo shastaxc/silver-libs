@@ -1,4 +1,4 @@
--- Version 2023.MAY.28.005
+-- Version 2023.MAY.28.006
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -394,6 +394,12 @@ silibs.elemental_ws = S{'Aeolian Edge', 'Sanguine Blade', 'Cloudsplitter', 'Sera
     'Infernal Scythe', 'Thunder Thrust', 'Raiden Thrust', 'Blade: Ei', 'Blade: Yu', 'Tachi: Goten', 'Tachi: Kagero',
     'Shining Strike', 'Seraph Strike', 'Flash Nova', 'Rock Crusher', 'Earth Crusher', 'Starburst', 'Sunburst', 'Vidohunir',
     'Garland of Bliss', 'Omniscience', 'Flaming Arrow', 'Hot Shot'}
+
+silibs.blue_magic_magical_dmg_spells = S{'Anvil Lightning','Blazing Bound','Bomb Toss','Cursed Sphere','Droning Whirlwind',
+'Embalming Earth','Entomb','Firespit','Foul Waters','Ice Break','Leafstorm','Maelstrom',
+'Molting Plumage','Nectarous Deluge','Regurgitation','Rending Deluge','Scouring Spate',
+'Silent Storm','Spectral Floe','Subduction','Tem. Upheaval','Water Bomb'}
+
 
 -------------------------------------------------------------------------------
 -- Fix Mote's mistakes
@@ -1867,7 +1873,7 @@ function silibs.handle_elemental_belts(spell, spellMap)
       and not spellMap == 'Helix'
       and not spellMap == 'ElementalEnfeeble')
     or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot'))
-    or (spell.skill == 'Blue Magic' and spellMap == 'Magical')
+    or (spell.skill == 'Blue Magic' and silibs.blue_magic_magical_dmg_spells:contains(spell.english))
     or spellMap == 'ElementalNinjutsu'
     or spell.english == 'Kaustra'
     or spell.english == 'Holy' or spell.english == 'Holy II')
@@ -1889,7 +1895,7 @@ function silibs.handle_elemental_belts(spell, spellMap)
     if obi_mult > 1 then -- Must be net positive
       equip({waist='Hachirin-no-Obi'})
     end
-  elseif silibs.has_obi and (spell.english == 'Drain' or spell.english == 'Aspir') then
+  elseif silibs.has_obi and (spellMap == 'Drain' or spellMap == 'Aspir') then
     local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
     if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
       equip({waist='Hachirin-no-Obi'})
