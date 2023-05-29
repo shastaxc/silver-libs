@@ -1,4 +1,4 @@
--- Version 2023.MAY.28.004
+-- Version 2023.MAY.28.005
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -140,6 +140,8 @@ silibs.ui.luopan = texts.new('${value}', {
   bg = { alpha=0, },
   stroke = { width=2, alpha=192 },
 })
+silibs.has_obi = false
+silibs.has_orpheus = false
 
 
 -------------------------------------------------------------------------------
@@ -426,6 +428,7 @@ function silibs.init_settings()
     show_others = false,
   }
   silibs.haste_info_enabled = false
+  silibs.elemental_belt_handling_enabled = false
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -1855,7 +1858,7 @@ end
 -- Input the parameters for spell, spell map, and boolean values for whether you
 -- actually possess the hachirin-no-obi and orpheus's sash.
 -- May not work properly if you have modified spell maps for the relevant spells.
-function silibs.handle_elemental_belts(spell, spellMap, has_obi, has_orpheus)
+function silibs.handle_elemental_belts(spell, spellMap)
   -- Handle belts for elemental damage
   if (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
     or ((spell.skill == 'Elemental Magic'
@@ -1874,19 +1877,19 @@ function silibs.handle_elemental_belts(spell, spellMap, has_obi, has_orpheus)
     local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance)
 
     -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
-    if has_obi and (obi_mult >= orpheus_mult or not has_orpheus) and (obi_mult > base_day_weather_mult) then
+    if silibs.has_obi and (obi_mult >= orpheus_mult or not silibs.has_orpheus) and (obi_mult > base_day_weather_mult) then
       -- Obi is better than orpheus and better than nothing
       equip({waist="Hachirin-no-Obi"})
-    elseif has_orpheus and (orpheus_mult > base_day_weather_mult) then
+    elseif silibs.has_orpheus and (orpheus_mult > base_day_weather_mult) then
       -- Orpheus is better than obi and better than nothing
       equip({waist="Orpheus's Sash"})
     end
-  elseif spellMap == 'Cure' or spellMap == 'Curaga' then
+  elseif silibs.has_obi and (spellMap == 'Cure' or spellMap == 'Curaga') then
     local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
     if obi_mult > 1 then -- Must be net positive
       equip({waist='Hachirin-no-Obi'})
     end
-  elseif spell.english == 'Drain' or spell.english == 'Aspir' then
+  elseif silibs.has_obi and (spell.english == 'Drain' or spell.english == 'Aspir') then
     local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
     if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
       equip({waist='Hachirin-no-Obi'})
@@ -2048,6 +2051,12 @@ function silibs.enable_haste_info()
   send_command('hi report')
 end
 
+function silibs.enable_elemental_belt_handling(has_obi, has_orpheus)
+  silibs.elemental_belt_handling_enabled = true
+  silibs.has_obi = has_obi
+  silibs.has_orpheus = has_orpheus
+end
+
 
 -------------------------------------------------------------------------------
 -- Gearswap lifecycle hooks
@@ -2199,6 +2208,11 @@ function silibs.midcast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
+  -- Equip elemental belts if appropriate
+  if silibs.elemental_belt_handling_enabled then
+    silibs.handle_elemental_belts(spell, spellMap)
+  end
+
   -- TH needs to be on for midcast too in order to apply TH to mob
   -- SATA-compatible actions (melee & WS) do not have midcast
   if silibs.th_enabled and state.TreasureMode.value ~= 'None' and spell.action_type ~= 'Item' then
