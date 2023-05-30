@@ -1,4 +1,4 @@
--- Version 2023.MAY.28.006
+-- Version 2023.MAY.30.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -297,8 +297,8 @@ silibs.elements = {
     ['Water']='Rainstorm'
   },
   nuke_of = {
-    ['Light']='Banish',
-    ['Dark']='Bio',
+    ['Light']='Holy',
+    ['Dark']='Comet',
     ['Fire']='Fire',
     ['Ice']='Blizzard',
     ['Wind']='Aero',
@@ -399,6 +399,11 @@ silibs.blue_magic_magical_dmg_spells = S{'Anvil Lightning','Blazing Bound','Bomb
 'Embalming Earth','Entomb','Firespit','Foul Waters','Ice Break','Leafstorm','Maelstrom',
 'Molting Plumage','Nectarous Deluge','Regurgitation','Rending Deluge','Scouring Spate',
 'Silent Storm','Spectral Floe','Subduction','Tem. Upheaval','Water Bomb'}
+
+silibs.spells_by_name = {}
+for k,v in pairs(res.spells) do
+  silibs.spells_by_name[v.en] = v
+end
 
 
 -------------------------------------------------------------------------------
@@ -1757,9 +1762,57 @@ function silibs.handle_elemental(cmdParams)
     local tier = (player.main_job == 'SCH' and player.job_points.sch.jp_spent > 100 and ' II') or ''
     send_command('@input /ma "'..silibs.elements.storm_of[state.ElementalMode.value]..''..tier..' '..target..'')
   elseif command:contains('tier') then
-    -- local spell_recasts = windower.ffxi.get_spell_recasts()
     local tierlist = {['tier1']='',['tier2']=' II',['tier3']=' III',['tier4']=' IV',['tier5']=' V',['tier6']=' VI'}
-    send_command('@input /ma "'..silibs.elements.nuke_of[state.ElementalMode.value]..tierlist[command]..'" '..target..'')
+    local selected_spell
+
+    -- Revise tier list under certain conditions
+    if state.ElementalMode.value == 'Light' then
+      if (player.main_job == 'WHM' or player.main_job == 'PLD') then
+        tierlist = {['tier1']='',['tier2']=' II',}
+      end
+    elseif state.ElementalMode.value == 'Dark' then
+      if player.main_job == 'BLM' then
+        tierlist = {['tier1']='',}
+      end
+    end
+
+    -- If command is just "tier" and does not include the number of tier, use smart selection of highest available nuke
+    if command == 'tier' then
+      local spell_recasts = windower.ffxi.get_spell_recasts()
+      for i=6,1,-1 do
+        local spell = tierlist['tier'..i] and silibs.elements.nuke_of[state.ElementalMode.value]..tierlist['tier'..i] or nil
+        local spell_detail = silibs.spells_by_name[spell]
+        if spell_detail then
+          local is_spell_available = silibs.is_spell_usable(spell_detail)
+          local timer = spell_recasts[spell_detail.recast_id] -- Divide by 60 to get time in seconds
+          if is_spell_available and timer < 12 then
+            selected_spell = spell
+            break
+          end
+        end
+      end
+    else
+      -- Check if requested spell is learned (or exists at all), if not then downselect tier until find an available spell
+      local spell = silibs.elements.nuke_of[state.ElementalMode.value]..tierlist[command]
+      local spell_detail = silibs.spells_by_name[spell]
+      if spell_detail and silibs.is_spell_usable(spell_detail) then
+        selected_spell = spell
+      else
+        for i=6,1,-1 do
+          spell = tierlist['tier'..i] and silibs.elements.nuke_of[state.ElementalMode.value]..tierlist['tier'..i] or nil
+          spell_detail = silibs.spells_by_name[spell]
+          if spell_detail and silibs.is_spell_usable(spell_detail) then
+            selected_spell = spell
+            break
+          end
+        end
+      end
+    end
+    if not selected_spell then
+      add_to_chat(123, 'No '..state.ElementalMode.value..' nukes available.')
+      return
+    end
+    send_command('@input /ma "'..selected_spell..'" '..target..'')
   elseif command == 'helix' then
     send_command('@input /ma "'..silibs.elements.helix_of[state.ElementalMode.value]..'helix II" '..target..'')
   elseif command == 'enspell' then
@@ -1900,6 +1953,25 @@ function silibs.handle_elemental_belts(spell, spellMap)
     if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
       equip({waist='Hachirin-no-Obi'})
     end
+  end
+end
+
+-- Spell input is the table pulled from resources.spells
+-- TODO: Add blue magic
+function silibs.is_spell_usable(spell)
+  if not spell then return false end
+  if S{'Honor March', 'Dispelga', 'Impact'}:contains(spell.english) then
+    -- TODO: check to see if you have the item and return true if yes/false if no can also confirm level, (probably smart)
+    return false
+  else
+    return (
+      spell.levels[player.main_job_id]
+      and (
+        (spell.levels[player.main_job_id] <= player.main_job_level)
+        or (spell.levels[player.main_job_id] > 99 and spell.levels[player.main_job_id] <= player.job_points[player.main_job:lower()].jp_spent)
+      )
+      or (spell.levels[player.sub_job_id] and spell.levels[player.sub_job_id] <= player.sub_job_level)
+    )
   end
 end
 
