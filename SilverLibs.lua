@@ -1,4 +1,4 @@
--- Version 2023.MAY.30.002
+-- Version 2023.JUN.01.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1450,10 +1450,10 @@ end
 
 -- Gets the damage multiplier of Orpheus sash based on distance from target.
 -- Bonus only exists if the spell used has elemental alignment.
--- Assumes that the given spell is an elemental WS.
 -- +15% dmg less than 1.93', +1% dmg > 13', scale linearly between 1.93' and 13'.
 -- Also includes base weather/day bonuses based on proc chance.
-function silibs.get_orpheus_multiplier(spell_element, distance)
+function silibs.get_orpheus_multiplier(spell_element, distance, has_iridescence)
+  has_iridescence = (has_iridescence ~= nil and has_iridescence) or false
   -- Distance is assumed to be measured from center of self to center of target.
   -- Distance of Orpheus bonus is assumed to be the distance from edge of player
   -- model to edge of target model.
@@ -1475,7 +1475,7 @@ function silibs.get_orpheus_multiplier(spell_element, distance)
   end
 
   -- Convert bonus (percentage) into multiplier (decimal)
-  local multiplier = (1 + (distance_bn / 100)) * silibs.get_day_weather_multiplier(spell_element, false, false)
+  local multiplier = (1 + (distance_bn / 100)) * silibs.get_day_weather_multiplier(spell_element, false, has_iridescence)
   return multiplier
 end
 
@@ -1918,6 +1918,9 @@ end
 -- actually possess the hachirin-no-obi and orpheus's sash.
 -- May not work properly if you have modified spell maps for the relevant spells.
 function silibs.handle_elemental_belts(spell, spellMap)
+  local has_iridescence = gearswap.equip_list and (gearswap.equip_list.main == 'Chatoyant Staff' or gearswap.equip_list.main == 'Iridal Staff') or false
+  local fallback_midcast_waist = gearswap.equip_list and gearswap.equip_list.waist
+
   -- Handle belts for elemental damage
   if (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
     or ((spell.skill == 'Elemental Magic'
@@ -1931,25 +1934,25 @@ function silibs.handle_elemental_belts(spell, spellMap)
     or spell.english == 'Kaustra'
     or spell.english == 'Holy' or spell.english == 'Holy II')
   then
-    local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, false)
-    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
-    local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance)
+    local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, has_iridescence)
+    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
+    local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance, has_iridescence)
 
     -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
-    if silibs.has_obi and (obi_mult >= orpheus_mult or not silibs.has_orpheus) and (obi_mult > base_day_weather_mult) then
+    if silibs.has_obi and (silibs.has_orpheus and obi_mult >= orpheus_mult) and (obi_mult > base_day_weather_mult) then
       -- Obi is better than orpheus and better than nothing
       equip({waist="Hachirin-no-Obi"})
-    elseif silibs.has_orpheus and (orpheus_mult > base_day_weather_mult) then
+    elseif silibs.has_orpheus and (orpheus_mult - base_day_weather_mult > 0.01 or (fallback_midcast_waist == 'Hachirin-no-obi' and obi_mult < base_day_weather_mult)) then
       -- Orpheus is better than obi and better than nothing
       equip({waist="Orpheus's Sash"})
     end
   elseif silibs.has_obi and (spellMap == 'Cure' or spellMap == 'Curaga') then
-    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
+    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
     if obi_mult > 1 then -- Must be net positive
       equip({waist='Hachirin-no-Obi'})
     end
   elseif silibs.has_obi and (spellMap == 'Drain' or spellMap == 'Aspir') then
-    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, false)
+    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
     if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
       equip({waist='Hachirin-no-Obi'})
     end
