@@ -1,4 +1,4 @@
--- Version 2023.JUN.01.001
+-- Version 2023.JUN.01.002
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1367,6 +1367,11 @@ function silibs.get_enemies_in_range(range, aoe_center_target)
   return return_list
 end
 
+-- Function to get the current weather intensity: 0 for none, 1 for single weather, 2 for double weather.
+function silibs.get_weather_intensity()
+  return gearswap.res.weather[world.weather_id].intensity
+end
+
 -- Returns the total day/weather damage multiplier based on what
 -- enhancing gear you have equipped and the element of the spell/ability
 -- you want to use.
@@ -1394,7 +1399,7 @@ function silibs.get_day_weather_multiplier(spell_element, is_obi_equipped, has_i
     weather_align = -1
   end
   -- Double weather = x2 bonus
-  weather_align = weather_align * get_weather_intensity()
+  weather_align = weather_align * silibs.get_weather_intensity()
 
   -- Using alignments, retrieve bonus values
   local row_index = silibs.day_weather_bns:find(function(row)
