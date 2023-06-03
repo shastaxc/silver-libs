@@ -1,4 +1,4 @@
--- Version 2023.JUN.01.002
+-- Version 2023.JUN.03.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1514,12 +1514,14 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     default_ammo = player.equipment.range and DefaultAmmo[player.equipment.range]
     magic_ammo = player.equipment.range and MagicAmmo[player.equipment.range]
     acc_ammo = player.equipment.range and AccAmmo[player.equipment.range]
+    macc_ammo = player.equipment.range and MagicAmmo[player.equipment.range]
     ws_ammo = player.equipment.range and WSAmmo[player.equipment.range]
     qd_ammo = 'empty'
   elseif player.main_job == 'COR' then
     default_ammo = gear.RAbullet
     magic_ammo = gear.MAbullet
     acc_ammo = gear.RAccbullet
+    macc_ammo = gear.MAccbullet
     ws_ammo = gear.WSbullet
     qd_ammo = gear.QDbullet
   end
@@ -1682,7 +1684,11 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       end
     end
   elseif spell.type == 'CorsairShot' then
-    if qd_ammo and silibs.has_item(qd_ammo, silibs.equippable_bags) then
+    if macc_ammo and silibs.has_item(qd_ammo, silibs.equippable_bags)
+        and spell.english == 'Light Shot' or spell.english == 'Dark Shot' then
+      swapped_ammo = macc_ammo
+      equip({ammo=swapped_ammo})
+    elseif qd_ammo and silibs.has_item(qd_ammo, silibs.equippable_bags) then
       swapped_ammo = qd_ammo
       equip({ammo=swapped_ammo})
     elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
