@@ -1,4 +1,4 @@
--- Version 2023.JUN.03.001
+-- Version 2023.JUN.04.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -142,6 +142,7 @@ silibs.ui.luopan = texts.new('${value}', {
 })
 silibs.has_obi = false
 silibs.has_orpheus = false
+silibs.latest_flurry_buff = nil
 
 
 -------------------------------------------------------------------------------
@@ -405,6 +406,15 @@ for k,v in pairs(res.spells) do
   silibs.spells_by_name[v.en] = v
 end
 
+silibs.snapshot_weapons = {
+  ['Gastraphetes'] = 10,
+  ['Acinaces'] = 6,
+  ['Compensator'] = 10,
+  ['Scout\'s Crossbow'] = 10,
+  ['Arke Crossbow'] = 15,
+  ['Sharanga'] = 20,
+}
+
 
 -------------------------------------------------------------------------------
 -- Fix Mote's mistakes
@@ -440,6 +450,7 @@ function silibs.init_settings()
   }
   silibs.haste_info_enabled = false
   silibs.elemental_belt_handling_enabled = false
+  silibs.snapshot_auto_equip_enabled = false
 
   silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
   silibs.lockstyle_set = 0
@@ -479,6 +490,7 @@ function silibs.init_settings()
   })
   silibs.dw_needed = 0
 
+  silibs.snapshot_sets = nil
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -1075,6 +1087,123 @@ function silibs.on_action_for_rolls(act)
       if do_printout then
         silibs.display_roll_info(act)
       end
+    end
+  end
+end
+
+function silibs.determine_snapshot_sets()
+  local snapshot_sets = {}
+  snapshot_sets['Velocity'] = {}
+  if sets then
+    for i=70,0,-1 do
+      if sets['Snapshot'..i] then
+        snapshot_sets[i] = set_combine(sets['Snapshot'..tostring(i)], {})
+      elseif snapshot_sets[i+1] then
+        snapshot_sets[i] = set_combine(snapshot_sets[i+1], {})
+      end
+      -- Fill in velocity sets
+      if sets['Velocity'] and sets['Velocity']['Snapshot'..tostring(i)] then
+        snapshot_sets['Velocity'][i] = set_combine(sets['Velocity']['Snapshot'..tostring(i)], {})
+      elseif snapshot_sets[i+1] then
+        snapshot_sets['Velocity'][i] = set_combine(snapshot_sets['Velocity'][i+1], {})
+      end
+    end
+
+    -- Backfill
+    for i=0,70,1 do
+      if not snapshot_sets[i] and snapshot_sets[i-1] then
+        snapshot_sets[i] = set_combine(snapshot_sets[i-1], {})
+      end
+      -- Fill in velocity sets
+      if not snapshot_sets['Velocity'][i] and snapshot_sets['Velocity'][i-1] then
+        snapshot_sets['Velocity'][i] = set_combine(snapshot_sets['Velocity'][i-1], {})
+      end
+    end
+
+    -- If velocity sets are still empty, fill with regular snapshot sets
+    for i=0,70,1 do
+      -- Fill in velocity sets
+      if not snapshot_sets['Velocity'][i] and snapshot_sets[i] then
+        snapshot_sets['Velocity'][i] = set_combine(snapshot_sets[i], {})
+      end
+    end
+  end
+  
+  silibs.snapshot_sets = snapshot_sets
+end
+
+function silibs.on_action_for_flurry(act)
+  -- Check if you are a target of spell
+  local actionTargets = act.targets
+  local playerId = windower.ffxi.get_player().id
+  local isTarget = false
+  for _, target in ipairs(actionTargets) do
+    if playerId == target.id then
+      isTarget = true
+    end
+  end
+  if isTarget == true then
+    if act.category == 4 then
+      local param = act.param
+      if param == 845 and flurry ~= 2 then
+        silibs.latest_flurry_buff = 1
+      elseif param == 846 then
+        silibs.latest_flurry_buff = 2
+      end
+    end
+  end
+end
+
+function silibs.select_snapshot_set_for_ranged_attacks(spell, eventArgs)
+  if spell.action_type == 'Ranged Attack' then
+    if not silibs.snapshot_sets then
+      silibs.determine_snapshot_sets()
+    end
+    -- Determine weapon flurry
+    local snapshot_needed = 70
+    local main_bonus = player.equipment.main and silibs.snapshot_weapons[player.equipment.main] or 0
+    local sub_bonus = player.equipment.sub and silibs.snapshot_weapons[player.equipment.sub] or 0
+    local range_bonus = player.equipment.range and silibs.snapshot_weapons[player.equipment.range] or 0
+    
+    snapshot_needed = snapshot_needed - main_bonus
+    snapshot_needed = snapshot_needed - sub_bonus
+    snapshot_needed = snapshot_needed - range_bonus
+
+    -- Determine magic flurry
+    if buffactive['Flurry'] then
+      if silibs.latest_flurry_buff == 1 then
+        snapshot_needed = snapshot_needed - 15
+      elseif silibs.latest_flurry_buff == 2 then
+        snapshot_needed = snapshot_needed - 30
+      end
+    end
+
+    if buffactive['Embrava'] then
+      snapshot_needed = snapshot_needed - 25
+    end
+
+    -- TODO: Add snapshot traits/gifts
+    -- COR 5% at 100 JP, 10% at 1200 JP
+    -- RNG 2% per merit
+    if player.main_job == 'COR' then
+      if player.job_points.cor.jp_spent >= 1200 then
+        snapshot_needed = snapshot_needed - 10
+      elseif player.job_points.cor.jp_spent >= 100 then
+        snapshot_needed = snapshot_needed - 5
+      end
+    elseif player.main_job == 'RNG' then
+      snapshot_needed = snapshot_needed - (player.merits.snapshot * 2)
+    end
+
+    -- Ensure snapshot_needed does not go negative
+    snapshot_needed = math.max(snapshot_needed, 0)
+
+    if buffactive['Velocity Shot'] and silibs.snapshot_sets['Velocity'][snapshot_needed] then
+      equip(silibs.snapshot_sets['Velocity'][snapshot_needed])
+      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+    elseif silibs.snapshot_sets[snapshot_needed] then
+      equip(silibs.snapshot_sets[snapshot_needed])
+      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
     end
   end
 end
@@ -2149,6 +2278,11 @@ function silibs.enable_elemental_belt_handling(has_obi, has_orpheus)
   silibs.has_orpheus = has_orpheus
 end
 
+function silibs.enable_snapshot_auto_equip()
+  silibs.snapshot_auto_equip_enabled = true
+  silibs.latest_flurry_buff = buffactive['Flurry'] and 1 or nil
+end
+
 
 -------------------------------------------------------------------------------
 -- Gearswap lifecycle hooks
@@ -2164,6 +2298,9 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
   end
   if silibs.cancel_on_blocking_status_enabled then
     silibs.cancel_on_blocking_status(spell, eventArgs)
+  end
+  if silibs.snapshot_auto_equip_enabled then
+    silibs.select_snapshot_set_for_ranged_attacks(spell, eventArgs)
   end
 
   -- Use special FC set under certain conditions.
@@ -2468,6 +2605,7 @@ end)
 windower.raw_register_event('action', function(action)
   silibs.on_action_for_th(action)
   silibs.on_action_for_rolls(action)
+  silibs.on_action_for_flurry(action)
 end)
 
 windower.raw_register_event('zone change', function(new_zone, old_zone)
