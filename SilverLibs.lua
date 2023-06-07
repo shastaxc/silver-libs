@@ -1,4 +1,4 @@
--- Version 2023.JUN.07.002
+-- Version 2023.JUN.07.003
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -42,6 +42,7 @@ silibs = {} -- Initialize library namespace
 res = include('resources')
 packets = include('packets')
 chars = include('chat/chars')
+extdata = include('extdata')
 
 
 -------------------------------------------------------------------------------
@@ -561,7 +562,7 @@ function silibs.has_item(item_name, bags_to_search, is_temp_item)
     end
     for bag,_ in bags:it() do
       if player[bag] and player[bag][item_name] then
-        return true
+        return player[bag][item_name]
       end
     end
   end
@@ -808,6 +809,23 @@ function silibs.interact()
       end
     elseif t == 'Sanraku' then
       send_command('@input /item "Soul Plate" <t>')
+    elseif t == 'Maze Mongers Shopfront' then
+      local mazes = S{'Maze Tabula M01', 'Maze Tabula M02', 'Maze Tabula M03',
+          'Maze Tabula R01', 'Maze Tabula R02', 'Maze Tabula R03',}
+      -- Determine if a maze tabula is in inventory
+      for maze in pairs(mazes) do
+        local item = silibs.has_item(maze, L{'inventory'})
+        if item then
+          local charges = string.sub(extdata.decode(item).value, 41, 41)
+          if charges ~= '0' then
+            add_to_chat(207 , 'SilverLibs: '..maze..' has '..charges..' charges.')
+            send_command('@input /item "'..maze..'" <t>')
+            break
+          else
+            add_to_chat(123, 'SilverLibs: '..maze..' has no charges.')
+          end
+        end
+      end
     end
   end
 end
