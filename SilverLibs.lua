@@ -1,4 +1,4 @@
--- Version 2023.JUN.06.001
+-- Version 2023.JUN.07.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1624,7 +1624,7 @@ end
 --   }
 --
 -- COR job lua should contain a series of variables defining ammo for gear.RAbullet,
--- gear.MAbullet, gear.RAccbullet, gear.WSbullet, and gear.QDbullet in the following format:
+-- gear.MAbullet, gear.RAccbullet, gear.MAccbullet, gear.WSbullet, and gear.QDbullet in the following format:
 --   gear.RAbullet = 'Chrono Bullet'
 function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   -- If throwing weapon, return empty as ammo
@@ -2079,44 +2079,68 @@ end
 -- Input the parameters for spell, spell map, and boolean values for whether you
 -- actually possess the hachirin-no-obi and orpheus's sash.
 -- May not work properly if you have modified spell maps for the relevant spells.
-function silibs.handle_elemental_belts(spell, spellMap)
+function silibs.handle_elemental_belts(spell, spellMap, phase)
+  if not silibs.has_obi and not silibs.has_orpheus then return end
+
   local has_iridescence = gearswap.equip_list and (gearswap.equip_list.main == 'Chatoyant Staff' or gearswap.equip_list.main == 'Iridal Staff') or false
-  local fallback_midcast_waist = gearswap.equip_list and gearswap.equip_list.waist
+  local waist = (gearswap.equip_list and gearswap.equip_list.waist) or player.equipment.waist
+  local fallback_midcast_waist = (type(waist)=='table' and waist.name) or (type(waist)=='string' and waist) or 'empty'
 
-  -- Handle belts for elemental damage
-  if (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
-    or ((spell.skill == 'Elemental Magic'
-      and not spell.english == 'Impact'
-      and not spell.english == 'Meteor'
-      and not spellMap == 'Helix'
-      and not spellMap == 'ElementalEnfeeble')
-    or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot'))
-    or (spell.skill == 'Blue Magic' and silibs.blue_magic_magical_dmg_spells:contains(spell.english))
-    or spellMap == 'ElementalNinjutsu'
-    or spell.english == 'Kaustra'
-    or spell.english == 'Holy' or spell.english == 'Holy II')
-  then
-    local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, has_iridescence)
-    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
-    local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance, has_iridescence)
+  if phase == 'precast' then
+    -- Handle belts for elemental damage
+    if (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
+      or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot'))
+    then
+      local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, has_iridescence)
+      local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
+      local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance, has_iridescence)
 
-    -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
-    if silibs.has_obi and (silibs.has_orpheus and obi_mult >= orpheus_mult) and (obi_mult > base_day_weather_mult) then
-      -- Obi is better than orpheus and better than nothing
-      equip({waist="Hachirin-no-Obi"})
-    elseif silibs.has_orpheus and (orpheus_mult - base_day_weather_mult > 0.01 or (fallback_midcast_waist == 'Hachirin-no-obi' and obi_mult < base_day_weather_mult)) then
-      -- Orpheus is better than obi and better than nothing
-      equip({waist="Orpheus's Sash"})
+      -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
+      if silibs.has_obi and ((not silibs.has_orpheus and obi_mult > base_day_weather_mult) or (silibs.has_orpheus and obi_mult >= orpheus_mult)) then
+        -- Obi is better than orpheus and better than nothing
+        equip({waist="Hachirin-no-Obi"})
+      elseif silibs.has_orpheus and (orpheus_mult - base_day_weather_mult > 0.01 or (fallback_midcast_waist == 'Hachirin-no-obi' and obi_mult < base_day_weather_mult)) then
+        -- Orpheus is better than obi and better than nothing
+        equip({waist="Orpheus's Sash"})
+      end
     end
-  elseif silibs.has_obi and (spellMap == 'Cure' or spellMap == 'Curaga') then
-    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
-    if obi_mult > 1 then -- Must be net positive
-      equip({waist='Hachirin-no-Obi'})
-    end
-  elseif silibs.has_obi and (spellMap == 'Drain' or spellMap == 'Aspir') then
-    local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
-    if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
-      equip({waist='Hachirin-no-Obi'})
+  elseif phase == 'midcast' then
+    -- Handle belts for elemental damage
+    if (fallback_midcast_waist ~= 'Hachirin-no-Obi' and (
+        (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
+        or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot'))))
+      or ((spell.skill == 'Elemental Magic'
+        and spell.english ~= 'Impact'
+        and spell.english ~= 'Meteor'
+        and spellMap ~= 'Helix'
+        and spellMap ~= 'ElementalEnfeeble')
+      or (spell.skill == 'Blue Magic' and silibs.blue_magic_magical_dmg_spells:contains(spell.english))
+      or spellMap == 'ElementalNinjutsu'
+      or spell.english == 'Kaustra'
+      or spell.english == 'Holy' or spell.english == 'Holy II')
+    then
+      local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, has_iridescence)
+      local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
+      local orpheus_mult = silibs.get_orpheus_multiplier(spell.element, spell.target.distance, has_iridescence)
+
+      -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
+      if silibs.has_obi and ((not silibs.has_orpheus and obi_mult > base_day_weather_mult) or (silibs.has_orpheus and obi_mult >= orpheus_mult)) then
+        -- Obi is better than orpheus and better than nothing
+        equip({waist="Hachirin-no-Obi"})
+      elseif silibs.has_orpheus and (orpheus_mult - base_day_weather_mult > 0.01 or (fallback_midcast_waist == 'Hachirin-no-obi' and obi_mult < base_day_weather_mult)) then
+        -- Orpheus is better than obi and better than nothing
+        equip({waist="Orpheus's Sash"})
+      end
+    elseif silibs.has_obi and (spellMap == 'Cure' or spellMap == 'Curaga') then
+      local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
+      if obi_mult > 1 then -- Must be net positive
+        equip({waist='Hachirin-no-Obi'})
+      end
+    elseif silibs.has_obi and (spellMap == 'Drain' or spellMap == 'Aspir') then
+      local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
+      if obi_mult > 1.08 then -- Must beat Fucho-no-Obi
+        equip({waist='Hachirin-no-Obi'})
+      end
     end
   end
 end
@@ -2454,6 +2478,11 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
     end
   end
 
+  -- Equip elemental belts if appropriate
+  if silibs.elemental_belt_handling_enabled then
+    silibs.handle_elemental_belts(spell, spellMap, 'precast')
+  end
+
   silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
 end
 
@@ -2463,7 +2492,7 @@ end
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
   -- Equip elemental belts if appropriate
   if silibs.elemental_belt_handling_enabled then
-    silibs.handle_elemental_belts(spell, spellMap)
+    silibs.handle_elemental_belts(spell, spellMap, 'midcast')
   end
 
   -- TH needs to be on for midcast too in order to apply TH to mob
