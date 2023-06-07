@@ -1,4 +1,4 @@
--- Version 2023.JUN.07.001
+-- Version 2023.JUN.07.002
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -63,7 +63,7 @@ state.TreasureMode = M{['description']='Treasure Mode'}
 -- Instatiated variables for storing values and states
 -------------------------------------------------------------------------------
 -- Most recent weapons (used for re-arming)
-silibs.most_recent_weapons = {main="empty",sub="empty",ranged="empty",ammo="empty"}
+silibs.most_recent_weapons = {main='empty',sub='empty',ranged='empty',ammo='empty'}
 silibs.locked_style = false
 silibs.lockstyle_set = 0
 silibs.encumbrance = 0
@@ -89,41 +89,41 @@ else
 end
 silibs.default_th_aoe_actions = {
   weaponskills = {
-    ["Aeolian Edge"] = {id=30,en="Aeolian Edge",ja="イオリアンエッジ",element=2,icon_id=595,prefix="/weaponskill",range=2,skill=2,skillchain_a="Impaction",skillchain_b="Scission",skillchain_c="Detonation",targets=32,aoe_range=10,aoe_center_self=false},
-    ["Cyclone"] = {id=20,en="Cyclone",ja="サイクロン",element=2,icon_id=595,prefix="/weaponskill",range=10,skill=2,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
-    ["Shockwave"] = {id=52,en="Shockwave",ja="ショックウェーブ",element=7,icon_id=604,prefix="/weaponskill",range=2,skill=4,skillchain_a="Reverberation",skillchain_b="",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
-    ["Earth Crusher"] = {id=178,en="Earth Crusher",ja="アースクラッシャー",element=3,icon_id=632,prefix="/weaponskill",range=2,skill=12,skillchain_a="Detonation",skillchain_b="Impaction",skillchain_c="",targets=32,aoe_range=5,aoe_center_self=false},
-    ["Cataclysm"] = {id=189,en="Cataclysm",ja="カタクリスム",element=7,icon_id=633,prefix="/weaponskill",range=2,skill=12,skillchain_a="Compression",skillchain_b="Reverberation",skillchain_c="",targets=32,aoe_range=10,aoe_center_self=false},
+    ['Aeolian Edge'] = {id=30,en='Aeolian Edge',ja='イオリアンエッジ',element=2,icon_id=595,prefix='/weaponskill',range=2,skill=2,skillchain_a='Impaction',skillchain_b='Scission',skillchain_c='Detonation',targets=32,aoe_range=10,aoe_center_self=false},
+    ['Cyclone'] = {id=20,en='Cyclone',ja='サイクロン',element=2,icon_id=595,prefix='/weaponskill',range=10,skill=2,skillchain_a='Detonation',skillchain_b='Impaction',skillchain_c='',targets=32,aoe_range=10,aoe_center_self=false},
+    ['Shockwave'] = {id=52,en='Shockwave',ja='ショックウェーブ',element=7,icon_id=604,prefix='/weaponskill',range=2,skill=4,skillchain_a='Reverberation',skillchain_b='',skillchain_c='',targets=32,aoe_range=10,aoe_center_self=false},
+    ['Earth Crusher'] = {id=178,en='Earth Crusher',ja='アースクラッシャー',element=3,icon_id=632,prefix='/weaponskill',range=2,skill=12,skillchain_a='Detonation',skillchain_b='Impaction',skillchain_c='',targets=32,aoe_range=5,aoe_center_self=false},
+    ['Cataclysm'] = {id=189,en='Cataclysm',ja='カタクリスム',element=7,icon_id=633,prefix='/weaponskill',range=2,skill=12,skillchain_a='Compression',skillchain_b='Reverberation',skillchain_c='',targets=32,aoe_range=10,aoe_center_self=false},
   },
   spells = {
-    ["Diaga"] = {id=33,en="Diaga",ja="ディアガ",cast_time=1.5,element=6,icon_id=101,icon_id_nq=6,levels={[3]=18,[5]=15},mp_cost=12,prefix="/magic",range=12,recast=6,recast_id=33,requirements=0,skill=35,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
-    ["Banishga"] = {id=38,en="Banishga",ja="バニシュガ",cast_time=2.75,element=6,icon_id=112,icon_id_nq=6,levels={[3]=15,[7]=30},mp_cost=41,prefix="/magic",range=12,recast=15,recast_id=38,requirements=0,skill=32,targets=32,type="WhiteMagic",aoe_range=10,aoe_center_self=false},
-    ["Firaga"] = {id=174,en="Firaga",ja="ファイガ",cast_time=2,element=0,icon_id=245,icon_id_nq=8,levels={[4]=28},mp_cost=57,prefix="/magic",range=12,recast=5,recast_id=174,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Blizzaga"] = {id=179,en="Blizzaga",ja="ブリザガ",cast_time=2,element=1,icon_id=274,icon_id_nq=9,levels={[4]=32},mp_cost=80,prefix="/magic",range=12,recast=5,recast_id=179,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Aeroga"] = {id=184,en="Aeroga",ja="エアロガ",cast_time=2,element=2,icon_id=285,icon_id_nq=10,levels={[4]=23},mp_cost=45,prefix="/magic",range=12,recast=5,recast_id=184,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Stonega"] = {id=189,en="Stonega",ja="ストンガ",cast_time=2,element=3,icon_id=215,icon_id_nq=11,levels={[4]=15},mp_cost=24,prefix="/magic",range=12,recast=5,recast_id=189,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Thundaga"] = {id=194,en="Thundaga",ja="サンダガ",cast_time=2,element=4,icon_id=265,icon_id_nq=12,levels={[4]=36},mp_cost=105,prefix="/magic",range=12,recast=5,recast_id=194,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Waterga"] = {id=199,en="Waterga",ja="ウォタガ",cast_time=2,element=5,icon_id=254,icon_id_nq=13,levels={[4]=19},mp_cost=34,prefix="/magic",range=12,recast=5,recast_id=199,requirements=0,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Poisonga"] = {id=225,en="Poisonga",ja="ポイゾガ",cast_time=2,element=5,icon_id=228,icon_id_nq=13,levels={[4]=24,[8]=26},mp_cost=44,prefix="/magic",range=12,recast=10,recast_id=225,requirements=0,skill=35,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=false},
-    ["Venom Shell"] = {id=513,en="Venom Shell",ja="ベノムシェル",blu_points=3,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=42},mp_cost=86,prefix="/magic",range=4,recast=45,recast_id=513,requirements=0,skill=43,status=41,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Mysterious Light"] = {id=534,en="Mysterious Light",ja="神秘の光",blu_points=4,cast_time=3.75,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=40},mp_cost=73,prefix="/magic",range=4,recast=24.5,recast_id=534,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Stinking Gas"] = {id=537,en="Stinking Gas",ja="スティンキングガス",blu_points=2,cast_time=4,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=44},mp_cost=37,prefix="/magic",range=4,recast=60,recast_id=537,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Blood Saber"] = {id=541,en="Blood Saber",ja="ブラッドセイバー",blu_points=2,cast_time=4,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=48},mp_cost=25,prefix="/magic",range=4,recast=26,recast_id=541,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Cursed Sphere"] = {id=544,en="Cursed Sphere",ja="カースドスフィア",blu_points=2,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=19.5,recast_id=544,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
-    ["Sound Blast"] = {id=572,en="Sound Blast",ja="サウンドブラスト",blu_points=1,cast_time=4,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=32},mp_cost=25,prefix="/magic",range=4,recast=30,recast_id=572,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Sheep Song"] = {id=584,en="Sheep Song",ja="シープソング",blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix="/magic",range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
-    ["Soporific"] = {id=598,en="Soporific",ja="サペリフィック",blu_points=4,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=24},mp_cost=38,prefix="/magic",range=4,recast=26,recast_id=598,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
-    ["Geist Wall"] = {id=605,en="Geist Wall",ja="ガイストウォール",blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix="/magic",range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=4.97,aoe_center_self=true},
-    ["Blastbomb"] = {id=618,en="Blastbomb",ja="炸裂弾",blu_points=2,cast_time=2.25,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=18},mp_cost=36,prefix="/magic",range=9,recast=15,recast_id=618,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
-    ["Battledance"] = {id=620,en="Battle Dance",ja="バトルダンス",blu_points=3,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=12},mp_cost=12,prefix="/magic",range=4,recast=10,recast_id=620,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Grand Slam"] = {id=622,en="Grand Slam",ja="グランドスラム",blu_points=2,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=30},mp_cost=24,prefix="/magic",range=4,recast=14.25,recast_id=622,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=true},
-    ["Bomb Toss"] = {id=626,en="Bomb Toss",ja="爆弾投げ",blu_points=3,cast_time=3.75,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=28},mp_cost=42,prefix="/magic",range=9,recast=24.5,recast_id=626,requirements=0,skill=43,targets=32,type="BlueMagic",aoe_range=5,aoe_center_self=false},
-    ["Fira"] = {id=828,en="Fira",ja="ファイラ",cast_time=1.5,element=0,icon_id=245,icon_id_nq=8,levels={[21]=40},mp_cost=93,prefix="/magic",range=8,recast=5,recast_id=828,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-    ["Blizzara"] = {id=830,en="Blizzara",ja="ブリザラ",cast_time=1.5,element=1,icon_id=274,icon_id_nq=9,levels={[21]=45},mp_cost=108,prefix="/magic",range=8,recast=5,recast_id=830,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-    ["Aera"] = {id=832,en="Aera",ja="エアロラ",cast_time=1.5,element=2,icon_id=285,icon_id_nq=10,levels={[21]=35},mp_cost=79,prefix="/magic",range=8,recast=5,recast_id=832,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-    ["Stonera"] = {id=834,en="Stonera",ja="ストンラ",cast_time=1.5,element=3,icon_id=215,icon_id_nq=11,levels={[21]=25},mp_cost=54,prefix="/magic",range=8,recast=5,recast_id=834,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-    ["Thundara"] = {id=836,en="Thundara",ja="サンダラ",cast_time=1.5,element=4,icon_id=265,icon_id_nq=12,levels={[21]=50},mp_cost=123,prefix="/magic",range=8,recast=5,recast_id=836,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
-    ["Watera"] = {id=838,en="Watera",ja="ウォタラ",cast_time=1.5,element=5,icon_id=254,icon_id_nq=13,levels={[21]=30},mp_cost=66,prefix="/magic",range=8,recast=5,recast_id=838,requirements=64,skill=36,targets=32,type="BlackMagic",aoe_range=10,aoe_center_self=true},
+    ['Diaga'] = {id=33,en='Diaga',ja='ディアガ',cast_time=1.5,element=6,icon_id=101,icon_id_nq=6,levels={[3]=18,[5]=15},mp_cost=12,prefix='/magic',range=12,recast=6,recast_id=33,requirements=0,skill=35,targets=32,type='WhiteMagic',aoe_range=10,aoe_center_self=false},
+    ['Banishga'] = {id=38,en='Banishga',ja='バニシュガ',cast_time=2.75,element=6,icon_id=112,icon_id_nq=6,levels={[3]=15,[7]=30},mp_cost=41,prefix='/magic',range=12,recast=15,recast_id=38,requirements=0,skill=32,targets=32,type='WhiteMagic',aoe_range=10,aoe_center_self=false},
+    ['Firaga'] = {id=174,en='Firaga',ja='ファイガ',cast_time=2,element=0,icon_id=245,icon_id_nq=8,levels={[4]=28},mp_cost=57,prefix='/magic',range=12,recast=5,recast_id=174,requirements=0,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Blizzaga'] = {id=179,en='Blizzaga',ja='ブリザガ',cast_time=2,element=1,icon_id=274,icon_id_nq=9,levels={[4]=32},mp_cost=80,prefix='/magic',range=12,recast=5,recast_id=179,requirements=0,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Aeroga'] = {id=184,en='Aeroga',ja='エアロガ',cast_time=2,element=2,icon_id=285,icon_id_nq=10,levels={[4]=23},mp_cost=45,prefix='/magic',range=12,recast=5,recast_id=184,requirements=0,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Stonega'] = {id=189,en='Stonega',ja='ストンガ',cast_time=2,element=3,icon_id=215,icon_id_nq=11,levels={[4]=15},mp_cost=24,prefix='/magic',range=12,recast=5,recast_id=189,requirements=0,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Thundaga'] = {id=194,en='Thundaga',ja='サンダガ',cast_time=2,element=4,icon_id=265,icon_id_nq=12,levels={[4]=36},mp_cost=105,prefix='/magic',range=12,recast=5,recast_id=194,requirements=0,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Waterga'] = {id=199,en='Waterga',ja='ウォタガ',cast_time=2,element=5,icon_id=254,icon_id_nq=13,levels={[4]=19},mp_cost=34,prefix='/magic',range=12,recast=5,recast_id=199,requirements=0,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Poisonga'] = {id=225,en='Poisonga',ja='ポイゾガ',cast_time=2,element=5,icon_id=228,icon_id_nq=13,levels={[4]=24,[8]=26},mp_cost=44,prefix='/magic',range=12,recast=10,recast_id=225,requirements=0,skill=35,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=false},
+    ['Venom Shell'] = {id=513,en='Venom Shell',ja='ベノムシェル',blu_points=3,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=42},mp_cost=86,prefix='/magic',range=4,recast=45,recast_id=513,requirements=0,skill=43,status=41,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Mysterious Light'] = {id=534,en='Mysterious Light',ja='神秘の光',blu_points=4,cast_time=3.75,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=40},mp_cost=73,prefix='/magic',range=4,recast=24.5,recast_id=534,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Stinking Gas'] = {id=537,en='Stinking Gas',ja='スティンキングガス',blu_points=2,cast_time=4,element=2,icon_id=-1,icon_id_nq=58,levels={[16]=44},mp_cost=37,prefix='/magic',range=4,recast=60,recast_id=537,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Blood Saber'] = {id=541,en='Blood Saber',ja='ブラッドセイバー',blu_points=2,cast_time=4,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=48},mp_cost=25,prefix='/magic',range=4,recast=26,recast_id=541,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Cursed Sphere'] = {id=544,en='Cursed Sphere',ja='カースドスフィア',blu_points=2,cast_time=3,element=5,icon_id=-1,icon_id_nq=61,levels={[16]=18},mp_cost=36,prefix='/magic',range=9,recast=19.5,recast_id=544,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=false},
+    ['Sound Blast'] = {id=572,en='Sound Blast',ja='サウンドブラスト',blu_points=1,cast_time=4,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=32},mp_cost=25,prefix='/magic',range=4,recast=30,recast_id=572,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Sheep Song'] = {id=584,en='Sheep Song',ja='シープソング',blu_points=2,cast_time=3,duration=60,element=6,icon_id=-1,icon_id_nq=62,levels={[16]=16},mp_cost=22,prefix='/magic',range=4,recast=60,recast_id=584,requirements=0,skill=43,status=2,targets=32,type='BlueMagic',aoe_range=4.97,aoe_center_self=true},
+    ['Soporific'] = {id=598,en='Soporific',ja='サペリフィック',blu_points=4,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=24},mp_cost=38,prefix='/magic',range=4,recast=26,recast_id=598,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=4.97,aoe_center_self=true},
+    ['Geist Wall'] = {id=605,en='Geist Wall',ja='ガイストウォール',blu_points=3,cast_time=3,element=7,icon_id=-1,icon_id_nq=63,levels={[16]=46},mp_cost=35,prefix='/magic',range=4,recast=30,recast_id=605,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=4.97,aoe_center_self=true},
+    ['Blastbomb'] = {id=618,en='Blastbomb',ja='炸裂弾',blu_points=2,cast_time=2.25,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=18},mp_cost=36,prefix='/magic',range=9,recast=15,recast_id=618,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=false},
+    ['Battledance'] = {id=620,en='Battle Dance',ja='バトルダンス',blu_points=3,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=12},mp_cost=12,prefix='/magic',range=4,recast=10,recast_id=620,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Grand Slam'] = {id=622,en='Grand Slam',ja='グランドスラム',blu_points=2,cast_time=1,element=15,icon_id=-1,icon_id_nq=64,levels={[16]=30},mp_cost=24,prefix='/magic',range=4,recast=14.25,recast_id=622,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=true},
+    ['Bomb Toss'] = {id=626,en='Bomb Toss',ja='爆弾投げ',blu_points=3,cast_time=3.75,element=0,icon_id=-1,icon_id_nq=56,levels={[16]=28},mp_cost=42,prefix='/magic',range=9,recast=24.5,recast_id=626,requirements=0,skill=43,targets=32,type='BlueMagic',aoe_range=5,aoe_center_self=false},
+    ['Fira'] = {id=828,en='Fira',ja='ファイラ',cast_time=1.5,element=0,icon_id=245,icon_id_nq=8,levels={[21]=40},mp_cost=93,prefix='/magic',range=8,recast=5,recast_id=828,requirements=64,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=true},
+    ['Blizzara'] = {id=830,en='Blizzara',ja='ブリザラ',cast_time=1.5,element=1,icon_id=274,icon_id_nq=9,levels={[21]=45},mp_cost=108,prefix='/magic',range=8,recast=5,recast_id=830,requirements=64,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=true},
+    ['Aera'] = {id=832,en='Aera',ja='エアロラ',cast_time=1.5,element=2,icon_id=285,icon_id_nq=10,levels={[21]=35},mp_cost=79,prefix='/magic',range=8,recast=5,recast_id=832,requirements=64,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=true},
+    ['Stonera'] = {id=834,en='Stonera',ja='ストンラ',cast_time=1.5,element=3,icon_id=215,icon_id_nq=11,levels={[21]=25},mp_cost=54,prefix='/magic',range=8,recast=5,recast_id=834,requirements=64,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=true},
+    ['Thundara'] = {id=836,en='Thundara',ja='サンダラ',cast_time=1.5,element=4,icon_id=265,icon_id_nq=12,levels={[21]=50},mp_cost=123,prefix='/magic',range=8,recast=5,recast_id=836,requirements=64,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=true},
+    ['Watera'] = {id=838,en='Watera',ja='ウォタラ',cast_time=1.5,element=5,icon_id=254,icon_id_nq=13,levels={[21]=30},mp_cost=66,prefix='/magic',range=8,recast=5,recast_id=838,requirements=64,skill=36,targets=32,type='BlackMagic',aoe_range=10,aoe_center_self=true},
   },
   abilities = {}
 }
@@ -232,37 +232,37 @@ silibs.equippable_bags = L{'inventory','wardrobe','wardrobe2','wardrobe3',
 'wardrobe4','wardrobe5','wardrobe6','wardrobe7','wardrobe8'}
 
 silibs.roll_info = {
-  [ 98] = {id=98, name="Fighter's Roll", lucky=5, unlucky=9, effect="Double Attack Rate"},
-  [ 99] = {id=99, name="Monk's Roll", lucky=3, unlucky=7, effect="Subtle Blow"},
-  [100] = {id=100, name="Healer's Roll", lucky=3, unlucky=7, effect="Cure Potency Received"},
-  [101] = {id=101, name="Wizard's Roll", lucky=5, unlucky=9, effect="Magic Attack"},
-  [102] = {id=102, name="Warlock's Roll", lucky=4, unlucky=8, effect="Magic Accuracy"},
-  [103] = {id=103, name="Rogue's Roll", lucky=5, unlucky=9, effect="Critical Hit Rate"},
-  [104] = {id=104, name="Gallant's Roll", lucky=3, unlucky=7, effect="Defense"},
-  [105] = {id=105, name="Chaos Roll", lucky=4, unlucky=8, effect="Attack"},
-  [106] = {id=106, name="Beast Roll", lucky=4, unlucky=8, effect="Pet Attack"},
-  [107] = {id=107, name="Choral Roll", lucky=2, unlucky=6, effect="Spell Interruption Rate"},
-  [108] = {id=108, name="Hunter's Roll", lucky=4, unlucky=8, effect="Accuracy"},
-  [109] = {id=109, name="Samurai Roll", lucky=2, unlucky=6, effect="Store TP"},
-  [110] = {id=110, name="Ninja Roll", lucky=4, unlucky=8, effect="Evasion"},
-  [111] = {id=111, name="Drachen Roll", lucky=4, unlucky=8, effect="Pet Magic Accuracy/Attack"},
-  [112] = {id=112, name="Evoker's Roll", lucky=5, unlucky=9, effect="Refresh"},
-  [113] = {id=113, name="Magus's Roll", lucky=2, unlucky=6, effect="Magic Defense"},
-  [114] = {id=114, name="Corsair's Roll", lucky=5, unlucky=9, effect="Experience Points"},
-  [115] = {id=115, name="Puppet Roll", lucky=3, unlucky=7, effect="Pet Magic Attack/Accuracy"},
-  [116] = {id=116, name="Dancer's Roll", lucky=3, unlucky=7, effect="Regen"},
-  [117] = {id=117, name="Scholar's Roll", lucky=2, unlucky=6, effect="Conserve MP"},
-  [118] = {id=118, name="Bolter's Roll", lucky=3, unlucky=9, effect="Movement Speed"},
-  [119] = {id=119, name="Caster's Roll", lucky=2, unlucky=7, effect="Fast Cast"},
-  [120] = {id=120, name="Courser's Roll", lucky=3, unlucky=9, effect="Snapshot"},
-  [121] = {id=121, name="Blitzer's Roll", lucky=4, unlucky=9, effect="Attack Delay"},
-  [122] = {id=122, name="Tactician's Roll", lucky=5, unlucky=8, effect="Regain"},
-  [302] = {id=302, name="Allies' Roll", lucky=3, unlucky=10, effect="Skillchain Damage"},
-  [303] = {id=303, name="Miser's Roll", lucky=5, unlucky=7, effect="Save TP"},
-  [304] = {id=304, name="Companion's Roll", lucky=2, unlucky=10, effect="Pet Regain and Regen"},
-  [305] = {id=305, name="Avenger's Roll", lucky=4, unlucky=8, effect="Counter Rate"},
-  [390] = {id=390, name="Naturalist's Roll", lucky=3, unlucky=7, effect="Enh. Magic Duration"},
-  [391] = {id=391, name="Runeist's Roll", lucky=4, unlucky=8, effect="Magic Evasion"},
+  [ 98] = {id=98, name='Fighter\'s Roll', lucky=5, unlucky=9, effect='Double Attack Rate'},
+  [ 99] = {id=99, name='Monk\'s Roll', lucky=3, unlucky=7, effect='Subtle Blow'},
+  [100] = {id=100, name='Healer\'s Roll', lucky=3, unlucky=7, effect='Cure Potency Received'},
+  [101] = {id=101, name='Wizard\'s Roll', lucky=5, unlucky=9, effect='Magic Attack'},
+  [102] = {id=102, name='Warlock\'s Roll', lucky=4, unlucky=8, effect='Magic Accuracy'},
+  [103] = {id=103, name='Rogue\'s Roll', lucky=5, unlucky=9, effect='Critical Hit Rate'},
+  [104] = {id=104, name='Gallant\'s Roll', lucky=3, unlucky=7, effect='Defense'},
+  [105] = {id=105, name='Chaos Roll', lucky=4, unlucky=8, effect='Attack'},
+  [106] = {id=106, name='Beast Roll', lucky=4, unlucky=8, effect='Pet Attack'},
+  [107] = {id=107, name='Choral Roll', lucky=2, unlucky=6, effect='Spell Interruption Rate'},
+  [108] = {id=108, name='Hunter\'s Roll', lucky=4, unlucky=8, effect='Accuracy'},
+  [109] = {id=109, name='Samurai Roll', lucky=2, unlucky=6, effect='Store TP'},
+  [110] = {id=110, name='Ninja Roll', lucky=4, unlucky=8, effect='Evasion'},
+  [111] = {id=111, name='Drachen Roll', lucky=4, unlucky=8, effect='Pet Magic Accuracy/Attack'},
+  [112] = {id=112, name='Evoker\'s Roll', lucky=5, unlucky=9, effect='Refresh'},
+  [113] = {id=113, name='Magus\'s Roll', lucky=2, unlucky=6, effect='Magic Defense'},
+  [114] = {id=114, name='Corsair\'s Roll', lucky=5, unlucky=9, effect='Experience Points'},
+  [115] = {id=115, name='Puppet Roll', lucky=3, unlucky=7, effect='Pet Magic Attack/Accuracy'},
+  [116] = {id=116, name='Dancer\'s Roll', lucky=3, unlucky=7, effect='Regen'},
+  [117] = {id=117, name='Scholar\'s Roll', lucky=2, unlucky=6, effect='Conserve MP'},
+  [118] = {id=118, name='Bolter\'s Roll', lucky=3, unlucky=9, effect='Movement Speed'},
+  [119] = {id=119, name='Caster\'s Roll', lucky=2, unlucky=7, effect='Fast Cast'},
+  [120] = {id=120, name='Courser\'s Roll', lucky=3, unlucky=9, effect='Snapshot'},
+  [121] = {id=121, name='Blitzer\'s Roll', lucky=4, unlucky=9, effect='Attack Delay'},
+  [122] = {id=122, name='Tactician\'s Roll', lucky=5, unlucky=8, effect='Regain'},
+  [302] = {id=302, name='Allies\' Roll', lucky=3, unlucky=10, effect='Skillchain Damage'},
+  [303] = {id=303, name='Miser\'s Roll', lucky=5, unlucky=7, effect='Save TP'},
+  [304] = {id=304, name='Companion\'s Roll', lucky=2, unlucky=10, effect='Pet Regain and Regen'},
+  [305] = {id=305, name='Avenger\'s Roll', lucky=4, unlucky=8, effect='Counter Rate'},
+  [390] = {id=390, name='Naturalist\'s Roll', lucky=3, unlucky=7, effect='Enh. Magic Duration'},
+  [391] = {id=391, name='Runeist\'s Roll', lucky=4, unlucky=8, effect='Magic Evasion'},
 }
 
 silibs.elements = {
@@ -416,6 +416,7 @@ silibs.snapshot_weapons = {
 }
 
 silibs.rare_ammo = S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}
+silibs.equip_locked_spells = S{'Honor March', 'Dispelga', 'Impact'}
 
 
 -------------------------------------------------------------------------------
@@ -454,7 +455,7 @@ function silibs.init_settings()
   silibs.elemental_belt_handling_enabled = false
   silibs.snapshot_auto_equip_enabled = false
 
-  silibs.most_recent_weapons = {main="",sub="",ranged="",ammo=""}
+  silibs.most_recent_weapons = {main='',sub='',ranged='',ammo=''}
   silibs.lockstyle_set = 0
   silibs.locked_style = false
   silibs.encumbrance = 0
@@ -518,7 +519,7 @@ end
 -- 'eventArgs' is the same as input parameter in job_precast function of Mote libs
 function silibs.cancel_outranged_ws(spell, eventArgs)
   -- Ensure spell is a weaponskill to proceed
-  if spell.type ~= "WeaponSkill" then
+  if spell.type ~= 'WeaponSkill' then
     return
   end
 
@@ -576,7 +577,7 @@ end
 --    send_command('bind @w gs c toggle RearmingLock')
 function silibs.update_and_rearm_weapons()
   -- Save state of any equipped weapons
-  if player.equipment.main ~= "empty" and player.equipment.main ~= '' and player.equipment.main ~= nil then
+  if player.equipment.main ~= 'empty' and player.equipment.main ~= '' and player.equipment.main ~= nil then
     if not is_encumbered('main') then
       silibs.most_recent_weapons.main = player.equipment.main
     end
@@ -584,8 +585,8 @@ function silibs.update_and_rearm_weapons()
       silibs.most_recent_weapons.sub = player.equipment.sub
     end
   end
-  if player.equipment.ammo == "empty" or player.equipment.ammo == '' or player.equipment.ammo == nil then
-    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= '' and player.equipment.ranged ~= nil then
+  if player.equipment.ammo == 'empty' or player.equipment.ammo == '' or player.equipment.ammo == nil then
+    if player.equipment.ranged ~= 'empty' and player.equipment.ranged ~= '' and player.equipment.ranged ~= nil then
       -- Only save if ranged is a combat item
       local rangedItem = res.items:with('name', player.equipment.ranged)
       if res.skills[rangedItem.skill].category == 'Combat' then
@@ -600,7 +601,7 @@ function silibs.update_and_rearm_weapons()
   -- If ammo is an ammunition (like bullet), update ranged if not empty
   elseif res.items:with('en', player.equipment.ammo).skill ~= nil and
       res.items:with('en', player.equipment.ammo).skill > 0 then
-    if player.equipment.ranged ~= "empty" and player.equipment.ranged ~= '' and player.equipment.ranged ~= nil then
+    if player.equipment.ranged ~= 'empty' and player.equipment.ranged ~= '' and player.equipment.ranged ~= nil then
       -- Only save if ranged is a combat item
       local rangedItem = res.items:with('name', player.equipment.ranged)
       if res.skills[rangedItem.skill].category == 'Combat' then
@@ -623,7 +624,7 @@ function silibs.update_and_rearm_weapons()
   end
 
   -- Disarm Handling
-  -- Table fills the string "empty" for empty slot. It won't return nil
+  -- Table fills the string 'empty' for empty slot. It won't return nil
   -- Must check if sub is also empty (and weapon) because if main hand is removed while dual wielding, the sub stays on for
   -- 1 cycle longer which will result in the main hand re-equipping but not the sub
   -- Also, if the sub is a shield, it will stay on even if main hand is removed.
@@ -633,9 +634,9 @@ function silibs.update_and_rearm_weapons()
   else
     is_sub_armor = false
   end
-  if ((player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and silibs.most_recent_weapons.main ~= "" and player.equipment.sub == "empty")
-      or (player.equipment.main == "empty" and silibs.most_recent_weapons.main ~= "empty" and silibs.most_recent_weapons.main ~= "" and is_sub_armor)
-      or (player.equipment.ranged == "empty" and silibs.most_recent_weapons.ranged ~= "empty" and silibs.most_recent_weapons.ranged ~= ""))
+  if ((player.equipment.main == 'empty' and silibs.most_recent_weapons.main ~= 'empty' and silibs.most_recent_weapons.main ~= '' and player.equipment.sub == 'empty')
+      or (player.equipment.main == 'empty' and silibs.most_recent_weapons.main ~= 'empty' and silibs.most_recent_weapons.main ~= '' and is_sub_armor)
+      or (player.equipment.ranged == 'empty' and silibs.most_recent_weapons.ranged ~= 'empty' and silibs.most_recent_weapons.ranged ~= ''))
       and (state.RearmingLock == nil or state.RearmingLock.value == false) then
     send_command('gs c rearm')
   end
@@ -719,8 +720,8 @@ function silibs.use_sneak()
   -- If those not available, attempt to use spells that consume items
   -- If those not available, attempt to use items
   if not cmd
-    and silibs.can_access_ability("Spectral Jig")
-    and silibs.can_recast_ability("Spectral Jig") then
+    and silibs.can_access_ability('Spectral Jig')
+    and silibs.can_recast_ability('Spectral Jig') then
     cmd = 'input /ja "Spectral Jig" <me>'
   end
   if not cmd
@@ -728,8 +729,8 @@ function silibs.use_sneak()
       cmd = 'input /ma "Sneak" <stpc>'
   end
   if not cmd
-    and silibs.can_access_spell("Monomi: Ichi")
-    and silibs.can_recast_spell("Monomi: Ichi", 5)
+    and silibs.can_access_spell('Monomi: Ichi')
+    and silibs.can_recast_spell('Monomi: Ichi', 5)
     and silibs.has_item('Sanjaku-Tenugui', L{'inventory'}) then
       cmd = 'input /ma "Monomi: Ichi" <me>'
   end
@@ -751,23 +752,23 @@ function silibs.use_invisible()
   -- If those not available, attempt to use spells that consume items
   -- If those not available, attempt to use items
   if not cmd
-    and silibs.can_access_ability("Spectral Jig")
-    and silibs.can_recast_ability("Spectral Jig") then
+    and silibs.can_access_ability('Spectral Jig')
+    and silibs.can_recast_ability('Spectral Jig') then
     cmd = 'input /ja "Spectral Jig" <me>'
   end
   if not cmd
-    and silibs.can_access_spell("Invisible") then
+    and silibs.can_access_spell('Invisible') then
       cmd = 'input /ma "Invisible" <stpc>'
   end
   if not cmd
-    and silibs.can_access_spell("Tonko: Ni")
-    and silibs.can_recast_spell("Tonko: Ni")
+    and silibs.can_access_spell('Tonko: Ni')
+    and silibs.can_recast_spell('Tonko: Ni')
     and silibs.has_item('Shinobi-Tabi', L{'inventory'}) then
       cmd = 'input /ma "Tonko: Ni" <me>'
   end
   if not cmd
-    and silibs.can_access_spell("Tonko: Ichi")
-    and silibs.can_recast_spell("Tonko: Ichi")
+    and silibs.can_access_spell('Tonko: Ichi')
+    and silibs.can_recast_spell('Tonko: Ichi')
     and silibs.has_item('Shinobi-Tabi', L{'inventory'}) then
       cmd = 'input /ma "Tonko: Ichi" <me>'
   end
@@ -858,7 +859,7 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
   end
 
   -- Don't modify anything for Healing Waltz or Divine Waltzes
-  if spell.english == "Healing Waltz" or spell.english == "Divine Waltz" or spell.english == "Divine Waltz II" then
+  if spell.english == 'Healing Waltz' or spell.english == 'Divine Waltz' or spell.english == 'Divine Waltz II' then
     return
   end
 
@@ -883,7 +884,7 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
   local missingHP
 
   -- If curing ourself, get our exact missing HP
-  if spell.target.type == "SELF" then
+  if spell.target.type == 'SELF' then
     missingHP = player.max_hp - player.hp
   -- If curing someone in our alliance, we can estimate their missing HP
   elseif spell.target.isallymember then
@@ -1299,18 +1300,18 @@ function silibs.update_ui_luopan_distance_tracker()
     luopan_txtbox = luopan_txtbox..' \\cs(0,255,0)Geo-'..silibs.last_geo..':\\cs(255,255,255)\n'
     for i,v in pairs(windower.ffxi.get_mob_array()) do
       local dist_between = ((my_luopan.x - v.x)*(my_luopan.x-v.x) + (my_luopan.y-v.y)*(my_luopan.y-v.y)):sqrt()
-      if dist_between < (6 + v.model_size) and not (v.status == 2 or v.status == 3) and v.name and v.name ~= '' and v.name ~= "Luopan" and v.valid_target and v.model_size > 0 then
+      if dist_between < (6 + v.model_size) and not (v.status == 2 or v.status == 3) and v.name and v.name ~= '' and v.name ~= 'Luopan' and v.valid_target and v.model_size > 0 then
         if silibs.geo_debuffs:contains(silibs.last_geo) then
           if v.is_npc and not (v.in_party or silibs.luopan_ignore_list:contains(v.name)) then
             if battle_target and battle_target.id == v.id then
-              luopan_txtbox = luopan_txtbox..' '..silibs.ui.bt_color..v.name.." "..string.format("%.2f",dist_between).."\\cs(255,255,255)\n"
+              luopan_txtbox = luopan_txtbox..' '..silibs.ui.bt_color..v.name..' '..string.format('%.2f',dist_between)..'\\cs(255,255,255)\n'
             else
-              luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+              luopan_txtbox = luopan_txtbox..' '..v.name..' '..string.format('%.2f',dist_between)..'\n'
             end
             geo_count = geo_count + 1
           end
         elseif v.in_party then
-          luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+          luopan_txtbox = luopan_txtbox..' '..v.name..' '..string.format('%.2f',dist_between)..'\n'
           geo_count = geo_count + 1
         end
       end
@@ -1324,19 +1325,19 @@ function silibs.update_ui_luopan_distance_tracker()
     luopan_txtbox = luopan_txtbox..' \\cs(0,255,0)Indi-'..silibs.last_indi..':\\cs(255,255,255)\n'
     for i,v in pairs(windower.ffxi.get_mob_array()) do
       local dist_between = ((s.x - v.x)*(s.x-v.x) + (s.y-v.y)*(s.y-v.y)):sqrt()
-      if dist_between < (6 + v.model_size) and (v.status == 1 or v.status == 0) and v.name and v.name ~= '' and v.name ~= "Luopan" and v.name ~= s.name and v.valid_target and v.model_size > 0 then
+      if dist_between < (6 + v.model_size) and (v.status == 1 or v.status == 0) and v.name and v.name ~= '' and v.name ~= 'Luopan' and v.name ~= s.name and v.valid_target and v.model_size > 0 then
         if silibs.geo_debuffs:contains(silibs.last_indi) then
           if v.is_npc and not (v.in_party or silibs.luopan_ignore_list:contains(v.name)) then
             if battle_target and battle_target.id == v.id then
-              luopan_txtbox = luopan_txtbox..' '..silibs.ui.bt_color..v.name.." "..string.format("%.2f",dist_between).."\\cs(255,255,255)\n"
+              luopan_txtbox = luopan_txtbox..' '..silibs.ui.bt_color..v.name..' '..string.format('%.2f',dist_between)..'\\cs(255,255,255)\n'
             else
-              luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+              luopan_txtbox = luopan_txtbox..' '..v.name..' '..string.format('%.2f',dist_between)..'\n'
             end
             indi_count = indi_count + 1
           end
         else
           if v.in_party then
-            luopan_txtbox = luopan_txtbox..' '..v.name.." "..string.format("%.2f",dist_between).."\n"
+            luopan_txtbox = luopan_txtbox..' '..v.name..' '..string.format('%.2f',dist_between)..'\n'
             indi_count = indi_count + 1
           end
         end
@@ -1369,8 +1370,11 @@ function silibs.can_access_ability(ability_name)
   return ability_ids:contains(silibs.find_ability(ability_name))
 end
 
-function silibs.can_access_spell(spell_name)
-  local _, spell = silibs.find_spell(spell_name)
+function silibs.can_access_spell(spell_name, spell)
+  local _
+  if spell_name and not spell then
+    _, spell = silibs.find_spell(spell_name)
+  end
   local has_learned_spell = windower.ffxi.get_spells()[spell.id] ~= nil
 	local spell_jobs = res.spells[spell.id].levels
 
@@ -1443,10 +1447,10 @@ function silibs.waltz_cure_amount(tier, target)
   local cure_base = silibs.curing_waltz[tier].cure_base
 
   -- Get stats (these are not 100% up-to-date, has about 1-2 seconds lag)
-  local base_chr = silibs.playerStats["Base"]["CHR"] or silibs.waltz_stats.base_chr
-  local base_vit = silibs.playerStats["Base"]["VIT"] or silibs.waltz_stats.base_vit
-  local bonus_chr = silibs.playerStats["Bonus"]["CHR"] or silibs.waltz_stats.bonus_chr
-  local bonus_vit = silibs.playerStats["Bonus"]["VIT"] or silibs.waltz_stats.bonus_vit
+  local base_chr = silibs.playerStats['Base']['CHR'] or silibs.waltz_stats.base_chr
+  local base_vit = silibs.playerStats['Base']['VIT'] or silibs.waltz_stats.base_vit
+  local bonus_chr = silibs.playerStats['Bonus']['CHR'] or silibs.waltz_stats.bonus_chr
+  local bonus_vit = silibs.playerStats['Bonus']['VIT'] or silibs.waltz_stats.bonus_vit
 
   if not target then
     return
@@ -1667,25 +1671,25 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "default ammo". **')
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'default ammo\'. **')
     return
   elseif silibs.rare_ammo:contains(magic_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "magic ammo". **')
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'magic ammo\'. **')
     return
   elseif silibs.rare_ammo:contains(acc_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "accuracy ammo". **')
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'accuracy ammo\'. **')
     return
   elseif silibs.rare_ammo:contains(ws_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "weaponskill ammo". **')
+    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'weaponskill ammo\'. **')
     return
   end
 
@@ -1699,7 +1703,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         -- Fall back to default ammo, if there is any
         swapped_ammo = default_ammo
         equip({ammo=swapped_ammo})
-        add_to_chat(3,"Acc ammo unavailable. Falling back to default ammo.")
+        add_to_chat(3, 'Acc ammo unavailable. Falling back to default ammo.')
       else
         -- If neither is available, empty the ammo slot
         swapped_ammo = empty
@@ -1731,7 +1735,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
           swapped_ammo = default_ammo
           equip({ammo=swapped_ammo})
-          add_to_chat(3,"Magic ammo unavailable. Using default ammo.")
+          add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
         else
           swapped_ammo = empty
           equip({ammo=swapped_ammo})
@@ -1748,11 +1752,11 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
           elseif ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
             swapped_ammo = ws_ammo
             equip({ammo=swapped_ammo})
-            add_to_chat(3,"Acc ammo unavailable. Using WS ammo.")
+            add_to_chat(3, 'Acc ammo unavailable. Using WS ammo.')
           elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
             swapped_ammo = default_ammo
             equip({ammo=swapped_ammo})
-            add_to_chat(3,"Acc & WS ammo unavailable. Using default ammo.")
+            add_to_chat(3, 'Acc & WS ammo unavailable. Using default ammo.')
           else
             swapped_ammo = empty
             equip({ammo=swapped_ammo})
@@ -1768,7 +1772,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
           elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
             swapped_ammo = default_ammo
             equip({ammo=swapped_ammo})
-            add_to_chat(3,"WS ammo unavailable. Using default ammo.")
+            add_to_chat(3, 'WS ammo unavailable. Using default ammo.')
           else
             swapped_ammo = empty
             equip({ammo=swapped_ammo})
@@ -1797,7 +1801,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
           swapped_ammo = default_ammo
           equip({ammo=swapped_ammo})
-          add_to_chat(3,"Magic ammo unavailable. Using default ammo.")
+          add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
         else
           swapped_ammo = empty
           equip({ammo=swapped_ammo})
@@ -1825,7 +1829,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
       swapped_ammo = default_ammo
       equip({ammo=swapped_ammo})
-      add_to_chat(3,"QD ammo unavailable. Using default ammo.")
+      add_to_chat(3, 'QD ammo unavailable. Using default ammo.')
     else
       swapped_ammo = empty
       equip({ammo=swapped_ammo})
@@ -1834,7 +1838,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       eventArgs.cancel = true
       return
     end
-  elseif spell.english == "Shadowbind" or spell.english == "Bounty Shot" or spell.english == "Eagle Eye Shot" then
+  elseif spell.english == 'Shadowbind' or spell.english == 'Bounty Shot' or spell.english == 'Eagle Eye Shot' then
     if silibs.has_item(default_ammo, silibs.equippable_bags) then
       swapped_ammo = default_ammo
       equip({ammo=swapped_ammo})
@@ -1850,7 +1854,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   local swapped_item = get_item(swapped_ammo)
   if player.equipment.ammo ~= 'empty' and swapped_item ~= nil and swapped_item.count < options.ammo_warning_limit
       and not silibs.rare_ammo:contains(swapped_item.shortname:lower()) then
-    add_to_chat(39,"*** Ammo '"..swapped_item.shortname.."' running low! *** ("..swapped_item.count..")")
+    add_to_chat(39,'*** Ammo \''..swapped_item.shortname..'\' running low! *** ('..swapped_item.count..')')
   end
 end
 
@@ -1922,7 +1926,7 @@ function silibs.handle_elemental(cmdParams, element)
   if command == 'storm' then
     -- Determine tier of storm
     local tier = (player.main_job == 'SCH' and player.job_points.sch.jp_spent > 100 and ' II') or ''
-    send_command('@input /ma "'..silibs.elements.storm_of[element]..''..tier..' '..target..'')
+    send_command('@input /ma "'..silibs.elements.storm_of[element]..''..tier..'" '..target..'')
   elseif command:contains('tier') then
     local tierlist = {['tier1']='',['tier2']=' II',['tier3']=' III',['tier4']=' IV',['tier5']=' V',['tier6']=' VI'}
     local selected_spell
@@ -1945,9 +1949,9 @@ function silibs.handle_elemental(cmdParams, element)
         local spell = tierlist['tier'..i] and silibs.elements.nuke_of[element]..tierlist['tier'..i] or nil
         local spell_detail = silibs.spells_by_name[spell]
         if spell_detail then
-          local is_spell_available = silibs.is_spell_usable(spell_detail)
+          local is_spell_available = silibs.can_access_spell(nil, spell_detail)
           local timer = spell_recasts[spell_detail.recast_id] -- Divide by 60 to get time in seconds
-          if is_spell_available and timer < 12 then
+          if is_spell_available and timer < 6 then
             selected_spell = spell
             break
           end
@@ -1957,13 +1961,13 @@ function silibs.handle_elemental(cmdParams, element)
       -- Check if requested spell is learned (or exists at all), if not then downselect tier until find an available spell
       local spell = silibs.elements.nuke_of[element]..tierlist[command]
       local spell_detail = silibs.spells_by_name[spell]
-      if spell_detail and silibs.is_spell_usable(spell_detail) then
+      if spell_detail and silibs.can_access_spell(nil, spell_detail) then
         selected_spell = spell
       else
         for i=6,1,-1 do
           spell = tierlist['tier'..i] and silibs.elements.nuke_of[element]..tierlist['tier'..i] or nil
           spell_detail = silibs.spells_by_name[spell]
-          if spell_detail and silibs.is_spell_usable(spell_detail) then
+          if spell_detail and silibs.can_access_spell(nil, spell_detail) then
             selected_spell = spell
             break
           end
@@ -2050,7 +2054,7 @@ end
 -- would drop your TP. Great to use inside a conditional such as "if in battle mode on RDM or BLU, don't drop TP"
 -- Credit to Rubenator for assistance on this one
 function silibs.prevent_ammo_tp_loss()
-  equip({range=""}) -- Prevent range swap from happening. Unless it's an instrument, this always drops TP
+  equip({range=''}) -- Prevent range swap from happening. Unless it's an instrument, this always drops TP
 
   local range = player.equipment.range
   range = (type(range)=='table' and range.name) or (type(range)=='string' and range) or 'empty'
@@ -2071,7 +2075,7 @@ function silibs.prevent_ammo_tp_loss()
   -- prevent swap of ammo if incompatible
   if silibs.ammo_map[new_ammo] ~= range.range_type then
     --add_to_chat(122, 'WARNING: %s is not the correct ammo type for %s.':format(ammo, range.english))
-    equip({ammo=""}) -- Prevent ammo swap from happening
+    equip({ammo=''}) -- Prevent ammo swap from happening
   end
 end
 
@@ -2098,17 +2102,18 @@ function silibs.handle_elemental_belts(spell, spellMap, phase)
       -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
       if silibs.has_obi and ((not silibs.has_orpheus and obi_mult > base_day_weather_mult) or (silibs.has_orpheus and obi_mult >= orpheus_mult)) then
         -- Obi is better than orpheus and better than nothing
-        equip({waist="Hachirin-no-Obi"})
+        equip({waist='Hachirin-no-Obi'})
       elseif silibs.has_orpheus and (orpheus_mult - base_day_weather_mult > 0.01 or (fallback_midcast_waist == 'Hachirin-no-obi' and obi_mult < base_day_weather_mult)) then
         -- Orpheus is better than obi and better than nothing
-        equip({waist="Orpheus's Sash"})
+        equip({waist='Orpheus\'s Sash'})
       end
     end
   elseif phase == 'midcast' then
     -- Handle belts for elemental damage
-    if (fallback_midcast_waist ~= 'Hachirin-no-Obi' and (
-        (spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
-        or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot'))))
+    if (
+      fallback_midcast_waist ~= 'Hachirin-no-Obi' and fallback_midcast_waist ~= 'Orpheus\'s Sash'
+        and ((spell.type == 'WeaponSkill' and silibs.elemental_ws:contains(spell.english))
+          or (spell.type == 'CorsairShot' and (spell.english ~= 'Light Shot' and spell.english ~= 'Dark Shot'))))
       or ((spell.skill == 'Elemental Magic'
         and spell.english ~= 'Impact'
         and spell.english ~= 'Meteor'
@@ -2126,10 +2131,10 @@ function silibs.handle_elemental_belts(spell, spellMap, phase)
       -- Determine which combination to use: orpheus, hachirin-no-obi, or neither
       if silibs.has_obi and ((not silibs.has_orpheus and obi_mult > base_day_weather_mult) or (silibs.has_orpheus and obi_mult >= orpheus_mult)) then
         -- Obi is better than orpheus and better than nothing
-        equip({waist="Hachirin-no-Obi"})
+        equip({waist='Hachirin-no-Obi'})
       elseif silibs.has_orpheus and (orpheus_mult - base_day_weather_mult > 0.01 or (fallback_midcast_waist == 'Hachirin-no-obi' and obi_mult < base_day_weather_mult)) then
         -- Orpheus is better than obi and better than nothing
-        equip({waist="Orpheus's Sash"})
+        equip({waist='Orpheus\'s Sash'})
       end
     elseif silibs.has_obi and (spellMap == 'Cure' or spellMap == 'Curaga') then
       local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
@@ -2142,25 +2147,6 @@ function silibs.handle_elemental_belts(spell, spellMap, phase)
         equip({waist='Hachirin-no-Obi'})
       end
     end
-  end
-end
-
--- Spell input is the table pulled from resources.spells
--- TODO: Add blue magic
-function silibs.is_spell_usable(spell)
-  if not spell then return false end
-  if S{'Honor March', 'Dispelga', 'Impact'}:contains(spell.english) then
-    -- TODO: check to see if you have the item and return true if yes/false if no can also confirm level, (probably smart)
-    return false
-  else
-    return (
-      spell.levels[player.main_job_id]
-      and (
-        (spell.levels[player.main_job_id] <= player.main_job_level)
-        or (spell.levels[player.main_job_id] > 99 and spell.levels[player.main_job_id] <= player.job_points[player.main_job:lower()].jp_spent)
-      )
-      or (spell.levels[player.sub_job_id] and spell.levels[player.sub_job_id] <= player.sub_job_level)
-    )
   end
 end
 
@@ -2470,7 +2456,7 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
       if spell.target.type == 'SELF' then
         silibs.last_indi = string.sub(spell.english,6)
       end
-		elseif spell.english:startswith('Geo-') or spell.english == "Mending Halation" or spell.english == "Radial Arcana" then
+		elseif spell.english:startswith('Geo-') or spell.english == 'Mending Halation' or spell.english == 'Radial Arcana' then
 			eventArgs.handled = true
 			if spell.english:startswith('Geo-') then
 				silibs.last_geo = string.sub(spell.english,5)
@@ -2616,7 +2602,7 @@ end)
 
 windower.raw_register_event('outgoing chunk', function(id, data, modified, injected, blocked)
   if id == 0x053 then -- Send lockstyle command to server
-    local type = data:unpack("I",0x05)
+    local type = data:unpack('I', 0x05)
     if type == 0 then -- This is lockstyle 'disable' command
       silibs.locked_style = false
     else -- Various diff ways to set lockstyle
@@ -2628,7 +2614,7 @@ end)
 -- Set lockstyle again when encumbrance value changes (which disables lockstyle as a side effect)
 windower.raw_register_event('incoming chunk', function(id, data, modified, injected, blocked)
   if id == 0x01B then -- Contains info about player's encumbrance status
-    local encumbrance = data:unpack('I',0x61)
+    local encumbrance = data:unpack('I', 0x61)
     if encumbrance ~= silibs.encumbrance then
       silibs.locked_style = false
       silibs.encumbrance = encumbrance
@@ -2637,20 +2623,20 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
   elseif id == 0x061 then -- Contains info about player stats
     local p = packets.parse('incoming', data)
 
-    silibs.playerStats["Base"]["STR"] = p["Base STR"] -- Includes STR merits
-    silibs.playerStats["Base"]["DEX"] = p["Base DEX"] -- Includes DEX merits
-    silibs.playerStats["Base"]["VIT"] = p["Base VIT"] -- Includes VIT merits
-    silibs.playerStats["Base"]["AGI"] = p["Base AGI"] -- Includes AGI merits
-    silibs.playerStats["Base"]["INT"] = p["Base INT"] -- Includes INT merits
-    silibs.playerStats["Base"]["MND"] = p["Base MND"] -- Includes MND merits
-    silibs.playerStats["Base"]["CHR"] = p["Base CHR"] -- Includes CHR merits
-    silibs.playerStats["Bonus"]["STR"] = p["Added STR"]
-    silibs.playerStats["Bonus"]["DEX"] = p["Added DEX"]
-    silibs.playerStats["Bonus"]["VIT"] = p["Added VIT"]
-    silibs.playerStats["Bonus"]["AGI"] = p["Added AGI"]
-    silibs.playerStats["Bonus"]["INT"] = p["Added INT"]
-    silibs.playerStats["Bonus"]["MND"] = p["Added MND"]
-    silibs.playerStats["Bonus"]["CHR"] = p["Added CHR"]
+    silibs.playerStats['Base']['STR'] = p['Base STR'] -- Includes STR merits
+    silibs.playerStats['Base']['DEX'] = p['Base DEX'] -- Includes DEX merits
+    silibs.playerStats['Base']['VIT'] = p['Base VIT'] -- Includes VIT merits
+    silibs.playerStats['Base']['AGI'] = p['Base AGI'] -- Includes AGI merits
+    silibs.playerStats['Base']['INT'] = p['Base INT'] -- Includes INT merits
+    silibs.playerStats['Base']['MND'] = p['Base MND'] -- Includes MND merits
+    silibs.playerStats['Base']['CHR'] = p['Base CHR'] -- Includes CHR merits
+    silibs.playerStats['Bonus']['STR'] = p['Added STR']
+    silibs.playerStats['Bonus']['DEX'] = p['Added DEX']
+    silibs.playerStats['Bonus']['VIT'] = p['Added VIT']
+    silibs.playerStats['Bonus']['AGI'] = p['Added AGI']
+    silibs.playerStats['Bonus']['INT'] = p['Added INT']
+    silibs.playerStats['Bonus']['MND'] = p['Added MND']
+    silibs.playerStats['Bonus']['CHR'] = p['Added CHR']
   end
   silibs.on_incoming_chunk_for_th(id, data, modified, injected, blocked)
 end)
@@ -2667,7 +2653,7 @@ end)
 
 windower.raw_register_event('incoming text', function(old, new, color)
   -- Hides Battlemod roll output
-  if old:match("Roll.* The total.*") or old:match('.*Roll.*' .. string.char(0x81, 0xA8)) or old:match('.*uses Double.*The total') and color ~= 123 then
+  if old:match('Roll.* The total.*') or old:match('.*Roll.*' .. string.char(0x81, 0xA8)) or old:match('.*uses Double.*The total') and color ~= 123 then
       return true
   end
 
