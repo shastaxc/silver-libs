@@ -1,4 +1,4 @@
--- Version 2023.JUN.04.001
+-- Version 2023.JUN.06.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -414,6 +414,8 @@ silibs.snapshot_weapons = {
   ['Arke Crossbow'] = 15,
   ['Sharanga'] = 20,
 }
+
+silibs.rare_ammo = S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}
 
 
 -------------------------------------------------------------------------------
@@ -1661,25 +1663,25 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   end
 
   -- Protect against shooting hauksbok ammo
-  if S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(default_ammo:lower()) then
+  if silibs.rare_ammo:contains(default_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "default ammo". **')
     return
-  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(magic_ammo:lower()) then
+  elseif silibs.rare_ammo:contains(magic_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "magic ammo". **')
     return
-  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(acc_ammo:lower()) then
+  elseif silibs.rare_ammo:contains(acc_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
     add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from "accuracy ammo". **')
     return
-  elseif S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(ws_ammo:lower()) then
+  elseif silibs.rare_ammo:contains(ws_ammo:lower()) then
     swapped_ammo = empty
     equip({ammo=swapped_ammo})
     eventArgs.cancel = true
@@ -1847,8 +1849,28 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   end
   local swapped_item = get_item(swapped_ammo)
   if player.equipment.ammo ~= 'empty' and swapped_item ~= nil and swapped_item.count < options.ammo_warning_limit
-      and not S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}:contains(swapped_item.shortname:lower()) then
+      and not silibs.rare_ammo:contains(swapped_item.shortname:lower()) then
     add_to_chat(39,"*** Ammo '"..swapped_item.shortname.."' running low! *** ("..swapped_item.count..")")
+  end
+end
+
+function silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
+  local ammo = gearswap.equip_list.ammo or player.equipment.ammo
+  ammo = (type(ammo)=='table' and ammo.name) or (type(ammo)=='string' and ammo) or 'empty'
+
+  -- Check if this is an action that might expend ammo
+  if silibs.rare_ammo:contains(ammo:lower())
+    and (spell.action_type == 'Ranged Attack'
+    or (spell.type == 'WeaponSkill' and (spell.skill == 'Marksmanship' or spell.skill == 'Archery'))
+    or spell.english == 'Shadowbind'
+    or spell.english == 'Bounty Shot'
+    or spell.english == 'Eagle Eye Shot')
+  then
+    -- Protect against shooting rare ammo
+    equip({ammo=empty})
+    eventArgs.cancel = true
+    cancel_spell()
+    add_to_chat(123, '** Action Canceled: Protecting rare ammo. **')
   end
 end
 
@@ -2431,6 +2453,8 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
 			end
     end
   end
+
+  silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
 end
 
 function silibs.midcast_hook(spell, action, spellMap, eventArgs)
