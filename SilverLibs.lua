@@ -1,4 +1,4 @@
--- Version 2023.JUN.07.003
+-- Version 2023.JUN.08.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -2670,14 +2670,16 @@ windower.raw_register_event('zone change', function(new_zone, old_zone)
 end)
 
 windower.raw_register_event('incoming text', function(old, new, color)
-  -- Hides Battlemod roll output
-  if old:match('Roll.* The total.*') or old:match('.*Roll.*' .. string.char(0x81, 0xA8)) or old:match('.*uses Double.*The total') and color ~= 123 then
-      return true
-  end
+  if old then
+    -- Hides Battlemod roll output
+    if old:match('Roll.* The total.*') or old:match('.*Roll.*' .. string.char(0x81, 0xA8)) or old:match('.*uses Double.*The total') and color ~= 123 then
+        return true
+    end
 
-  --Hides Vanilla roll output
-  if old:match('.* receives the effect of .* Roll.') ~= nil then
-      return true
+    --Hides Vanilla roll output
+    if old:match('.* receives the effect of .* Roll.') ~= nil then
+        return true
+    end
   end
 
   return new, color
