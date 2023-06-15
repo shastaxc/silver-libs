@@ -1,4 +1,4 @@
--- Version 2023.JUN.08.001
+-- Version 2023.JUN.15.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -2491,6 +2491,23 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.midcast_hook(spell, action, spellMap, eventArgs)
+  -- If spell is on the quick magic list, and user has a quick magic set, use it
+  if spell.action_type == 'Magic' and sets.precast.FC then
+    local customEquipSet = select_specific_set(sets.precast.FC, spell, spellMap)
+    -- Add optional casting mode
+    if customEquipSet[state.CastingMode.current] then
+      customEquipSet = customEquipSet[state.CastingMode.current]
+    end
+    if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.quick_magic_spells[spell.type]:contains(spell.en)) then
+      customEquipSet = customEquipSet['QuickMagic']
+      equip(customEquipSet)
+      if player.sub_job == 'RDM' and player.sub_job_level > 0 and customEquipSet['RDM'] then
+        customEquipSet = customEquipSet['RDM']
+        equip(customEquipSet)
+      end
+      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+    end
+  end
 end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
