@@ -431,6 +431,9 @@ end
 spell_maps['Aspir III'] = 'Aspir'
 spell_maps['Haste'] = 'Haste'
 spell_maps['Haste II'] = 'Haste'
+spell_maps['Dia II'] = 'Dia'
+spell_maps['Dia III'] = 'Dia'
+spell_maps['Diaga'] = 'Dia'
 
 
 -------------------------------------------------------------------------------
