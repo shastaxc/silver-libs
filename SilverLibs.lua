@@ -1,4 +1,4 @@
--- Version 2023.AUG.27.002
+-- Version 2023.SEP.17.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -499,6 +499,8 @@ function silibs.init_settings()
   silibs.dw_needed = 0
 
   silibs.snapshot_sets = nil
+
+  silibs.is_midaction = false
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -708,7 +710,7 @@ function silibs.self_command(cmdParams, eventArgs)
   if silibs.haste_info_enabled then
     if cmdParams[1] == 'hasteinfo' then
       silibs.dw_needed = tonumber(cmdParams[2])
-      if not midaction() then
+      if not silibs.midaction() then
         handle_equipping_gear(player.status)
       end
     end
@@ -2172,6 +2174,10 @@ function silibs.handle_elemental_belts(spell, spellMap, phase)
   end
 end
 
+function silibs.midaction()
+  return silibs.is_midaction
+end
+
 
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
@@ -2492,6 +2498,7 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   end
 
   silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
+  silibs.is_midaction = true
 end
 
 function silibs.midcast_hook(spell, action, spellMap, eventArgs)
@@ -2549,6 +2556,7 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
+  silibs.is_midaction = false
 end
 
 function silibs.post_aftercast_hook(spell, action, spellMap, eventArgs)
@@ -2611,7 +2619,7 @@ windower.raw_register_event('prerender',function()
     -- Every 15 frames (roughly 0.5 seconds depending on FPS)
     if frame_count%15 == 0 then
       if silibs.equip_loop_enabled
-          and not midaction()
+          and not silibs.midaction()
           and not ((player.main_job == 'SMN'
             or player.main_job == 'BST'
             or player.main_job == 'PUP')
