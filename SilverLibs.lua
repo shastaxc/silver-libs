@@ -1,4 +1,4 @@
--- Version 2023.OCT.09.001
+-- Version 2023.OCT.10.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -1940,14 +1940,20 @@ function silibs.handle_elemental(cmdParams, element)
   end
 
   local target = '<t>'
-  if cmdParams[3] then
-    if tonumber(cmdParams[3]) then
-      target = cmdParams[3]
+  -- Check if element came in cmdParams. This should take priority.
+  if cmdParams[4] then -- Must be element
+    element = cmdParams[4]
+  elseif cmdParams[3] then
+    -- 3rd param could be target specifier or element
+    if not cmdParams[3]:startswith('<') then
+      element = cmdParams[3]
     else
-      target = table.concat(cmdParams, ' ', 3)
-      target = get_closest_mob_id_by_name(target) or '<t>'
+      target = cmdParams[3]
     end
   end
+
+  -- Clean up element capitalization
+  element = element:lower():ucfirst()
 
   local command = cmdParams[2]:lower()
   if command == 'storm' then
