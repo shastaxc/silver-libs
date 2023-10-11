@@ -1,4 +1,4 @@
--- Version 2023.SEP.17.001
+-- Version 2023.OCT.09.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -397,10 +397,13 @@ silibs.elemental_ws = S{'Aeolian Edge', 'Sanguine Blade', 'Cloudsplitter', 'Sera
     'Shining Strike', 'Seraph Strike', 'Flash Nova', 'Rock Crusher', 'Earth Crusher', 'Starburst', 'Sunburst', 'Vidohunir',
     'Garland of Bliss', 'Omniscience', 'Flaming Arrow', 'Hot Shot'}
 
+silibs.proc_ws_abyssea_red = S{'Cyclone', 'Energy Drain', 'Red Lotus Blade', 'Seraph Blade', 'Freezebite', 'Shadow of Death', 'Raiden Thrust',
+    'Blade: Ei', 'Tachi: Jinpu', 'Tachi: Koki', 'Seraph Strike', 'Earth Crusher', 'Sunburst'}
+
 silibs.blue_magic_magical_dmg_spells = S{'Anvil Lightning','Blazing Bound','Bomb Toss','Cursed Sphere','Droning Whirlwind',
-'Embalming Earth','Entomb','Firespit','Foul Waters','Ice Break','Leafstorm','Maelstrom',
-'Molting Plumage','Nectarous Deluge','Regurgitation','Rending Deluge','Scouring Spate',
-'Silent Storm','Spectral Floe','Subduction','Tem. Upheaval','Water Bomb'}
+    'Embalming Earth','Entomb','Firespit','Foul Waters','Ice Break','Leafstorm','Maelstrom',
+    'Molting Plumage','Nectarous Deluge','Regurgitation','Rending Deluge','Scouring Spate',
+    'Silent Storm','Spectral Floe','Subduction','Tem. Upheaval','Water Bomb'}
 
 silibs.spells_by_name = {}
 for k,v in pairs(res.spells) do
