@@ -1,4 +1,4 @@
--- Version 2023.OCT.10.001
+-- Version 2023.OCT.14.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -325,6 +325,22 @@ silibs.elements = {
     ['Earth']='Stone',
     ['Lightning']='Thunda',
     ['Water']='Wate'
+  },
+  nukega_of = {
+    ['Fire']='Fira',
+    ['Ice']='Blizza',
+    ['Wind']='Aero',
+    ['Earth']='Stone',
+    ['Lightning']='Thunda',
+    ['Water']='Water',
+  },
+  nukeja_of = {
+    ['Fire']='Fira',
+    ['Ice']='Blizza',
+    ['Wind']='Aero',
+    ['Earth']='Stone',
+    ['Lightning']='Thunda',
+    ['Water']='Water',
   },
   spirit_of = {
     ['Light']='Light Spirit',
@@ -1402,7 +1418,7 @@ function silibs.can_access_spell(spell_name, spell)
   if spell_name and not spell then
     _, spell = silibs.find_spell(spell_name)
   end
-  local has_learned_spell = windower.ffxi.get_spells()[spell.id] ~= nil
+  local has_learned_spell = windower.ffxi.get_spells()[spell.id] == true
 	local spell_jobs = res.spells[spell.id].levels
 
 	-- Filter for spells that you do not know. Exclude Impact, Honor March and Dispelga.
@@ -1982,7 +1998,7 @@ function silibs.handle_elemental(cmdParams, element)
         local spell = tierlist['tier'..i] and silibs.elements.nuke_of[element]..tierlist['tier'..i] or nil
         local spell_detail = silibs.spells_by_name[spell]
         if spell_detail then
-          local is_spell_available = silibs.can_access_spell(nil, spell_detail)
+          local is_spell_available = silibs.can_access_spell(nil, spell_detail) and silibs.actual_cost(spell_detail) <= player.mp
           local timer = spell_recasts[spell_detail.recast_id] -- Divide by 60 to get time in seconds
           if is_spell_available and timer < 6 then
             selected_spell = spell
@@ -1990,17 +2006,64 @@ function silibs.handle_elemental(cmdParams, element)
           end
         end
       end
-    else
+    else -- Command specifies tier
       -- Check if requested spell is learned (or exists at all), if not then downselect tier until find an available spell
       local spell = silibs.elements.nuke_of[element]..tierlist[command]
       local spell_detail = silibs.spells_by_name[spell]
       if spell_detail and silibs.can_access_spell(nil, spell_detail) then
         selected_spell = spell
       else
-        for i=6,1,-1 do
+        local spell_index = tonumber(command:slice(#command))
+        for i=spell_index,1,-1 do
           spell = tierlist['tier'..i] and silibs.elements.nuke_of[element]..tierlist['tier'..i] or nil
           spell_detail = silibs.spells_by_name[spell]
-          if spell_detail and silibs.can_access_spell(nil, spell_detail) then
+          if spell_detail and silibs.can_access_spell(nil, spell_detail) and silibs.actual_cost(spell_detail) <= player.mp then
+            selected_spell = spell
+            break
+          end
+        end
+      end
+    end
+    if not selected_spell then
+      add_to_chat(123, 'No '..element..' nukes available.')
+      return
+    end
+    send_command('@input /ma "'..selected_spell..'" '..target..'')
+  elseif command:contains('ga') then
+    if element == 'Light' or element == 'Dark' then
+      add_to_chat(123, 'No corresponding -ga spell for '..element)
+    end
+
+    local tierlist = {['ga1']='',['ga2']=' II',['ga3']=' III',['ga4']=' IV',['ga5']=' V'}
+    local selected_spell
+
+    -- If command is just "ga" and does not include the number of tier, use smart selection of highest available nuke
+    if command == 'ga' then
+      local spell_recasts = windower.ffxi.get_spell_recasts()
+      for i=5,1,-1 do
+        local spell = tierlist['ga'..i] and silibs.elements.nukega_of[element]..'ga'..tierlist['ga'..i] or nil
+        local spell_detail = silibs.spells_by_name[spell]
+        if spell_detail then
+          local is_spell_available = silibs.can_access_spell(nil, spell_detail) and silibs.actual_cost(spell_detail) <= player.mp
+          local timer = spell_recasts[spell_detail.recast_id] -- Divide by 60 to get time in seconds
+          if is_spell_available and timer < 6 then
+            selected_spell = spell
+            break
+          end
+        end
+      end
+    else -- Command specifies tier
+      -- Check if requested spell is learned (or exists at all), if not then downselect tier until find an available spell
+      local spell = silibs.elements.nukega_of[element]..'ga'..tierlist[command]
+      local spell_detail = silibs.spells_by_name[spell]
+      if spell_detail and silibs.can_access_spell(nil, spell_detail) then
+        selected_spell = spell
+      else
+        local spell_index = tonumber(command:slice(#command))
+        for i=spell_index,1,-1 do
+          spell = tierlist['ga'..i] and silibs.elements.nukega_of[element]..'ga'..tierlist['ga'..i] or nil
+          spell_detail = silibs.spells_by_name[spell]
+          if spell_detail and silibs.can_access_spell(nil, spell_detail) and silibs.actual_cost(spell_detail) <= player.mp then
             selected_spell = spell
             break
           end
@@ -2038,6 +2101,13 @@ function silibs.handle_elemental(cmdParams, element)
       end
     else
       add_to_chat(123, 'No corresponding -ara spell for '..element)
+    end
+  elseif command:contains('ja') then
+    if element ~= 'Light' and element ~= 'Dark' then
+      local nuke = silibs.elements.nukeja_of[element]..'ja'
+      send_command('@input /ma "'..nuke..'" '..target)
+    else
+      add_to_chat(123, 'No corresponding -ja spell for '..element)
     end
   else
     add_to_chat(123,'Unrecognized elemental command.')
