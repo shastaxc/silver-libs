@@ -1,4 +1,4 @@
--- Version 2023.OCT.14.001
+-- Version 2023.OCT.18.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -545,7 +545,7 @@ end
 -- 'eventArgs' is the same as input parameter in job_precast function of Mote libs
 function silibs.cancel_outranged_ws(spell, eventArgs)
   -- Ensure spell is a weaponskill to proceed
-  if spell.type ~= 'WeaponSkill' then
+  if spell.type ~= 'WeaponSkill' or spell.targets['Self'] then
     return
   end
 
