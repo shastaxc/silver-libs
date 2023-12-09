@@ -1,4 +1,4 @@
--- Version 2023.OCT.18.001
+-- Version 2023.DEC.09.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -476,6 +476,7 @@ function silibs.init_settings()
   }
   silibs.haste_info_enabled = false
   silibs.elemental_belt_handling_enabled = false
+  silibs.elemental_belt_handling_condition = nil
   silibs.snapshot_auto_equip_enabled = false
 
   silibs.most_recent_weapons = {main='',sub='',ranged='',ammo=''}
@@ -2411,10 +2412,11 @@ function silibs.enable_haste_info()
   send_command('hi report')
 end
 
-function silibs.enable_elemental_belt_handling(has_obi, has_orpheus)
+function silibs.enable_elemental_belt_handling(has_obi, has_orpheus, condition_fn)
   silibs.elemental_belt_handling_enabled = true
   silibs.has_obi = has_obi
   silibs.has_orpheus = has_orpheus
+  silibs.elemental_belt_handling_condition = condition_fn
 end
 
 function silibs.enable_snapshot_auto_equip()
@@ -2572,7 +2574,7 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   end
 
   -- Equip elemental belts if appropriate
-  if silibs.elemental_belt_handling_enabled then
+  if silibs.elemental_belt_handling_enabled and (silibs.elemental_belt_handling_condition == nil or silibs.elemental_belt_handling_condition()) then
     silibs.handle_elemental_belts(spell, spellMap, 'precast')
   end
 
@@ -2602,7 +2604,7 @@ end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
   -- Equip elemental belts if appropriate
-  if silibs.elemental_belt_handling_enabled then
+  if silibs.elemental_belt_handling_enabled and (silibs.elemental_belt_handling_condition == nil or silibs.elemental_belt_handling_condition()) then
     silibs.handle_elemental_belts(spell, spellMap, 'midcast')
   end
 
