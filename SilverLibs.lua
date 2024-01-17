@@ -1,4 +1,4 @@
--- Version 2023.DEC.09.001
+-- Version 2024.JAN.17.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -453,6 +453,9 @@ spell_maps['Haste II'] = 'Haste'
 spell_maps['Dia II'] = 'Dia'
 spell_maps['Dia III'] = 'Dia'
 spell_maps['Diaga'] = 'Dia'
+spell_maps['Bio II'] = 'Bio'
+spell_maps['Bio III'] = 'Bio'
+spell_maps['Poison II'] = 'Poison'
 
 
 -------------------------------------------------------------------------------
