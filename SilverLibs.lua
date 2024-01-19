@@ -1,4 +1,4 @@
--- Version 2024.JAN.17.001
+-- Version 2024.JAN.19.001
 -- Copyright © 2021-2023, Shasta
 -- All rights reserved.
 
@@ -456,6 +456,14 @@ spell_maps['Diaga'] = 'Dia'
 spell_maps['Bio II'] = 'Bio'
 spell_maps['Bio III'] = 'Bio'
 spell_maps['Poison II'] = 'Poison'
+spell_maps['Absorb-STR'] = 'Absorb'
+spell_maps['Absorb-DEX'] = 'Absorb'
+spell_maps['Absorb-VIT'] = 'Absorb'
+spell_maps['Absorb-AGI'] = 'Absorb'
+spell_maps['Absorb-INT'] = 'Absorb'
+spell_maps['Absorb-MND'] = 'Absorb'
+spell_maps['Absorb-CHR'] = 'Absorb'
+spell_maps['Absorb-ACC'] = 'Absorb'
 
 
 -------------------------------------------------------------------------------
