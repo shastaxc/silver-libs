@@ -1,5 +1,5 @@
--- Version 2024.JAN.19.001
--- Copyright © 2021-2023, Shasta
+-- Version 2024.APR.21.001
+-- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
 -- Redistribution and use in source and binary forms, with or without
@@ -1043,7 +1043,7 @@ function silibs.on_action_for_th(action)
             prev_tagged = true
           end
           -- Update mob in tag list
-          info.tagged_mobs[target.id] = os.time()
+          info.tagged_mobs[target.id] = os.clock()
           -- Melee attacks alone do not cause update to engaged set, so call manually
           if (state.TreasureMode.value == 'Tag' or state.TreasureMode.value == 'SATA')
             and not prev_tagged and action_category.category == 1
@@ -1063,18 +1063,18 @@ function silibs.on_action_for_th(action)
           target = windower.ffxi.get_mob_by_id(target.id)
           -- Determine if action was offensive based on target type
           if silibs.is_target_enemy(target) then
-            info.tagged_mobs[target.id] = os.time()
+            info.tagged_mobs[target.id] = os.clock()
           end
         end
       end
     -- If mob acts, keep an update of last action time for TH bookkeeping
     elseif info.tagged_mobs[action.actor_id] then
-      info.tagged_mobs[action.actor_id] = os.time()
+      info.tagged_mobs[action.actor_id] = os.clock()
     -- If anyone else acts, check if any of the targets are our tagged mobs
     else
       for index,target in pairs(action.targets) do
         if info.tagged_mobs[target.id] then
-          info.tagged_mobs[target.id] = os.time()
+          info.tagged_mobs[target.id] = os.clock()
         end
       end
     end
@@ -1085,7 +1085,7 @@ end
 -- for over 3 minutes.  This is to handle deagros, player deaths, or other random stuff where the
 -- mob is lost, but doesn't die.
 function silibs.cleanup_tagged_mobs()
-  local current_time = os.time()
+  local current_time = os.clock()
   -- Search list and flag old entries.
   for target_id,last_action_time in pairs(info.tagged_mobs) do
     local time_since_last_action = current_time - last_action_time
@@ -1331,14 +1331,6 @@ end
 -------------------------------------------------------------------------------
 -- Helpful/Supporting functions
 -------------------------------------------------------------------------------
-function silibs.update_ui(frame_count)
-  if frame_count%15 == 0 then
-    if state.ShowLuopanUi.value then
-      silibs.update_ui_luopan_distance_tracker()
-    end
-  end
-end
-
 function silibs.update_ui_luopan_distance_tracker()
   local s = windower.ffxi.get_mob_by_target('me')
   local my_luopan
@@ -2696,20 +2688,33 @@ end
 -- Event hooks
 -------------------------------------------------------------------------------
 -- Executes on every frame. This is just a way to create a perpetual loop.
-frame_count=1
+silibs.timer1 = os.clock()
+silibs.timer2 = os.clock()
+silibs.timer3 = os.clock()
+silibs.timer4 = os.clock()
 windower.raw_register_event('prerender',function()
+  silibs.now = os.clock()
+
   if windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
-    -- Use frame count to limit execution rate
-    -- Every 10 frames (roughly 0.16-0.33 seconds depending on FPS)
-    if frame_count%10 == 0 then
+    -- Every 0.25 seconds update Luopan UI
+    if silibs.now - silibs.timer1 > 0.25 then
+      silibs.timer1 = silibs.now
+      if state.ShowLuopanUi.value then
+        silibs.update_ui_luopan_distance_tracker()
+      end
+    end
+
+    -- Every 0.33 seconds, check to re-arm weapons
+    if silibs.now - silibs.timer2 > 0.33 then
+      silibs.timer2 = silibs.now
       if silibs.weapon_rearm_enabled then
         silibs.update_and_rearm_weapons()
       end
     end
-    
-    -- Use frame count to limit execution rate
-    -- Every 15 frames (roughly 0.5 seconds depending on FPS)
-    if frame_count%15 == 0 then
+
+    -- Every 0.5 seconds, check to re-arm weapons
+    if silibs.now - silibs.timer3 > 0.5 then
+      silibs.timer3 = silibs.now
       if silibs.equip_loop_enabled
           and not silibs.midaction()
           and not ((player.main_job == 'SMN'
@@ -2720,21 +2725,12 @@ windower.raw_register_event('prerender',function()
       end
     end
 
-    -- Every 600 frames (roughly 10-20 seconds depending on FPS)
-    if frame_count%600 == 0 then
+    -- Every 20 seconds clean TH tagged mob list
+    if silibs.now - silibs.timer4 > 20 then
+      silibs.timer4 = silibs.now
       if state.TreasureMode.value ~= 'None' then
-        -- Clean TH tagged mob list
         silibs.cleanup_tagged_mobs()
       end
-    end
-
-    silibs.update_ui(frame_count)
-
-    -- Increment frame_count but prevent overflows
-    if frame_count > 10000 then
-      frame_count = 1
-    else
-      frame_count = frame_count + 1
     end
   end
 end)
