@@ -1,4 +1,4 @@
--- Version 2024.APR.21.001
+-- Version 2024.APR.21.002
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2693,28 +2693,28 @@ silibs.timer2 = os.clock()
 silibs.timer3 = os.clock()
 silibs.timer4 = os.clock()
 windower.raw_register_event('prerender',function()
-  silibs.now = os.clock()
+  local now = os.clock()
 
   if windower.ffxi.get_info().logged_in and windower.ffxi.get_player() then
     -- Every 0.25 seconds update Luopan UI
-    if silibs.now - silibs.timer1 > 0.25 then
-      silibs.timer1 = silibs.now
+    if now - silibs.timer1 > 0.25 then
+      silibs.timer1 = now
       if state.ShowLuopanUi.value then
         silibs.update_ui_luopan_distance_tracker()
       end
     end
 
     -- Every 0.33 seconds, check to re-arm weapons
-    if silibs.now - silibs.timer2 > 0.33 then
-      silibs.timer2 = silibs.now
+    if now - silibs.timer2 > 0.33 then
+      silibs.timer2 = now
       if silibs.weapon_rearm_enabled then
         silibs.update_and_rearm_weapons()
       end
     end
 
     -- Every 0.5 seconds, check to re-arm weapons
-    if silibs.now - silibs.timer3 > 0.5 then
-      silibs.timer3 = silibs.now
+    if now - silibs.timer3 > 0.5 then
+      silibs.timer3 = now
       if silibs.equip_loop_enabled
           and not silibs.midaction()
           and not ((player.main_job == 'SMN'
@@ -2726,8 +2726,8 @@ windower.raw_register_event('prerender',function()
     end
 
     -- Every 20 seconds clean TH tagged mob list
-    if silibs.now - silibs.timer4 > 20 then
-      silibs.timer4 = silibs.now
+    if now - silibs.timer4 > 20 then
+      silibs.timer4 = now
       if state.TreasureMode.value ~= 'None' then
         silibs.cleanup_tagged_mobs()
       end
