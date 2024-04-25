@@ -1,4 +1,4 @@
--- Version 2024.APR.21.002
+-- Version 2024.APR.24.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2090,8 +2090,8 @@ function silibs.handle_elemental(cmdParams, element)
   elseif command:contains('ara') then
     if element ~= 'Light' and element ~= 'Dark' then
       -- local spell_recasts = windower.ffxi.get_spell_recasts()
-      local tierkey = {'ara3','ara2','ara'}
-      local tierlist = {['ara3']='ra III',['ara2']='ra II',['ara']='ra'}
+      local tierkey = {'ara3','ara2','ara1'}
+      local tierlist = {['ara3']='ra III',['ara2']='ra II',['ara1']='ra'}
       local nuke = silibs.elements.nukera_of[element]
       if command == 'ara' then
         for i in ipairs(tierkey) do
