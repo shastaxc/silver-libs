@@ -1,4 +1,4 @@
--- Version 2024.APR.24.001
+-- Version 2024.APR.25.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -530,8 +530,7 @@ function silibs.init_settings()
   silibs.dw_needed = 0
 
   silibs.snapshot_sets = nil
-
-  silibs.is_midaction = false
+  silibs.reset_midaction()
 end
 
 -- 'ws_range' expected to be the range pulled from weapon_skills.lua
@@ -2261,6 +2260,42 @@ function silibs.midaction()
   return silibs.is_midaction
 end
 
+-- Calculate how long the action should take and set a timer. If the is_midaction flag does not
+-- reset by then, reset manually.
+function silibs.set_midaction(spell, action, spellMap, eventArgs)
+  silibs.is_midaction = true
+  -- Set time based on expected cast time plus a buffer
+  local buffer = 3
+  -- Certain actions have an expected cast time. We can expect the cast time to 
+  -- vary with buffs. Not going to account for gear modifications to cast time.
+  -- Items always handle fine
+  local cast_time = spell.cast_time or 0
+  local speed_mod = 1
+  if spell.action_type == 'Magic' then
+    if buffactive['slow'] or buffactive['Slow'] then
+      speed_mod = speed_mod + 0.25
+    end
+    if buffactive['elegy'] or buffactive['Elegy'] then
+      speed_mod = speed_mod + 0.25
+    end
+    if buffactive['haste'] or buffactive['Haste'] then
+      speed_mod = speed_mod - 0.1
+    end
+    if buffactive['march'] or buffactive['March'] then
+      speed_mod = speed_mod - 0.1
+    end
+
+    -- Haste cannot make speed less than 15% cast time
+    speed_mod = (speed_mod < 0.15 and 0.15) or speed_mod
+  end
+
+  silibs.midaction_expected_finish_time = os.clock() + (cast_time * speed_mod) + buffer
+end
+
+function silibs.reset_midaction()
+  silibs.is_midaction = false
+  silibs.midaction_expected_finish_time = 0
+end
 
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
@@ -2582,7 +2617,7 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   end
 
   silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
-  silibs.is_midaction = true
+  silibs.set_midaction(spell, action, spellMap, eventArgs)
 end
 
 function silibs.midcast_hook(spell, action, spellMap, eventArgs)
@@ -2640,7 +2675,7 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
-  silibs.is_midaction = false
+  silibs.reset_midaction()
 end
 
 function silibs.post_aftercast_hook(spell, action, spellMap, eventArgs)
@@ -2732,6 +2767,13 @@ windower.raw_register_event('prerender',function()
         silibs.cleanup_tagged_mobs()
       end
     end
+
+    -- Check if we've been stuck in midaction for a while, reset it because
+    -- we're probably in an error state.
+    if silibs.is_midaction and now > silibs.midaction_expected_finish_time then
+      silibs.reset_midaction()
+      send_command('gs c update')
+    end
   end
 end)
 
@@ -2754,6 +2796,13 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
       silibs.locked_style = false
       silibs.encumbrance = encumbrance
       silibs.set_lockstyle()
+    end
+  elseif id == 0x029 then
+    -- Message IDs can be found here https://github.com/Windower/Lua/wiki/Message-IDs
+    local p = packets.parse('incoming', data)
+    if p.Message == 429 then -- roll already up
+      silibs.reset_midaction()
+      send_command('gs c update')
     end
   elseif id == 0x061 then -- Contains info about player stats
     local p = packets.parse('incoming', data)
