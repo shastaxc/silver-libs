@@ -1,4 +1,4 @@
--- Version 2024.APR.25.001
+-- Version 2024.APR.27.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -1897,11 +1897,36 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       return
     end
   end
-  local swapped_item = get_item(swapped_ammo)
+  local swapped_item = silibs.get_item(swapped_ammo)
   if player.equipment.ammo ~= 'empty' and swapped_item ~= nil and swapped_item.count < options.ammo_warning_limit
       and not silibs.rare_ammo:contains(swapped_item.shortname:lower()) then
     add_to_chat(39,'*** Ammo \''..swapped_item.shortname..'\' running low! *** ('..swapped_item.count..')')
   end
+end
+
+-- Returns details of item if you have it. Optional get_count boolean will
+-- also return count of all instances of the item with that name that you
+-- have in all wardrobes and inventory. get_count defaults to true
+function silibs.get_item(item_name, --[[optional]]get_count)
+  if get_count == nil then
+    get_count = true
+  end
+  local item = nil
+  local count = 0
+  if item_name and item_name ~= '' then
+    local bags = L{'inventory','wardrobe','wardrobe2','wardrobe3','wardrobe4','wardrobe5','wardrobe6','wardrobe7','wardrobe8'}
+    for bag,_ in bags:it() do
+      if player[bag] and player[bag][item_name] then
+        item = player[bag][item_name]
+        if not get_count then return end
+        count = count + (item.count or 1)
+      end
+    end
+  end
+  if item then
+    item.count = count
+  end
+  return item
 end
 
 function silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
