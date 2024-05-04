@@ -1,4 +1,4 @@
--- Version 2024.MAY.4.001
+-- Version 2024.MAY.4.002
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -471,9 +471,9 @@ function silibs.init_settings()
   silibs.ui = {
     --Luopan Distance Tracking
     luopan = texts.new('${value}', {
-      pos = { x=0, y=50, },
+      pos = { x=-130, y=80, },
       text = { font='Arial', size=12, },
-      flags = { right=false, bold=true, },
+      flags = { right=true, bold=true, },
       bg = { alpha=0, },
       stroke = { width=2, alpha=192 },
     }),
@@ -1451,6 +1451,7 @@ end
 -------------------------------------------------------------------------------
 -- Helpful/Supporting functions
 -------------------------------------------------------------------------------
+-- Credit to Selindrile for this function
 function silibs.update_ui_luopan_distance_tracker()
   local s = windower.ffxi.get_mob_by_target('me')
   local my_luopan
@@ -2537,22 +2538,26 @@ function silibs.enable_th(feature_config)
   end
 end
 
-function silibs.enable_ui(feature_config)
-  if feature_config and feature_config.geo_luopan then
-    if feature_config.geo_luopan.align_right then
-      silibs.ui.luopan:right_justified(feature_config.geo_luopan.align_right)
+function silibs.enable_luopan_ui(luopan_config)
+  if luopan_config then
+    if luopan_config.align_right then
+      silibs.ui.luopan:right_justified(luopan_config.align_right)
     end
-    if feature_config.geo_luopan.x and feature_config.geo_luopan.y then
+    if luopan_config.x and luopan_config.y then
       silibs.ui.luopan:pos(
-        feature_config.geo_luopan.x,
-        feature_config.geo_luopan.y
+        luopan_config.x,
+        luopan_config.y
       )
     end
-    state.ShowLuopanUi:set(true)
+    if luopan_config.is_visible_by_default == false then
+      state.ShowLuopanUi:set(false)
+    else
+      state.ShowLuopanUi:set(true)
+    end
   end
 
   -- Turn on this UI if no config was passed but job is GEO
-  if not feature_config and (player.main_job == 'GEO' or player.sub_job == 'GEO') then
+  if not luopan_config and (player.main_job == 'GEO' or player.sub_job == 'GEO') then
     state.ShowLuopanUi:set(true)
   end
 end
@@ -2939,6 +2944,8 @@ windower.raw_register_event('prerender',function()
       silibs.timer1 = now
       if state.ShowLuopanUi.value then
         silibs.update_ui_luopan_distance_tracker()
+      else
+        silibs.ui.luopan:visible(false)
       end
     end
 
