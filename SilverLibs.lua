@@ -1,4 +1,4 @@
--- Version 2024.MAY.4.002
+-- Version 2024.MAY.4.003
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -1176,6 +1176,7 @@ function silibs.parse_buff_update_packet(data)
       end
 
       if not is_dud then
+        local is_double_buff_still_active = false
         -- read times
         for i = 1, 32 do
           
@@ -1202,10 +1203,13 @@ function silibs.parse_buff_update_packet(data)
                 print('This is a self-correcting error.')
               end
             end
-          elseif buff and buff.id == 308 and not silibs.is_double_up_active then -- Double-Up Chance
-            local index = 0x49 + ((i-1) * 0x04)
-            local expiration = silibs.from_server_time(data:unpack('I', index))
-            silibs.set_double_up_timer(expiration)
+          elseif buff and buff.id == 308 then -- Double-Up Chance
+            is_double_buff_still_active = true
+            if not silibs.is_double_up_active then
+              local index = 0x49 + ((i-1) * 0x04)
+              local expiration = silibs.from_server_time(data:unpack('I', index))
+              silibs.set_double_up_timer(expiration)
+            end
           end
         end
 
@@ -1219,6 +1223,10 @@ function silibs.parse_buff_update_packet(data)
             v.is_still_active = nil
           end
         end
+
+        if not is_double_buff_still_active and silibs.is_double_up_active then
+          silibs.clear_double_up_timer()
+        end
       end
     end
   end
@@ -1231,6 +1239,7 @@ end
 
 function silibs.clear_double_up_timer()
   send_command('@timers d "Double-Up Chance"')
+  silibs.is_double_up_active = false
 end
 
 function silibs.clear_roll_timer(roll)
