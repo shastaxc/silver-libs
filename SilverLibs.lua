@@ -1,4 +1,4 @@
--- Version 2024.MAY.4.003
+-- Version 2024.MAY.5.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -491,6 +491,7 @@ function silibs.init_settings()
     Bonus = {}
   }
   silibs.is_double_up_active = false
+  silibs.self_timers_symbol = '@'
 
   -------------------------------------------------------------------------------
   -- One-off commands to execute on load
@@ -1096,50 +1097,64 @@ function silibs.on_zone_change_for_th(new_zone, old_zone)
 end
 
 function silibs.on_action_for_rolls(act)
-  if silibs.custom_roll_text_enabled.show_self then
-    -- Detect roll actions used by self in order to display results
-    if act and type(act) == 'table' and act.category == 6 and silibs.roll_info[act.param] then
-      local do_printout
-      if act.actor_id == player.id then -- This is your own roll
-        do_printout = true
-      elseif silibs.custom_roll_text_enabled.show_others then -- Check if we wanna display rolls from other players
-        for i=1,#act.targets do
-          if act.targets[i].id == player.id then
-            do_printout = true
-            break
-          end
+  -- Detect roll actions used by self in order to display results
+  if act and type(act) == 'table' and act.category == 6 and silibs.roll_info[act.param] then
+    local roll_self_or_party
+    if act.actor_id == player.id then -- This is your own roll
+      roll_self_or_party = 'self'
+    else -- Party member rolled this and it hit you
+      for i=1,#act.targets do
+        if act.targets[i].id == player.id then
+          roll_self_or_party = 'party'
+          break
         end
-      end
-
-      if do_printout then
-        silibs.display_roll_info(act)
       end
     end
-  end
+    
+    if roll_self_or_party == 'self' or roll_self_or_party == 'party' then
+      if silibs.custom_roll_timers_enabled then
+        local is_self = roll_self_or_party == 'self'
+        local message_id = act.targets[1].actions[1].message
+        local roll_info = silibs.roll_info[act.param]
 
-  if silibs.custom_roll_timers_enabled then
-    -- If message relates to double up, update timers
-    if act and type(act) == 'table' and act.category == 6 and silibs.roll_info[act.param] then
-      local message_id = act.targets[1].actions[1].message
-      if message_id == 424 or message_id == 425 then -- Double up
-        local roll_info = silibs.roll_info[act.param]
-        local roll_value = act.targets[1].actions[1].param
-        local active_roll = silibs.my_active_rolls[roll_info.status]
-        if active_roll then
-          active_roll.value = roll_value
-        else
-          silibs.my_active_rolls[roll_info.status] = roll_info
-          silibs.my_active_rolls[roll_info.status].value = roll_value
+        -- 420 = first roll, 424 and 425 = double up
+        if message_id == 420 or message_id == 424 or message_id == 425 then
+          local roll_value = act.targets[1].actions[1].param
+          local active_roll = silibs.my_active_rolls[roll_info.status]
+          if active_roll then -- If already tracking, update value
+            if active_roll.value ~= roll_value or active_roll.is_self ~= is_self then
+              silibs.clear_roll_timer(active_roll)
+              -- Update roll value
+              active_roll.value = roll_value
+              active_roll.is_self = is_self
+              -- Update timer text
+              silibs.set_roll_timer(active_roll)
+            end
+          else -- If not tracking, start tracking
+            silibs.my_active_rolls[roll_info.status] = roll_info
+            silibs.my_active_rolls[roll_info.status].value = roll_value
+            silibs.my_active_rolls[roll_info.status].is_self = is_self
+            -- We don't know the expiration from this message.
+            -- Let the buff packet update handle correcting the timer. We can at least create
+            -- it with a default expiration to show that a roll buff exists
+            silibs.set_roll_timer(silibs.my_active_rolls[roll_info.status])
+          end
+        elseif message_id == 426 then -- Busted double up
+          local active_roll = silibs.my_active_rolls[roll_info.status]
+          if active_roll then -- If tracking this roll, clear it from tracking and clear timer
+            silibs.clear_roll_timer(active_roll)
+            silibs.my_active_rolls[roll_info.status] = nil
+          end
+          silibs.clear_double_up_timer() -- Busting removes the Double Up Chance buff
         end
-      elseif message_id == 426 then -- Busted double up
-        local roll_info = silibs.roll_info[act.param]
-        local active_roll = silibs.my_active_rolls[roll_info.status]
-        if active_roll then
-          silibs.clear_roll_timer(active_roll)
-          silibs.my_active_rolls[roll_info.status] = nil
-        end
-        silibs.clear_double_up_timer()
       end
+    end
+
+    -- Handle displaying text
+    if roll_self_or_party == 'self' then
+      if silibs.custom_roll_text_enabled.show_self then silibs.display_roll_info(act) end
+    elseif roll_self_or_party == 'party' then
+      if silibs.custom_roll_text_enabled.show_others then silibs.display_roll_info(act) end
     end
   end
 end
@@ -1196,12 +1211,8 @@ function silibs.parse_buff_update_packet(data)
             if not roll.is_timer_set then
               local index = 0x49 + ((i-1) * 0x04)
               roll.expiration = silibs.from_server_time(data:unpack('I', index))
-
-              if roll.expiration then
-                silibs.set_roll_timer(roll)
-              else
-                print('This is a self-correcting error.')
-              end
+              silibs.set_roll_timer(roll)
+              roll.is_timer_set = true
             end
           elseif buff and buff.id == 308 then -- Double-Up Chance
             is_double_buff_still_active = true
@@ -1233,7 +1244,8 @@ function silibs.parse_buff_update_packet(data)
 end
 
 function silibs.set_double_up_timer(expiration)
-  send_command('@timers c "Double-Up Chance" ' ..expiration-os.time().. ' down abilities/00193.png')
+  local exp = expiration and expiration-os.time() or 45
+  send_command('@timers c "Double-Up Chance" ' ..exp.. ' down abilities/00193.png')
   silibs.is_double_up_active = true
 end
 
@@ -1248,14 +1260,16 @@ function silibs.clear_roll_timer(roll)
 end
 
 function silibs.set_roll_timer(roll)
-  if roll and roll.expiration then
-    send_command('@timers c "'..silibs.roll_timer_name(roll)..'" ' ..roll.expiration-os.time().. ' down abilities/00193.png')
-    roll.is_timer_set = true
+  local exp = roll and roll.expiration and roll.expiration-os.time() or 300
+  if roll then
+    send_command('@timers c "'..silibs.roll_timer_name(roll)..'" ' ..exp.. ' down abilities/00193.png')
   end
 end
 
 function silibs.roll_timer_name(roll)
+  local self_flag = roll.is_self and silibs.self_timers_symbol or ''
   local value_str = ''
+
   if roll.value > 0 then
     value_str = ' '..roll.value
     if roll.value == roll.lucky then
@@ -1267,13 +1281,14 @@ function silibs.roll_timer_name(roll)
     end
   end
 
-  return roll.short_name..value_str
+  return self_flag..roll.short_name..value_str
 end
 
 function silibs.from_server_time(t)
   if not silibs.clock_offset then
-    print('clock_offset will self-correct shortly.')
+    return nil
   end
+
   local result = t / 60 + silibs.clock_offset
   return result
 end
@@ -2605,8 +2620,11 @@ function silibs.enable_custom_roll_text(hide_others_rolls)
   end
 end
 
-function silibs.enable_custom_roll_timers()
+function silibs.enable_custom_roll_timers(self_timers_symbol)
   silibs.custom_roll_timers_enabled = true
+  if self_timers_symbol then
+    silibs.self_timers_symbol = self_timers_symbol
+  end
 end
 
 function silibs.enable_haste_info()
@@ -2635,10 +2653,12 @@ function silibs.user_setup_hook()
   silibs.set_lockstyle()
   
   if silibs.custom_roll_timers_enabled then
+    send_command('reload timers')
+  
     -- Rolls will be tracked here indexed by name. A packet listener will remove rolls from this list
     -- when they fall off, and update timers based on data coming from the game.
     silibs.my_active_rolls = {
-      -- Example: [321] = silibs.roll_info + {value=3, expiration=12345, is_timer_set=false},
+      -- Example: [321] = silibs.roll_info + {value=3, expiration=12345, is_timer_set=false, is_self=true},
     }
     -- Check if any rolls are currently active and begin tracking them. Just have to assume they were
     -- rolled by self.
@@ -2646,7 +2666,13 @@ function silibs.user_setup_hook()
       if buffactive[ja.name] then
         silibs.my_active_rolls[ja.status] = ja
         silibs.my_active_rolls[ja.status].value = 0
+        silibs.my_active_rolls[ja.status].is_self = false
       end
+    end
+    
+    -- Timers addon hasn't reloaded yet. Must delay so that it creates timers after the reload
+    for status_id,active_roll in pairs(silibs.my_active_rolls) do
+      silibs.set_roll_timer:schedule(2, active_roll)
     end
   end
 end
@@ -2872,10 +2898,13 @@ function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
           silibs.is_doubling_up = nil
           silibs.my_active_rolls[spell.status] = silibs.roll_info[spell.id]
           silibs.my_active_rolls[spell.status].value = spell.value
+          silibs.my_active_rolls[spell.status].is_self = true
+          silibs.set_double_up_timer()
         else -- Double-up
           if spell.value > 11 then -- Busted
             silibs.clear_roll_timer(silibs.my_active_rolls[spell.status])
             silibs.my_active_rolls[spell.status] = nil
+            silibs.clear_double_up_timer()
           else -- Not busted double-up
             -- Clear current timer, allows new one to be created with the buff update packet
             silibs.clear_roll_timer(silibs.my_active_rolls[spell.status])
@@ -2883,6 +2912,7 @@ function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
             local old_exp = silibs.my_active_rolls[spell.status] and silibs.my_active_rolls[spell.status].expiration or nil
             silibs.my_active_rolls[spell.status] = silibs.roll_info[spell.id]
             silibs.my_active_rolls[spell.status].value = spell.value
+            silibs.my_active_rolls[spell.status].is_self = true
             silibs.my_active_rolls[spell.status].expiration = old_exp
 
             silibs.set_roll_timer(silibs.my_active_rolls[spell.status])
