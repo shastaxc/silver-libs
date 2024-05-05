@@ -1260,7 +1260,7 @@ function silibs.clear_roll_timer(roll)
 end
 
 function silibs.set_roll_timer(roll)
-  local exp = roll and roll.expiration and roll.expiration-os.time() or 300
+  local exp = roll and roll.expiration and roll.expiration-os.time() or 600
   if roll then
     send_command('@timers c "'..silibs.roll_timer_name(roll)..'" ' ..exp.. ' down abilities/00193.png')
   end
