@@ -1,4 +1,4 @@
--- Version 2024.MAY.5.002
+-- Version 2024.MAY.5.003
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -3085,9 +3085,11 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
 end)
 
 windower.raw_register_event('action', function(action)
-  silibs.on_action_for_th(action)
-  silibs.on_action_for_rolls(action)
-  silibs.on_action_for_flurry(action)
+  if action then
+    silibs.on_action_for_th(action)
+    silibs.on_action_for_rolls(action)
+    silibs.on_action_for_flurry(action)
+  end
 end)
 
 windower.raw_register_event('zone change', function(new_zone, old_zone)
