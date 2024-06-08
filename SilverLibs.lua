@@ -1,4 +1,4 @@
--- Version 2024.MAY.5.003
+-- Version 2024.JUN.8.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -286,6 +286,9 @@ silibs.elements = {
 }
 
 -- Credit to Rubenator for the ammo map
+-- Maps ammo type (i.e. bullet, bolt, etc) to the range type (i.e. gun, crossbow, etc).
+-- Ammo items have an ammo_type field and range items have a range_type field. This map
+-- provides a way to check if a specific ammo item can be used by a specific range item.
 silibs.ammo_map = T{}
 silibs.ammo_range_map = T{
     ['Bullet'] = 'Gun',
@@ -1811,95 +1814,134 @@ function silibs.get_orpheus_multiplier(spell_element, distance, has_iridescence)
   return multiplier
 end
 
--- Check for proper ammo when shooting or weaponskilling
--- RNG and THF job luas should contain a map of weapon-to-ammo for DefaultAmmo,
--- MagicAmmo, AccAmmo, and WSAmmo in this format:
---   DefaultAmmo = {
---     ['Gastraphetes'] = "Quelling Bolt",
---     ['Fomalhaut'] = "Chrono Bullet",
---   }
---
--- COR job lua should contain a series of variables defining ammo for gear.RAbullet,
--- gear.MAbullet, gear.RAccbullet, gear.MAccbullet, gear.WSbullet, and gear.QDbullet in the following format:
---   gear.RAbullet = 'Chrono Bullet'
+--[[
+Check for proper ammo when shooting or weaponskilling.
+
+Job luas should contain a map of weapon type to ammo in this format:
+  ammo_assignment = {
+    Bow = {
+      Default = "Chrono Arrow",
+      Accuracy = "Yoichi's Arrow",
+      Physical_Weaponskill = "Chrono Arrow",
+      Magic_Damage = "Chrono Arrow",
+      Magic_Accuracy = "Devastating Bullet",
+      Quick_Draw = "Hauksbok Bullet",
+    },
+    Crossbow = {
+      Default = "Quelling Bolt",
+      Accuracy = "Quelling Bolt",
+      Physical_Weaponskill = "Quelling Bolt",
+      Magic_Damage = "Quelling Bolt",
+      Magic_Accuracy = "Devastating Bullet",
+      Quick_Draw = "Hauksbok Bullet",
+    },
+    Gun_or_Cannon = {
+      Default = "Chrono Bullet",
+      Accuracy = "Eradicating Bullet",
+      Physical_Weaponskill = "Chrono Bullet",
+      Magic_Damage = "Devastating Bullet",
+      Magic_Accuracy = "Devastating Bullet",
+      Quick_Draw = "Hauksbok Bullet",
+    }
+  }
+]]--
 function silibs.equip_ammo(spell, action, spellMap, eventArgs)
-  -- If throwing weapon, return empty as ammo
+  -- Determine weapon type
+  local range_type
   if player.equipment.range and player.equipment.range ~= 'empty' then
     local weapon_stats = res.items:with('en', player.equipment.range)
+    -- If throwing weapon, return empty as ammo
     if weapon_stats.skill == 27 then
       equip({ammo='empty'})
       return
+    elseif weapon_stats.range_type == 'Bow' then
+      range_type = 'Bow'
+    elseif weapon_stats.range_type == 'Crossbow' then
+      range_type = 'Crossbow'
+    elseif weapon_stats.range_type == 'Gun' or weapon_stats.range_type == 'Cannon' then
+      range_type = 'Gun_or_Cannon'
     end
   end
 
-  local swapped_ammo = nil
-  local default_ammo
-  local magic_ammo
-  local acc_ammo
-  local ws_ammo
-  if player.main_job == 'RNG' or player.main_job == 'THF' then
-    default_ammo = player.equipment.range and DefaultAmmo[player.equipment.range]
-    magic_ammo = player.equipment.range and MagicAmmo[player.equipment.range]
-    acc_ammo = player.equipment.range and AccAmmo[player.equipment.range]
-    macc_ammo = player.equipment.range and MagicAmmo[player.equipment.range]
-    ws_ammo = player.equipment.range and WSAmmo[player.equipment.range]
-    qd_ammo = 'empty'
-  elseif player.main_job == 'COR' then
-    default_ammo = gear.RAbullet
-    magic_ammo = gear.MAbullet
-    acc_ammo = gear.RAccbullet
-    macc_ammo = gear.MAccbullet
-    ws_ammo = gear.WSbullet
-    qd_ammo = gear.QDbullet
+  if not range_type then
+    add_to_chat(123, 'Attempting to shoot with inappropriate weapon.')
+    return
   end
+
+  if not ammo_assignment then
+    add_to_chat(123, 'ammo_assignment map not defined!')
+    equip({ammo='empty'}) -- Just in case, unequip any current ammo to avoid accidental firing
+    eventArgs.cancel = true
+    return
+  end
+  if not ammo_assignment[range_type] then
+    add_to_chat(123, 'ammo_assignment '..range_type..' sub-map not defined!')
+    equip({ammo='empty'}) -- Just in case, unequip any current ammo to avoid accidental firing
+    eventArgs.cancel = true
+    return
+  end
+
+  local default_ammo = ammo_assignment[range_type].Default
+  local acc_ammo = ammo_assignment[range_type].Accuracy
+  local ws_ammo = ammo_assignment[range_type].Physical_Weaponskill
+  local magic_ammo = ammo_assignment[range_type].Magic_Damage
+  local macc_ammo = ammo_assignment[range_type].Magic_Accuracy or ammo_assignment[range_type].Magic_Damage
+  local qd_ammo = ammo_assignment[range_type].Quick_Draw
+
   if not default_ammo then
     add_to_chat(123, 'Default ammo is undefined.')
     equip({ammo='empty'})
+    cancel_spell()
+    eventArgs.cancel = true
     return
   end
 
   -- Protect against shooting hauksbok ammo
   if silibs.rare_ammo:contains(default_ammo:lower()) then
-    swapped_ammo = empty
-    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove rare ammo from \'Default\' ammo assignment. **')
+    equip({ammo='empty'})
+    cancel_spell()
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'default ammo\'. **')
-    return
-  elseif silibs.rare_ammo:contains(magic_ammo:lower()) then
-    swapped_ammo = empty
-    equip({ammo=swapped_ammo})
-    eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'magic ammo\'. **')
     return
   elseif silibs.rare_ammo:contains(acc_ammo:lower()) then
-    swapped_ammo = empty
-    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove rare ammo from \'Accuracy\' ammo assignment. **')
+    equip({ammo='empty'})
+    cancel_spell()
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'accuracy ammo\'. **')
     return
   elseif silibs.rare_ammo:contains(ws_ammo:lower()) then
-    swapped_ammo = empty
-    equip({ammo=swapped_ammo})
+    add_to_chat(123, '** Action Canceled: Remove rare ammo from \'Physical_Weaponskill\' ammo assignment. **')
+    equip({ammo='empty'})
+    cancel_spell()
     eventArgs.cancel = true
-    add_to_chat(123, '** Action Canceled: Remove Hauksbok/Animikii ammo from \'weaponskill ammo\'. **')
+    return
+  elseif silibs.rare_ammo:contains(magic_ammo:lower()) then
+    add_to_chat(123, '** Action Canceled: Remove rare ammo from \'Magic_Damage\' ammo assignment. **')
+    equip({ammo='empty'})
+    cancel_spell()
+    eventArgs.cancel = true
+    return
+  elseif silibs.rare_ammo:contains(macc_ammo:lower()) then
+    add_to_chat(123, '** Action Canceled: Remove rare ammo from \'Magic_Accuracy\' ammo assignment. **')
+    equip({ammo='empty'})
+    cancel_spell()
+    eventArgs.cancel = true
     return
   end
 
+  local swapped_ammo
   if spell.action_type == 'Ranged Attack' then
     -- If in ranged acc mode, use acc bullet (fall back to default bullet if out of acc ammo)
     if state.RangedMode.value ~= 'Normal' then
       if acc_ammo and silibs.has_item(acc_ammo, silibs.equippable_bags) then
         swapped_ammo = acc_ammo
-        equip({ammo=swapped_ammo})
       elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
         -- Fall back to default ammo, if there is any
         swapped_ammo = default_ammo
-        equip({ammo=swapped_ammo})
         add_to_chat(3, 'Acc ammo unavailable. Falling back to default ammo.')
       else
         -- If neither is available, empty the ammo slot
-        swapped_ammo = empty
-        equip({ammo=swapped_ammo})
+        swapped_ammo = 'empty'
         cancel_spell()
         add_to_chat(123, '** Action Canceled: [ Acc & default ammo unavailable. ] **')
         eventArgs.cancel = true
@@ -1907,10 +1949,8 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       end
     elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
       swapped_ammo = default_ammo
-      equip({ammo=swapped_ammo})
     else
-      swapped_ammo = empty
-      equip({ammo=swapped_ammo})
+      swapped_ammo = 'empty'
       cancel_spell()
       add_to_chat(123, '** Action Canceled: [ Default ammo unavailable. ] **')
       eventArgs.cancel = true
@@ -1923,14 +1963,11 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       if silibs.elemental_ws:contains(spell.english) then
         if magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
           swapped_ammo = magic_ammo
-          equip({ammo=swapped_ammo})
         elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
           swapped_ammo = default_ammo
-          equip({ammo=swapped_ammo})
           add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
         else
-          swapped_ammo = empty
-          equip({ammo=swapped_ammo})
+          swapped_ammo = 'empty'
           cancel_spell()
           add_to_chat(123, '** Action Canceled: [ Magic & default ammo unavailable. ] **')
           eventArgs.cancel = true
@@ -1940,17 +1977,14 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         if state.RangedMode.value ~= 'Normal' then
           if acc_ammo and silibs.has_item(acc_ammo, silibs.equippable_bags) then
             swapped_ammo = acc_ammo
-            equip({ammo=swapped_ammo})
           elseif ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
             swapped_ammo = ws_ammo
-            equip({ammo=swapped_ammo})
             add_to_chat(3, 'Acc ammo unavailable. Using WS ammo.')
           elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
             swapped_ammo = default_ammo
-            equip({ammo=swapped_ammo})
             add_to_chat(3, 'Acc & WS ammo unavailable. Using default ammo.')
           else
-            swapped_ammo = empty
+            swapped_ammo = 'empty'
             equip({ammo=swapped_ammo})
             cancel_spell()
             add_to_chat(123, '** Action Canceled: [ Acc, WS, & default ammo unavailable. ] **')
@@ -1960,14 +1994,11 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         else
           if ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
             swapped_ammo = ws_ammo
-            equip({ammo=swapped_ammo})
           elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
             swapped_ammo = default_ammo
-            equip({ammo=swapped_ammo})
             add_to_chat(3, 'WS ammo unavailable. Using default ammo.')
           else
-            swapped_ammo = empty
-            equip({ammo=swapped_ammo})
+            swapped_ammo = 'empty'
             cancel_spell()
             add_to_chat(123, '** Action Canceled: [ WS & default ammo unavailable. ] **')
             eventArgs.cancel = true
@@ -1976,55 +2007,31 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         end
       end
     else -- Melee WS
-      -- melee magical weaponskills
-      if silibs.elemental_ws:contains(spell.english) then
-        -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
-        local rweapon = player.equipment.range
-        local range_type = res.items:with('en', rweapon).range_type
-        if rweapon and range_type == 'Bow' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
-          swapped_ammo = 'Hauksbok Arrow'
-          equip({ammo=swapped_ammo})
-        elseif rweapon and range_type == 'Gun' and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
-          swapped_ammo = 'Hauksbok Bullet'
-          equip({ammo=swapped_ammo})
-        elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
-          swapped_ammo = magic_ammo
-          equip({ammo=swapped_ammo})
-        elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
-          swapped_ammo = default_ammo
-          equip({ammo=swapped_ammo})
-          add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
-        else
-          swapped_ammo = empty
-          equip({ammo=swapped_ammo})
-          -- Return from function without ammo but don't cancel action. Ammo not needed for melee WS.
-          return
-        end
-      else -- melee physical weaponskills
-        -- If ranged weapon is accipiter/sparrowhawk and using non-ranged WS, equip WSD ammo
-        local rweapon = player.equipment.range
-        local range_type = res.items:with('en', rweapon).range_type
-        if rweapon and range_type == 'Bow' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
-          swapped_ammo = 'Hauksbok Arrow'
-          equip({ammo=swapped_ammo})
-        end
+      -- Equip WSD ammo if possible
+      if range_type == 'Bow' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+        swapped_ammo = 'Hauksbok Arrow'
+      elseif range_type == 'Gun_or_Cannon' and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
+        swapped_ammo = 'Hauksbok Bullet'
+      elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
+        swapped_ammo = magic_ammo
+      elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+        swapped_ammo = default_ammo
+        add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
+      else
+        swapped_ammo = 'empty'
       end
     end
   elseif spell.type == 'CorsairShot' then
     if macc_ammo and silibs.has_item(qd_ammo, silibs.equippable_bags)
         and spell.english == 'Light Shot' or spell.english == 'Dark Shot' then
       swapped_ammo = macc_ammo
-      equip({ammo=swapped_ammo})
     elseif qd_ammo and silibs.has_item(qd_ammo, silibs.equippable_bags) then
       swapped_ammo = qd_ammo
-      equip({ammo=swapped_ammo})
     elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
       swapped_ammo = default_ammo
-      equip({ammo=swapped_ammo})
       add_to_chat(3, 'QD ammo unavailable. Using default ammo.')
     else
-      swapped_ammo = empty
-      equip({ammo=swapped_ammo})
+      swapped_ammo = 'empty'
       cancel_spell()
       add_to_chat(123, '** Action Canceled: [ QD & default ammo unavailable. ] **')
       eventArgs.cancel = true
@@ -2033,20 +2040,34 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
   elseif spell.english == 'Shadowbind' or spell.english == 'Bounty Shot' or spell.english == 'Eagle Eye Shot' then
     if silibs.has_item(default_ammo, silibs.equippable_bags) then
       swapped_ammo = default_ammo
-      equip({ammo=swapped_ammo})
     else
-      swapped_ammo = empty
-      equip({ammo=swapped_ammo})
+      swapped_ammo = 'empty'
       cancel_spell()
       add_to_chat(123, '** Action Canceled: [ Default ammo unavailable. ] **')
       eventArgs.cancel = true
       return
     end
   end
-  local swapped_item = silibs.get_item(swapped_ammo)
-  if player.equipment.ammo ~= 'empty' and swapped_item ~= nil and swapped_item.count < options.ammo_warning_limit
-      and not silibs.rare_ammo:contains(swapped_item.shortname:lower()) then
-    add_to_chat(39,'*** Ammo \''..swapped_item.shortname..'\' running low! *** ('..swapped_item.count..')')
+
+  if swapped_ammo and swapped_ammo ~= 'empty' then
+    local swapped_item = silibs.get_item(swapped_ammo)
+    if swapped_item then
+      -- Warn player if ammo is running low (unless it's rare ammo in which case it's always gonna be low so ignore).
+      if options.ammo_warning_limit
+        and swapped_item.count < options.ammo_warning_limit
+        and not silibs.rare_ammo:contains(swapped_item.shortname:lower())
+      then
+        add_to_chat(39,'*** Ammo \''..swapped_item.shortname..'\' running low! *** ('..swapped_item.count..')')
+      end
+    else
+      add_to_chat(123, '** Ammo unavailable: [ '..swapped_ammo..' ] **')
+      swapped_ammo = 'empty'
+      cancel_spell()
+      eventArgs.cancel = true
+      return
+    end
+
+    equip({ammo=swapped_ammo})
   end
 end
 
