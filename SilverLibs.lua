@@ -1,4 +1,4 @@
--- Version 2024.JUN.8.001
+-- Version 2024.JUN.8.002
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -413,6 +413,7 @@ function silibs.init_settings()
   silibs.elemental_belt_handling_enabled = false
   silibs.elemental_belt_handling_condition = nil
   silibs.snapshot_auto_equip_enabled = false
+  silibs.handle_ammo_swaps_enabled = false
 
   -- Other variables
   -- Most recent weapons (used for re-arming)
@@ -495,6 +496,14 @@ function silibs.init_settings()
   }
   silibs.is_double_up_active = false
   silibs.self_timers_symbol = '@'
+  -- This map will be used by SilverLibs to determine which ammo to use
+  -- Default: Used most of the time. It is also the fallback option in case you don't have any of the other ammo.
+  -- Accuracy: Used in high accuracy situations.
+  -- Physical_Weaponskill: Used for ranged physical weaponskills.
+  -- Magic_Damage: Used when you are dealing magic damage.
+  -- Magic_Accuracy: Used for Light Shot and Dark Shot.
+  -- Quick_Draw: Used when performing Quick Draws (not Light or Dark). This ammo is never consumed.
+  silibs.ammo_assignment = nil
 
   -------------------------------------------------------------------------------
   -- One-off commands to execute on load
@@ -1868,25 +1877,25 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     return
   end
 
-  if not ammo_assignment then
+  if not silibs.ammo_assignment then
     add_to_chat(123, 'ammo_assignment map not defined!')
     equip({ammo='empty'}) -- Just in case, unequip any current ammo to avoid accidental firing
     eventArgs.cancel = true
     return
   end
-  if not ammo_assignment[range_type] then
+  if not silibs.ammo_assignment[range_type] then
     add_to_chat(123, 'ammo_assignment '..range_type..' sub-map not defined!')
     equip({ammo='empty'}) -- Just in case, unequip any current ammo to avoid accidental firing
     eventArgs.cancel = true
     return
   end
 
-  local default_ammo = ammo_assignment[range_type].Default
-  local acc_ammo = ammo_assignment[range_type].Accuracy
-  local ws_ammo = ammo_assignment[range_type].Physical_Weaponskill
-  local magic_ammo = ammo_assignment[range_type].Magic_Damage
-  local macc_ammo = ammo_assignment[range_type].Magic_Accuracy or ammo_assignment[range_type].Magic_Damage
-  local qd_ammo = ammo_assignment[range_type].Quick_Draw
+  local default_ammo = silibs.ammo_assignment[range_type].Default
+  local acc_ammo = silibs.ammo_assignment[range_type].Accuracy
+  local ws_ammo = silibs.ammo_assignment[range_type].Physical_Weaponskill
+  local magic_ammo = silibs.ammo_assignment[range_type].Magic_Damage
+  local macc_ammo = silibs.ammo_assignment[range_type].Magic_Accuracy or silibs.ammo_assignment[range_type].Magic_Damage
+  local qd_ammo = silibs.ammo_assignment[range_type].Quick_Draw
 
   if not default_ammo then
     add_to_chat(123, 'Default ammo is undefined.')
@@ -2008,9 +2017,9 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
       end
     else -- Melee WS
       -- Equip WSD ammo if possible
-      if range_type == 'Bow' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+      if range_type == 'Bow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
         swapped_ammo = 'Hauksbok Arrow'
-      elseif range_type == 'Gun_or_Cannon' and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
+      elseif range_type == 'Gun_or_Cannon' and (player.main_job == 'RNG' or player.main_job == 'COR') and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
         swapped_ammo = 'Hauksbok Bullet'
       elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
         swapped_ammo = magic_ammo
@@ -2665,6 +2674,11 @@ function silibs.enable_snapshot_auto_equip()
   silibs.latest_flurry_buff = buffactive['Flurry'] and 1 or nil
 end
 
+function silibs.enable_handle_ammo_swaps(ammo_map)
+  silibs.handle_ammo_swaps_enabled = true
+  silibs.ammo_assignment = ammo_map
+end
+
 
 -------------------------------------------------------------------------------
 -- Gearswap lifecycle hooks
@@ -2707,6 +2721,10 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
   end
   if silibs.snapshot_auto_equip_enabled then
     silibs.select_snapshot_set_for_ranged_attacks(spell, eventArgs)
+  end
+
+  if silibs.handle_ammo_swaps_enabled then
+    silibs.equip_ammo(spell, action, spellMap, eventArgs)
   end
 
   -- Use special FC set under certain conditions.
@@ -2874,6 +2892,10 @@ function silibs.midcast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
+  if silibs.handle_ammo_swaps_enabled then
+    silibs.equip_ammo(spell, action, spellMap, eventArgs)
+  end
+
   -- Equip elemental belts if appropriate
   if silibs.elemental_belt_handling_enabled and (silibs.elemental_belt_handling_condition == nil or silibs.elemental_belt_handling_condition()) then
     silibs.handle_elemental_belts(spell, spellMap, 'midcast')
