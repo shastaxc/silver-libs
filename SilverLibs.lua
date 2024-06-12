@@ -1,4 +1,4 @@
--- Version 2024.JUN.8.002
+-- Version 2024.JUN.11.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -1872,8 +1872,8 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     end
   end
 
+  -- Attempting to shoot with inappropriate weapon
   if not range_type then
-    add_to_chat(123, 'Attempting to shoot with inappropriate weapon.')
     return
   end
 
