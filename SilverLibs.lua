@@ -1,4 +1,4 @@
--- Version 2024.JUN.11.001
+-- Version 2024.JUN.12.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2725,6 +2725,12 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
 
   if silibs.handle_ammo_swaps_enabled then
     silibs.equip_ammo(spell, action, spellMap, eventArgs)
+  end
+
+  -- Cancel action if casting Warp II on self
+  if spell.english == 'Warp II' and spell.target.type == 'SELF' then
+    eventArgs.cancel = true
+    add_to_chat(123, '** Action canceled: Detected casting Warp II on self. **')
   end
 
   -- Use special FC set under certain conditions.
