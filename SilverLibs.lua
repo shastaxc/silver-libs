@@ -3045,7 +3045,7 @@ windower.raw_register_event('prerender',function()
       end
     end
 
-    -- Every 0.5 seconds, check to re-arm weapons
+    -- Every 0.5 seconds, check to re-arm gear
     if now - silibs.timer3 > 0.5 then
       silibs.timer3 = now
       if silibs.equip_loop_enabled
