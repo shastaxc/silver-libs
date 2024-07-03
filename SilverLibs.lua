@@ -1,4 +1,4 @@
--- Version 2024.JUN.12.001
+-- Version 2024.JUL.3.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2517,7 +2517,6 @@ function silibs.enable_auto_lockstyle(set_number)
   if set_number then
     silibs.lockstyle_set = set_number
     silibs.auto_lockstyle_enabled = true
-    silibs.set_lockstyle()
   end
 end
 
@@ -3077,7 +3076,7 @@ end)
 
 windower.raw_register_event('outgoing chunk', function(id, data, modified, injected, blocked)
   if id == 0x053 then -- Send lockstyle command to server
-    local type = data:unpack('I', 0x05)
+    local type = data:unpack('C', 0x05)
     if type == 0 then -- This is lockstyle 'disable' command
       silibs.locked_style = false
     else -- Various diff ways to set lockstyle
@@ -3086,14 +3085,27 @@ windower.raw_register_event('outgoing chunk', function(id, data, modified, injec
   end
 end)
 
--- Set lockstyle again when encumbrance value changes (which disables lockstyle as a side effect)
 windower.raw_register_event('incoming chunk', function(id, data, modified, injected, blocked)
-  if id == 0x01B then -- Contains info about player's encumbrance status
+  -- Set lockstyle again if it ever gets disabled due to action player did not initiate such as
+  -- if an enemy force unequips your gear.
+  if id == 0x009 then
+    local is_lockstyle_enabled = data:unpack('C', 0x0B) == 11
+    -- If incoming message is saying lockstyle is off but we're internally tracking that it is locked
+    -- try to re-enable lockstyle. Checking both vars should help prevent re-enabling lockstyle when
+    -- the player manually disabled it themselves.
+    if not is_lockstyle_enabled and silibs.locked_style then
+      silibs.locked_style = false
+      silibs.set_lockstyle()
+    end
+  -- Set lockstyle again when encumbrance value changes (which disables lockstyle as a side effect)
+  elseif id == 0x01B then -- Contains info about player's encumbrance status
     local encumbrance = data:unpack('I', 0x61)
     if encumbrance ~= silibs.encumbrance then
-      silibs.locked_style = false
       silibs.encumbrance = encumbrance
-      silibs.set_lockstyle()
+      if silibs.locked_style then
+        silibs.locked_style = false
+        silibs.set_lockstyle()
+      end
     end
   elseif id == 0x029 then
     -- Message IDs can be found here https://github.com/Windower/Lua/wiki/Message-IDs
