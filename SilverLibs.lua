@@ -1,4 +1,4 @@
--- Version 2024.JUL.3.001
+-- Version 2024.JUL.6.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -485,15 +485,12 @@ function silibs.init_settings()
   }
   silibs.dw_needed = 0
   silibs.snapshot_sets = nil
-  silibs.clock_offset = nil
+  -- Time in Earth seconds from Unix epoch to the start of the current vana'diel era
+  silibs.start_of_era = 0
   silibs.is_doubling_up = nil
   silibs.latest_flurry_buff = nil
   silibs.has_orpheus = false
   silibs.has_obi = false
-  silibs.playerStats = {
-    Base = {},
-    Bonus = {}
-  }
   silibs.is_double_up_active = false
   silibs.self_timers_symbol = '@'
   -- This map will be used by SilverLibs to determine which ammo to use
@@ -509,9 +506,11 @@ function silibs.init_settings()
   -- One-off commands to execute on load
   -------------------------------------------------------------------------------
 
-  -- Send request for player stats update
-  local packet = packets.new('outgoing', 0x061, {})
-  packets.inject(packet)
+  -- Refresh vana'diel clock offset
+  local last_time_packet = windower.packets.last_incoming(0x037)
+  if last_time_packet then
+    silibs.parse_packet('0x037', last_time_packet)
+  end
 
   silibs.reset_midaction()
 end
@@ -988,6 +987,8 @@ function silibs.refine_waltz(spell, action, spellMap, eventArgs)
 end
 
 function silibs.set_waltz_stats(table)
+  silibs.waltz_stats.base_chr = player.base_chr
+  silibs.waltz_stats.base_vit = player.base_vit
   -- Write given values to settings table
   for k,v in pairs(table) do
     if rawget(silibs.waltz_stats,k) ~= nil then
@@ -1297,12 +1298,7 @@ function silibs.roll_timer_name(roll)
 end
 
 function silibs.from_server_time(t)
-  if not silibs.clock_offset then
-    return nil
-  end
-
-  local result = t / 60 + silibs.clock_offset
-  return result
+  return t / 60 + silibs.start_of_era
 end
 
 function silibs.determine_snapshot_sets()
@@ -1650,11 +1646,10 @@ function silibs.waltz_cure_amount(tier, target)
 
   local cure_base = silibs.curing_waltz[tier].cure_base
 
-  -- Get stats (these are not 100% up-to-date, has about 1-2 seconds lag)
-  local base_chr = silibs.playerStats['Base']['CHR'] or silibs.waltz_stats.base_chr
-  local base_vit = silibs.playerStats['Base']['VIT'] or silibs.waltz_stats.base_vit
-  local bonus_chr = silibs.playerStats['Bonus']['CHR'] or silibs.waltz_stats.bonus_chr
-  local bonus_vit = silibs.playerStats['Bonus']['VIT'] or silibs.waltz_stats.bonus_vit
+  local base_chr = silibs.waltz_stats.base_chr
+  local base_vit = silibs.waltz_stats.base_vit
+  local bonus_chr = silibs.waltz_stats.bonus_chr
+  local bonus_vit = silibs.waltz_stats.bonus_vit
 
   if not target then
     return
@@ -3116,34 +3111,19 @@ windower.raw_register_event('incoming chunk', function(id, data, modified, injec
     end
   elseif id == 0x037 then
     -- Update clock offset; required for packet 0x063 to work properly
-    -- credit: Akaden, Buffed addon
-    local p = packets.parse('incoming', data)
-    if p['Timestamp'] and p['Time offset?'] then
-      local vana_time = p['Timestamp'] * 60 - math.floor(p['Time offset?'])
-      silibs.clock_offset = math.floor(os.time() - vana_time % 0x100000000 / 60)
-    end
-  elseif id == 0x061 then -- Contains info about player stats
-    local p = packets.parse('incoming', data)
-
-    silibs.playerStats['Base']['STR'] = p['Base STR'] -- Includes STR merits
-    silibs.playerStats['Base']['DEX'] = p['Base DEX'] -- Includes DEX merits
-    silibs.playerStats['Base']['VIT'] = p['Base VIT'] -- Includes VIT merits
-    silibs.playerStats['Base']['AGI'] = p['Base AGI'] -- Includes AGI merits
-    silibs.playerStats['Base']['INT'] = p['Base INT'] -- Includes INT merits
-    silibs.playerStats['Base']['MND'] = p['Base MND'] -- Includes MND merits
-    silibs.playerStats['Base']['CHR'] = p['Base CHR'] -- Includes CHR merits
-    silibs.playerStats['Bonus']['STR'] = p['Added STR']
-    silibs.playerStats['Bonus']['DEX'] = p['Added DEX']
-    silibs.playerStats['Bonus']['VIT'] = p['Added VIT']
-    silibs.playerStats['Bonus']['AGI'] = p['Added AGI']
-    silibs.playerStats['Bonus']['INT'] = p['Added INT']
-    silibs.playerStats['Bonus']['MND'] = p['Added MND']
-    silibs.playerStats['Bonus']['CHR'] = p['Added CHR']
+    silibs.parse_packet('0x037', data)
   elseif id == 0x063 then -- Set Update packet
     silibs.parse_buff_update_packet(data)
   end
   silibs.on_incoming_chunk_for_th(id, data, modified, injected, blocked)
 end)
+
+function silibs.parse_packet(packet_id, packet)
+  if packet_id == '0x037' then
+    -- Info provided by Akaden
+    silibs.start_of_era = math.floor(os.time() - (((packet:unpack("I",0x41)*60 - packet:unpack("I",0x3D)) % 0x100000000) / 60))
+  end
+end
 
 windower.raw_register_event('action', function(action)
   if action then
