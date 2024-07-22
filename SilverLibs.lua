@@ -1,4 +1,4 @@
--- Version 2024.JUL.6.001
+-- Version 2024.JUL.22.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -343,6 +343,8 @@ silibs.snapshot_weapons = {
 
 silibs.rare_ammo = S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}
 silibs.equip_locked_spells = S{'Honor March', 'Dispelga', 'Impact'}
+
+silibs.pickable_locks = S{'Treasure Chest', 'Treasure Coffer', 'Chest', 'Coffer', 'Aurum Strongbox'}
 
 
 -------------------------------------------------------------------------------
@@ -815,7 +817,7 @@ function silibs.interact()
     -- Handle keys
     elseif t == 'Sturdy Pyxis' then
       send_command('@input /item "Forbidden Key" <t>')
-    elseif player.main_job == 'THF' then
+    elseif player.main_job == 'THF' and silibs.pickable_locks:contains(t) then
       if silibs.has_item('Skeleton Key', L{'inventory'}) then
         send_command('@input /item "Skeleton Key" <t>')
       elseif silibs.has_item('Living Key', L{'inventory'}) then
@@ -844,6 +846,8 @@ function silibs.interact()
           end
         end
       end
+    elseif world.area:startswith('Abyssea') then
+      send_command('abysseapopper pop')
     end
   end
 end
@@ -2653,7 +2657,7 @@ end
 
 function silibs.enable_haste_info()
   silibs.haste_info_enabled = true
-  send_command('hi report')
+  send_command('hasteinfo report')
 end
 
 function silibs.enable_elemental_belt_handling(has_obi, has_orpheus, condition_fn)
