@@ -1,4 +1,4 @@
--- Version 2024.JUL.22.001
+-- Version 2024.AUG.9.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2130,16 +2130,23 @@ function silibs.get_dual_wield_needed()
   end
 end
 
--- Check sub slot to see if you currently have equipped weapons in a dual wielding configuration
-function silibs.is_dual_wielding()
-  local sub_weapon_name = player and player.equipment and player.equipment.sub
-  if sub_weapon_name then
-    local item = res.items:with('en', sub_weapon_name)
+function silibs.is_weapon(weapon_name)
+  if weapon_name then
+    local item = res.items:with('en', weapon_name)
     if item and item.category == 'Weapon' then
-      return true
+      -- Ensure it's not a grip, which also have category as "Weapon"
+      if not item.slots ==  S{1} then
+        return true
+      end
     end
   end
   return false
+end
+
+-- Check sub slot to see if you currently have equipped weapons in a dual wielding configuration
+function silibs.is_dual_wielding()
+  local sub_weapon_name = sub_weapon_name or (player and player.equipment and player.equipment.sub)
+  return silibs.is_weapon(sub_weapon_name)
 end
 
 function silibs.can_dual_wield()
