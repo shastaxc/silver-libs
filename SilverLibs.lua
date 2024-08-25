@@ -1,4 +1,4 @@
--- Version 2024.AUG.9.001
+-- Version 2024.AUG.25.001
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2130,7 +2130,9 @@ function silibs.get_dual_wield_needed()
   end
 end
 
-function silibs.is_weapon(weapon_name)
+function silibs.is_weapon(input)
+  -- Check if input is a weapon table {name='...', augments='...'} or a string
+  local weapon_name = type(input) == 'table' and input.name or input
   if weapon_name then
     local item = res.items:with('en', weapon_name)
     if item and item.category == 'Weapon' then
