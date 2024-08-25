@@ -1,4 +1,4 @@
--- Version 2024.AUG.25.002
+-- Version 2024.AUG.25.003
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -2139,7 +2139,7 @@ function silibs.is_weapon(input)
     local item = res.items:with('en', weapon_name)
     if item and item.category == 'Weapon' then
       -- Ensure it's not a grip, which also have category as "Weapon"
-      if not item.slots ==  S{1} then
+      if item.slots ~= S{1} then
         return true
       end
     end
