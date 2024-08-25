@@ -1,4 +1,4 @@
--- Version 2024.AUG.25.001
+-- Version 2024.AUG.25.002
 -- Copyright © 2021-2024, Shasta
 -- All rights reserved.
 
@@ -48,6 +48,8 @@ extdata = include('extdata')
 -------------------------------------------------------------------------------
 -- Constants and maps
 -------------------------------------------------------------------------------
+silibs.init_time = os.time()
+
 silibs.range_mult = {
   [2] = 1.55,
   [3] = 1.490909,
@@ -3056,6 +3058,7 @@ windower.raw_register_event('prerender',function()
     if now - silibs.timer3 > 0.5 then
       silibs.timer3 = now
       if silibs.equip_loop_enabled
+          and os.time() - silibs.init_time > 3
           and not silibs.midaction()
           and not ((player.main_job == 'SMN'
             or player.main_job == 'BST'
