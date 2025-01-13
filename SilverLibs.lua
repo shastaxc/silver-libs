@@ -1,5 +1,5 @@
--- Version 2024.AUG.25.003
--- Copyright © 2021-2024, Shasta
+-- Version 2025.JAN.13.001
+-- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
 -- Redistribution and use in source and binary forms, with or without
@@ -1320,7 +1320,7 @@ function silibs.determine_snapshot_sets()
       -- Fill in velocity sets
       if sets['Velocity'] and sets['Velocity']['Snapshot'..tostring(i)] then
         snapshot_sets['Velocity'][i] = set_combine(sets['Velocity']['Snapshot'..tostring(i)], {})
-      elseif snapshot_sets[i+1] then
+      elseif snapshot_sets['Velocity'][i+1] then
         snapshot_sets['Velocity'][i] = set_combine(snapshot_sets['Velocity'][i+1], {})
       end
     end
@@ -1333,18 +1333,13 @@ function silibs.determine_snapshot_sets()
       -- Fill in velocity sets
       if not snapshot_sets['Velocity'][i] and snapshot_sets['Velocity'][i-1] then
         snapshot_sets['Velocity'][i] = set_combine(snapshot_sets['Velocity'][i-1], {})
-      end
-    end
-
-    -- If velocity sets are still empty, fill with regular snapshot sets
-    for i=0,70,1 do
-      -- Fill in velocity sets
-      if not snapshot_sets['Velocity'][i] and snapshot_sets[i] then
+      -- If velocity sets are still empty, fill with regular snapshot sets
+      elseif not snapshot_sets['Velocity'][i] and snapshot_sets[i] then
         snapshot_sets['Velocity'][i] = set_combine(snapshot_sets[i], {})
       end
     end
   end
-  
+
   silibs.snapshot_sets = snapshot_sets
 end
 
@@ -1398,7 +1393,7 @@ function silibs.select_snapshot_set_for_ranged_attacks(spell, eventArgs)
       snapshot_needed = snapshot_needed - 25
     end
 
-    -- TODO: Add snapshot traits/gifts
+    -- Add snapshot traits/gifts
     -- COR 5% at 100 JP, 10% at 1200 JP
     -- RNG 2% per merit
     if player.main_job == 'COR' then
@@ -1416,10 +1411,10 @@ function silibs.select_snapshot_set_for_ranged_attacks(spell, eventArgs)
 
     if buffactive['Velocity Shot'] and silibs.snapshot_sets['Velocity'][snapshot_needed] then
       equip(silibs.snapshot_sets['Velocity'][snapshot_needed])
-      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+      eventArgs.handled=true -- Prevents Mote/Sel lib from overwriting the equipSet
     elseif silibs.snapshot_sets[snapshot_needed] then
       equip(silibs.snapshot_sets[snapshot_needed])
-      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+      eventArgs.handled=true -- Prevents Mote/Sel lib from overwriting the equipSet
     end
   end
 end
