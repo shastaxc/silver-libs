@@ -1,4 +1,4 @@
--- Version 2025.JAN.13.001
+-- Version 2025.JAN.22.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -2017,6 +2017,8 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         swapped_ammo = 'Hauksbok Arrow'
       elseif range_type == 'Gun_or_Cannon' and (player.main_job == 'RNG' or player.main_job == 'COR') and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
         swapped_ammo = 'Hauksbok Bullet'
+      elseif range_type == 'Crossbow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Bolt', silibs.equippable_bags) then
+        swapped_ammo = 'Hauksbok Bolt'
       elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
         swapped_ammo = magic_ammo
       elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
