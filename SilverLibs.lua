@@ -1,4 +1,4 @@
--- Version 2025.JAN.22.002
+-- Version 2025.JAN.22.003
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -500,10 +500,12 @@ function silibs.init_settings()
   -- This map will be used by SilverLibs to determine which ammo to use
   -- Default: Used most of the time. It is also the fallback option in case you don't have any of the other ammo.
   -- Accuracy: Used in high accuracy situations.
-  -- Physical_Weaponskill: Used for ranged physical weaponskills.
+  -- Physical_Weaponskill_Ranged: Used for ranged physical weaponskills.
   -- Magic_Damage: Used when you are dealing magic damage.
   -- Magic_Accuracy: Used for Light Shot and Dark Shot.
   -- Quick_Draw: Used when performing Quick Draws (not Light or Dark). This ammo is never consumed.
+  -- Physical_Weaponskill_Melee: Used for melee physical weaponskills.
+  -- Magical_Weaponskill_Melee: Used for melee magical weaponskills.
   silibs.ammo_assignment = nil
 
   -------------------------------------------------------------------------------
@@ -1827,26 +1829,32 @@ Job luas should contain a map of weapon type to ammo in this format:
     Bow = {
       Default = "Chrono Arrow",
       Accuracy = "Yoichi's Arrow",
-      Physical_Weaponskill = "Chrono Arrow",
+      Physical_Weaponskill_Ranged = "Chrono Arrow",
       Magic_Damage = "Chrono Arrow",
       Magic_Accuracy = "Devastating Bullet",
       Quick_Draw = "Hauksbok Bullet",
+      Physical_Weaponskill_Melee = "Hauksbok Arrow", -- Does not get consumed
+      Magical_Weaponskill_Melee = "Hauksbok Arrow", -- Does not get consumed
     },
     Crossbow = {
       Default = "Quelling Bolt",
       Accuracy = "Quelling Bolt",
-      Physical_Weaponskill = "Quelling Bolt",
+      Physical_Weaponskill_Ranged = "Quelling Bolt",
       Magic_Damage = "Quelling Bolt",
       Magic_Accuracy = "Devastating Bullet",
       Quick_Draw = "Hauksbok Bullet",
+      Physical_Weaponskill_Melee = "Hauksbok Bolt", -- Does not get consumed
+      Magical_Weaponskill_Melee = "Hauksbok Bolt", -- Does not get consumed
     },
     Gun_or_Cannon = {
       Default = "Chrono Bullet",
       Accuracy = "Eradicating Bullet",
-      Physical_Weaponskill = "Chrono Bullet",
+      Physical_Weaponskill_Ranged = "Chrono Bullet",
       Magic_Damage = "Devastating Bullet",
       Magic_Accuracy = "Devastating Bullet",
       Quick_Draw = "Hauksbok Bullet",
+      Physical_Weaponskill_Melee = "Hauksbok Bullet", -- Does not get consumed
+      Magical_Weaponskill_Melee = "Hauksbok Bullet", -- Does not get consumed
     }
   }
 ]]--
@@ -1888,10 +1896,12 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
 
   local default_ammo = silibs.ammo_assignment[range_type].Default
   local acc_ammo = silibs.ammo_assignment[range_type].Accuracy
-  local ws_ammo = silibs.ammo_assignment[range_type].Physical_Weaponskill
+  local phys_ra_ws_ammo = silibs.ammo_assignment[range_type].Physical_Weaponskill_Ranged or silibs.ammo_assignment[range_type].Physical_Weaponskill
   local magic_ammo = silibs.ammo_assignment[range_type].Magic_Damage
   local macc_ammo = silibs.ammo_assignment[range_type].Magic_Accuracy or silibs.ammo_assignment[range_type].Magic_Damage
   local qd_ammo = silibs.ammo_assignment[range_type].Quick_Draw
+  local phys_melee_ws_ammo = silibs.ammo_assignment[range_type].Physical_Weaponskill_Melee
+  local magic_melee_ws_ammo = silibs.ammo_assignment[range_type].Magical_Weaponskill_Melee
 
   if not default_ammo then
     add_to_chat(123, 'Default ammo is undefined.')
@@ -1914,7 +1924,7 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
     cancel_spell()
     eventArgs.cancel = true
     return
-  elseif silibs.rare_ammo:contains(ws_ammo:lower()) then
+  elseif silibs.rare_ammo:contains(phys_ra_ws_ammo:lower()) then
     add_to_chat(123, '** Action Canceled: Remove rare ammo from \'Physical_Weaponskill\' ammo assignment. **')
     equip({ammo='empty'})
     cancel_spell()
@@ -1982,8 +1992,8 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         if state.RangedMode.value ~= 'Normal' then
           if acc_ammo and silibs.has_item(acc_ammo, silibs.equippable_bags) then
             swapped_ammo = acc_ammo
-          elseif ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
-            swapped_ammo = ws_ammo
+          elseif phys_ra_ws_ammo and silibs.has_item(phys_ra_ws_ammo, silibs.equippable_bags) then
+            swapped_ammo = phys_ra_ws_ammo
             add_to_chat(3, 'Acc ammo unavailable. Using WS ammo.')
           elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
             swapped_ammo = default_ammo
@@ -1997,8 +2007,8 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
             return
           end
         else
-          if ws_ammo and silibs.has_item(ws_ammo, silibs.equippable_bags) then
-            swapped_ammo = ws_ammo
+          if phys_ra_ws_ammo and silibs.has_item(phys_ra_ws_ammo, silibs.equippable_bags) then
+            swapped_ammo = phys_ra_ws_ammo
           elseif silibs.has_item(default_ammo, silibs.equippable_bags) then
             swapped_ammo = default_ammo
             add_to_chat(3, 'WS ammo unavailable. Using default ammo.')
@@ -2012,20 +2022,49 @@ function silibs.equip_ammo(spell, action, spellMap, eventArgs)
         end
       end
     else -- Melee WS
-      -- Equip WSD ammo if possible
-      if range_type == 'Bow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
-        swapped_ammo = 'Hauksbok Arrow'
-      elseif range_type == 'Gun_or_Cannon' and (player.main_job == 'RNG' or player.main_job == 'COR') and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
-        swapped_ammo = 'Hauksbok Bullet'
-      elseif range_type == 'Crossbow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Bolt', silibs.equippable_bags) then
-        swapped_ammo = 'Hauksbok Bolt'
-      elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
-        swapped_ammo = magic_ammo
-      elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
-        swapped_ammo = default_ammo
-        add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
-      else
-        swapped_ammo = 'empty'
+      -- Magical
+      if silibs.elemental_ws:contains(spell.english) then
+        -- Use ammo explicitly defined for this situation
+        if magic_melee_ws_ammo and silibs.has_item(magic_melee_ws_ammo, silibs.equippable_bags) then
+          swapped_ammo = magic_melee_ws_ammo
+        else
+          -- Fallback ammo if not user-defined
+          if range_type == 'Bow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+            swapped_ammo = 'Hauksbok Arrow'
+          elseif range_type == 'Gun_or_Cannon' and (player.main_job == 'RNG' or player.main_job == 'COR') and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
+            swapped_ammo = 'Hauksbok Bullet'
+          elseif range_type == 'Crossbow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Bolt', silibs.equippable_bags) then
+            swapped_ammo = 'Hauksbok Bolt'
+          elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
+            swapped_ammo = magic_ammo
+          elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+            swapped_ammo = default_ammo
+            add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
+          else
+            swapped_ammo = 'empty'
+          end
+        end
+      else -- Physical
+        -- Use ammo explicitly defined for this situation
+        if phys_melee_ws_ammo and silibs.has_item(phys_melee_ws_ammo, silibs.equippable_bags) then
+          swapped_ammo = phys_melee_ws_ammo
+        else
+          -- Fallback ammo if not user-defined
+          if range_type == 'Bow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Arrow', silibs.equippable_bags) then
+            swapped_ammo = 'Hauksbok Arrow'
+          elseif range_type == 'Gun_or_Cannon' and (player.main_job == 'RNG' or player.main_job == 'COR') and silibs.has_item('Hauksbok Bullet', silibs.equippable_bags) then
+            swapped_ammo = 'Hauksbok Bullet'
+          elseif range_type == 'Crossbow' and player.main_job == 'RNG' and silibs.has_item('Hauksbok Bolt', silibs.equippable_bags) then
+            swapped_ammo = 'Hauksbok Bolt'
+          elseif magic_ammo and silibs.has_item(magic_ammo, silibs.equippable_bags) then
+            swapped_ammo = magic_ammo
+          elseif default_ammo and silibs.has_item(default_ammo, silibs.equippable_bags) then
+            swapped_ammo = default_ammo
+            add_to_chat(3, 'Magic ammo unavailable. Using default ammo.')
+          else
+            swapped_ammo = 'empty'
+          end
+        end
       end
     end
   elseif spell.type == 'CorsairShot' then
