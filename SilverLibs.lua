@@ -1,4 +1,4 @@
--- Version 2025.JAN.22.001
+-- Version 2025.JAN.22.002
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -343,7 +343,7 @@ silibs.snapshot_weapons = {
   ['Sharanga'] = 20,
 }
 
-silibs.rare_ammo = S{'hauksbok arrow', 'hauksbok bullet', 'animikii bullet'}
+silibs.rare_ammo = S{'hauksbok arrow', 'hauksbok bullet', 'hauksbok bolt', 'animikii bullet'}
 silibs.equip_locked_spells = S{'Honor March', 'Dispelga', 'Impact'}
 
 silibs.pickable_locks = S{'Treasure Chest', 'Treasure Coffer', 'Chest', 'Coffer', 'Aurum Strongbox'}
