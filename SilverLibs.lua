@@ -1,4 +1,4 @@
--- Version 2025.JAN.22.003
+-- Version 2025.MAR.1.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -396,6 +396,7 @@ function silibs.init_settings()
   end
   state.RearmingLock = M(false, 'Rearming Lock')
   state.ShowLuopanUi = M(false, 'Show Luopan UI')
+  state.AutoReraise = M{['description']='Auto Reraise Mode', 'Off', 'On', 'Auto'}
 
   -- Feature flags
   silibs.cancel_outranged_ws_enabled = false
@@ -418,6 +419,7 @@ function silibs.init_settings()
   silibs.elemental_belt_handling_condition = nil
   silibs.snapshot_auto_equip_enabled = false
   silibs.handle_ammo_swaps_enabled = false
+  silibs.auto_reraise_enabled = false
 
   -- Other variables
   -- Most recent weapons (used for re-arming)
@@ -507,6 +509,12 @@ function silibs.init_settings()
   -- Physical_Weaponskill_Melee: Used for melee physical weaponskills.
   -- Magical_Weaponskill_Melee: Used for melee magical weaponskills.
   silibs.ammo_assignment = nil
+  silibs.auto_reraise_config = {
+    set = nil,
+    mode = 'off',
+    hpp = 10,
+  }
+  silibs.auto_reraise_hpp_threshold = 10
 
   -------------------------------------------------------------------------------
   -- One-off commands to execute on load
@@ -720,6 +728,8 @@ function silibs.self_command(cmdParams, eventArgs)
           send_command:schedule(cooldown + 5, 'gs c soultrapper')
         end
       end
+    elseif lowerCmdParams[1] == 'autoreraise' then
+        silibs.set_auto_reraise_state(lowerCmdParams[2])
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
@@ -2544,6 +2554,36 @@ function silibs.reset_midaction()
   silibs.midaction_expected_finish_time = 0
 end
 
+-- mode: Enumeration 'on', 'off', 'auto', 'cycle' (default). Sets appropriate state based on activated feature.
+-- 'cycle' mode cycles through each state and is the default if no mode is specified for this function.
+function silibs.set_auto_reraise_state(mode)
+  if silibs.auto_reraise_enabled then
+    if mode == 'on' then
+      state.AutoReraise:set('On')
+    elseif mode == 'off' then
+      state.AutoReraise:set('Off')
+    elseif mode == 'auto' then
+      state.AutoReraise:set('Auto')
+    else
+      state.AutoReraise:cycle()
+    end
+
+    -- Print out new mode
+    windower.add_to_chat(141, state.AutoReraise.description..string.char(31,1)..' set to '..string.char(31,141)..state.AutoReraise.current)
+  end
+end
+
+-- Based on the mode you're in, may need to also check HP state and equip appropriate gear
+-- If HP lower than defined threshold in 'auto' mode, equip gear
+-- If in 'on' mode, equip gear
+function silibs.get_auto_reraise_gear()
+  if state.AutoReraise.value == 'On' or (state.AutoReraise.value == 'Auto' and player.hpp < silibs.auto_reraise_config.hpp) then
+    return silibs.auto_reraise_config.set
+  end
+
+  return {}
+end
+
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
 -------------------------------------------------------------------------------
@@ -2722,6 +2762,27 @@ end
 function silibs.enable_handle_ammo_swaps(ammo_map)
   silibs.handle_ammo_swaps_enabled = true
   silibs.ammo_assignment = ammo_map
+end
+
+-- config has options:
+-- At least one slot must be defined: 'head', 'body'
+-- mode (optional string): set default mode, either 'on', 'off', or 'auto' (default: auto)
+-- hpp (optional number): determines HP threshold for which 'auto' mode will equip reraise gear (default: 10)
+function silibs.enable_auto_reraise(config)
+  if not config or not config.set or (not config.set.head and not config.set.body) then
+    windower.add_to_chat(123, 'Silibs: No valid gear slots defined for auto reraise mode')
+  else
+    silibs.auto_reraise_config.set = config.set
+    silibs.auto_reraise_enabled = true
+  end
+
+  if config.mode == 'on' or config.mode == 'off' or config.mode == 'auto' then
+    silibs.auto_reraise_config.mode = config.mode
+  end
+
+  silibs.set_auto_reraise_state(silibs.auto_reraise_config.mode)
+
+  silibs.auto_reraise_config.hpp = config.hpp or 10
 end
 
 
@@ -2919,6 +2980,10 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   end
 
   silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
+
+  -- Equip auto-reraise gear as appropriate
+  equip(silibs.get_auto_reraise_gear())
+
   silibs.set_midaction(spell, action, spellMap, eventArgs)
 end
 
@@ -2978,6 +3043,9 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
       end
     end
   end
+  
+  -- Equip auto-reraise gear as appropriate
+  equip(silibs.get_auto_reraise_gear())
 end
 
 function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
@@ -3020,9 +3088,14 @@ function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.post_aftercast_hook(spell, action, spellMap, eventArgs)
+  -- Equip auto-reraise gear as appropriate
+  equip(silibs.get_auto_reraise_gear())
 end
 
 function silibs.customize_idle_set(idleSet)
+  -- Equip auto-reraise gear as appropriate
+  idleSet = set_combine(idleSet, silibs.get_auto_reraise_gear())
+
   return idleSet
 end
 
@@ -3052,10 +3125,17 @@ function silibs.customize_melee_set(meleeSet)
       end
     end
   end
+
+  -- Equip auto-reraise gear as appropriate
+  meleeSet = set_combine(meleeSet, silibs.get_auto_reraise_gear())
+
   return meleeSet
 end
 
 function silibs.customize_defense_set(defenseSet)
+  -- Equip auto-reraise gear as appropriate
+  defenseSet = set_combine(defenseSet, silibs.get_auto_reraise_gear())
+
   return defenseSet
 end
 
