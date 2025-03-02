@@ -1,4 +1,4 @@
--- Version 2025.MAR.1.001
+-- Version 2025.MAR.2.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -2769,8 +2769,8 @@ end
 -- mode (optional string): set default mode, either 'on', 'off', or 'auto' (default: auto)
 -- hpp (optional number): determines HP threshold for which 'auto' mode will equip reraise gear (default: 10)
 function silibs.enable_auto_reraise(config)
-  if not config or not config.set or (not config.set.head and not config.set.body) then
-    windower.add_to_chat(123, 'Silibs: No valid gear slots defined for auto reraise mode')
+  if not config or not config.set then
+    windower.add_to_chat(123, 'Silibs: No valid gear set defined for auto reraise mode')
   else
     silibs.auto_reraise_config.set = config.set
     silibs.auto_reraise_enabled = true
