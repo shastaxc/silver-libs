@@ -1,4 +1,4 @@
--- Version 2025.MAR.2.001
+-- Version 2025.MAR.17.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -1276,6 +1276,7 @@ end
 
 function silibs.set_double_up_timer(expiration)
   local exp = expiration and expiration-os.time() or 45
+  exp = math.floor(exp)
   send_command('@timers c "Double-Up Chance" ' ..exp.. ' down abilities/00193.png')
   silibs.is_double_up_active = true
 end
@@ -1292,6 +1293,7 @@ end
 
 function silibs.set_roll_timer(roll)
   local exp = roll and roll.expiration and roll.expiration-os.time() or 600
+  exp = math.floor(exp)
   if roll then
     send_command('@timers c "'..silibs.roll_timer_name(roll)..'" ' ..exp.. ' down abilities/00193.png')
   end
