@@ -1,4 +1,4 @@
--- Version 2025.APR.5.001
+-- Version 2025.APR.5.002
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -85,6 +85,7 @@ silibs.action_type_blockers = {
   ['Ability'] = {'terror', 'petrification', 'stun', 'sleep', 'charm', 'amnesia', 'impairment'},
   ['Item'] = {'terror', 'petrification', 'stun', 'sleep', 'charm', 'muddle'},
   ['Monster Move'] = {'terror', 'petrification', 'stun', 'sleep', 'charm', 'amnesia'},
+  ['Trade'] = {},
 }
 
 silibs.curing_waltz = T{
