@@ -1,4 +1,4 @@
--- Version 2025.MAR.17.001
+-- Version 2025.APR.5.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -569,7 +569,7 @@ end
 -- 'spell' is the same as input parameter in job_precast function of Mote libs
 -- 'eventArgs' is the same as input parameter in job_precast function of Mote libs
 function silibs.cancel_on_blocking_status(spell, eventArgs)
-  local forbidden_statuses = silibs.action_type_blockers[spell.action_type]
+  local forbidden_statuses = silibs.action_type_blockers[spell.action_type] or {}
   for k,status in pairs(forbidden_statuses) do
     if buffactive[status] then
       windower.add_to_chat(167, 'Stopped due to status.')
