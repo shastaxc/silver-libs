@@ -1,4 +1,4 @@
--- Version 2025.APR.5.002
+-- Version 2025.MAY.10.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -349,6 +349,36 @@ silibs.equip_locked_spells = S{'Honor March', 'Dispelga', 'Impact'}
 
 silibs.pickable_locks = S{'Treasure Chest', 'Treasure Coffer', 'Chest', 'Coffer', 'Aurum Strongbox'}
 
+silibs.slot_names = T{
+  main='main',
+  sub='sub',
+  ranged='range',
+  range='range',
+  ammo='ammo',
+  head='head',
+  body='body',
+  hands='hands',
+  legs='legs',
+  feet='feet',
+  neck='neck',
+  lear='left_ear',
+  ear1='left_ear',
+  learring='left_ear',
+  left_ear='left_ear',
+  rear='right_ear',
+  ear2='right_ear',
+  rearring='right_ear',
+  right_ear='right_ear',
+  lring='left_ring',
+  ring1='left_ring',
+  left_ring='left_ring',
+  rring='right_ring',
+  ring2='right_ring',
+  right_ring='right_ring',
+  back='back',
+  waist='waist',
+}
+
 
 -------------------------------------------------------------------------------
 -- Fix/override Mote's functions and variables
@@ -516,6 +546,15 @@ function silibs.init_settings()
     hpp = 10,
   }
   silibs.auto_reraise_hpp_threshold = 10
+  -- Each slot can have various locks including manual (set by player calling a command),
+  -- and potentially several automated locks used by SilverLibs features such as
+  -- when `lock_on_usable_items_enabled` and a usable item is equipped.
+  -- Each slot uses a Set to contain locks. Gear swapping will only be allowed for
+  -- a slot with an empty Set of locks.
+  silibs.locked_slots = {}
+  for slot_name in gearswap.default_slot_map:it() do
+    silibs.locked_slots[slot_name] = S{}
+  end
 
   -------------------------------------------------------------------------------
   -- One-off commands to execute on load
@@ -730,7 +769,13 @@ function silibs.self_command(cmdParams, eventArgs)
         end
       end
     elseif lowerCmdParams[1] == 'autoreraise' then
-        silibs.set_auto_reraise_state(lowerCmdParams[2])
+      silibs.set_auto_reraise_state(lowerCmdParams[2])
+    elseif lowerCmdParams[1] == 'lock' then
+      silibs.lock('manual', lowerCmdParams:slice(2):unpack())
+    elseif lowerCmdParams[1] == 'unlock' then
+      silibs.unlock('manual', lowerCmdParams:slice(2):unpack())
+    elseif lowerCmdParams[1] == 'clearlocks' then
+      silibs.clearlocks(lowerCmdParams:unpack())
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
@@ -2587,6 +2632,163 @@ function silibs.get_auto_reraise_gear()
   return {}
 end
 
+-- Lock name is optional and is set to 'manual' if not specified.
+-- All other parameters should be slot names indicating which slots to lock.
+-- Lock name should either be the first or last parameter.
+function silibs.lock(...)
+  -- Parameters are accessed in the magic "arg" variable
+  for k,v in pairs(arg) do
+    if v then
+      -- Force all parameters to lowercase string
+      v = tostring(v):lower()
+    end
+  end
+
+  local lock_name = 'manual'
+
+  -- If 'all' is specified as one of the params, update slot list to include all slots
+  local is_all_slots = false
+  if table.contains(arg, 'all') then
+    is_all_slots = true
+  end
+
+  if not silibs.slot_names:contains(arg[1]) and not arg[1] == 'all' then
+    lock_name = arg[1]
+    arg[1]=nil
+  elseif not silibs.slot_names:contains(arg[arg.n]) and not arg[arg.n] == 'all' then
+    lock_name = arg[arg.n]
+    arg[arg.n]=nil
+  end
+  arg.n=nil
+
+  if is_all_slots then
+    -- Update list to include all slot names
+    arg = gearswap.default_slot_map
+  end
+
+  for k,v in pairs(arg) do
+    if v then
+      local slot_name = silibs.slot_names[v]
+      if slot_name then
+        -- Lock slot
+        silibs.locked_slots[slot_name]:add(lock_name)
+      else
+        windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: ['..v..'] is not a valid slot name.')
+      end
+    end
+  end
+end
+
+-- Lock name is optional and is set to 'manual' if not specified.
+-- All other parameters should be slot names indicating which slots to unlock.
+-- Lock name should either be the first or last parameter.
+function silibs.unlock(...)
+  -- Parameters are accessed in the magic "arg" variable
+  for k,v in pairs(arg) do
+    if v then
+      -- Force all parameters to lowercase string
+      v = tostring(v):lower()
+    end
+  end
+
+  local lock_name = 'manual'
+
+  -- If 'all' is specified as one of the params, update slot list to include all slots
+  local is_all_slots = false
+  if table.contains(arg, 'all') then
+    is_all_slots = true
+  end
+
+  if not silibs.slot_names:contains(arg[1]) and not arg[1] == 'all' then
+    lock_name = arg[1]
+    arg[1]=nil
+  elseif not silibs.slot_names:contains(arg[arg.n]) and not arg[arg.n] == 'all' then
+    lock_name = arg[arg.n]
+    arg[arg.n]=nil
+  end
+  arg.n=nil
+
+  if is_all_slots then
+    -- Update list to include all slot names
+    arg = gearswap.default_slot_map
+  end
+
+  for k,v in pairs(arg) do
+    if v then
+      local slot_name = silibs.slot_names[v]
+      if slot_name then
+        -- Unlock slot
+        silibs.locked_slots[slot_name]:remove(lock_name)
+      else
+        windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: ['..v..'] is not a valid slot name.')
+      end
+    end
+  end
+end
+
+-- All parameters should be slot names indicating which slots to clear locks.
+function silibs.clearlocks(...)
+  -- Parameters are accessed in the magic "arg" variable
+  for k,v in pairs(arg) do
+    if v then
+      -- Force all parameters to lowercase string
+      v = tostring(v):lower()
+    end
+  end
+
+  -- If 'all' is specified as one of the params, update slot list to include all slots
+  local is_all_slots = false
+  if table.contains(arg, 'all') then
+    is_all_slots = true
+  end
+
+  if not silibs.slot_names:contains(arg[1]) and not arg[1] == 'all' then
+    arg[1]=nil
+  elseif not silibs.slot_names:contains(arg[arg.n]) and not arg[arg.n] == 'all' then
+    arg[arg.n]=nil
+  end
+  arg.n=nil
+
+  if is_all_slots then
+    -- Update list to include all slot names
+    arg = gearswap.default_slot_map
+  end
+
+  for k,v in pairs(arg) do
+    if v then
+      local slot_name = silibs.slot_names[v]
+      if slot_name then
+        -- Unlock slot
+        silibs.locked_slots[slot_name] = S{}
+      else
+        windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: ['..v..'] is not a valid slot name.')
+      end
+    end
+  end
+end
+
+-- Prevent gear from equipping if lock is enabled
+function silibs.enforce_gear_locks(set_to_combine)
+  local overrides = {}
+  for k,v in pairs(silibs.locked_slots) do
+    local slot_name = k
+    local locks = v
+    if not locks:empty() then
+      overrides[slot_name]=player.equipment[slot_name]
+    end
+  end
+
+  -- If set_to_combine is passed in, use set_combine and return the set
+  -- otherwise just use equip() function
+  if set_to_combine then
+    set_to_combine = set_combine(set_to_combine, overrides)
+  else
+    equip(overrides)
+  end
+
+  return set_to_combine
+end
+
 -------------------------------------------------------------------------------
 -- Feature-enabling functions
 -------------------------------------------------------------------------------
@@ -2984,6 +3186,9 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
 
   silibs.protect_rare_ammo(spell, action, spellMap, eventArgs)
 
+  -- Ignore equip for locked slots
+  silibs.enforce_gear_locks()
+
   -- Equip auto-reraise gear as appropriate
   equip(silibs.get_auto_reraise_gear())
 
@@ -3046,7 +3251,10 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
       end
     end
   end
-  
+
+  -- Ignore equip for locked slots
+  silibs.enforce_gear_locks()
+
   -- Equip auto-reraise gear as appropriate
   equip(silibs.get_auto_reraise_gear())
 end
@@ -3096,6 +3304,9 @@ function silibs.post_aftercast_hook(spell, action, spellMap, eventArgs)
 end
 
 function silibs.customize_idle_set(idleSet)
+  -- Ignore equip for locked slots
+  idleSet = silibs.enforce_gear_locks(idleSet)
+
   -- Equip auto-reraise gear as appropriate
   idleSet = set_combine(idleSet, silibs.get_auto_reraise_gear())
 
@@ -3129,6 +3340,9 @@ function silibs.customize_melee_set(meleeSet)
     end
   end
 
+  -- Ignore equip for locked slots
+  meleeSet = silibs.enforce_gear_locks(meleeSet)
+
   -- Equip auto-reraise gear as appropriate
   meleeSet = set_combine(meleeSet, silibs.get_auto_reraise_gear())
 
@@ -3136,6 +3350,9 @@ function silibs.customize_melee_set(meleeSet)
 end
 
 function silibs.customize_defense_set(defenseSet)
+  -- Ignore equip for locked slots
+  defenseSet = silibs.enforce_gear_locks(defenseSet)
+
   -- Equip auto-reraise gear as appropriate
   defenseSet = set_combine(defenseSet, silibs.get_auto_reraise_gear())
 
