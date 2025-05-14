@@ -1,4 +1,4 @@
--- Version 2025.MAY.10.001
+-- Version 2025.MAY.13.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -1404,6 +1404,8 @@ function silibs.determine_snapshot_sets()
 end
 
 function silibs.on_action_for_flurry(act)
+  if type(action) ~= 'table' then return end
+
   -- Check if you are a target of spell
   local actionTargets = act.targets
   local playerId = windower.ffxi.get_player().id
@@ -3487,6 +3489,7 @@ end)
 
 windower.raw_register_event('zone change', function(new_zone, old_zone)
   silibs.on_zone_change_for_th(new_zone, old_zone)
+  silibs.on_zone_change_unlock_slots()
 end)
 
 windower.raw_register_event('incoming text', function(old, new, color)
