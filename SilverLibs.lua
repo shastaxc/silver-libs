@@ -3489,7 +3489,6 @@ end)
 
 windower.raw_register_event('zone change', function(new_zone, old_zone)
   silibs.on_zone_change_for_th(new_zone, old_zone)
-  silibs.on_zone_change_unlock_slots()
 end)
 
 windower.raw_register_event('incoming text', function(old, new, color)
