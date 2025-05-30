@@ -1,4 +1,4 @@
--- Version 2025.MAY.30.001
+-- Version 2025.MAY.30.002
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -2681,18 +2681,20 @@ function silibs.lock(...)
     end
   end
 
-  if errorSlots:length() == 0 then
-    -- Print success message
-    local succStr = is_all_slots and 'all' or table.concat(arg, ', ')
-    windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: \''..lock_name..'\' lock added to ['..succStr..']')
-  elseif errorSlots:length() == 1 then
-    -- Print single error message
-    local errStr = errorSlots:concat(', ')
-    windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] is not a valid slot name.')
-  else
-    -- Print plural error message
-    local errStr = errorSlots:concat(', ')
-    windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] are not a valid slot names.')
+  if lock_name == 'manual' then
+    if errorSlots:length() == 0 then
+      -- Print success message
+      local succStr = is_all_slots and 'all' or table.concat(arg, ', ')
+      windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: \''..lock_name..'\' lock added to ['..succStr..'] slots.')
+    elseif errorSlots:length() == 1 then
+      -- Print single error message
+      local errStr = errorSlots:concat(', ')
+      windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] is not a valid slot name.')
+    else
+      -- Print plural error message
+      local errStr = errorSlots:concat(', ')
+      windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] are not a valid slot names.')
+    end
   end
 end
 
@@ -2743,18 +2745,20 @@ function silibs.unlock(...)
     end
   end
 
-  if errorSlots:length() == 0 then
-    -- Print success message
-    local succStr = is_all_slots and 'all' or table.concat(arg, ', ')
-    windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: \''..lock_name..'\' lock removed from ['..succStr..']')
-  elseif errorSlots:length() == 1 then
-    -- Print single error message
-    local errStr = errorSlots:concat(', ')
-    windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] is not a valid slot name.')
-  else
-    -- Print plural error message
-    local errStr = errorSlots:concat(', ')
-    windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] are not a valid slot names.')
+  if lock_name == 'manual' then
+    if errorSlots:length() == 0 then
+      -- Print success message
+      local succStr = is_all_slots and 'all' or table.concat(arg, ', ')
+      windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: \''..lock_name..'\' lock removed from ['..succStr..'] slots.')
+    elseif errorSlots:length() == 1 then
+      -- Print single error message
+      local errStr = errorSlots:concat(', ')
+      windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] is not a valid slot name.')
+    else
+      -- Print plural error message
+      local errStr = errorSlots:concat(', ')
+      windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] are not a valid slot names.')
+    end
   end
 end
 
@@ -2786,6 +2790,7 @@ function silibs.clearlocks(...)
     arg = gearswap.default_slot_map
   end
 
+  local errorSlots = L{}
   for k,v in pairs(arg) do
     if v then
       local slot_name = silibs.slot_names[v]
@@ -2793,9 +2798,23 @@ function silibs.clearlocks(...)
         -- Unlock slot
         silibs.locked_slots[slot_name] = S{}
       else
-        windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: ['..v..'] is not a valid slot name.')
+        errorSlots:append(v)
       end
     end
+  end
+
+  if errorSlots:length() == 0 then
+    -- Print success message
+    local succStr = is_all_slots and 'all' or table.concat(arg, ', ')
+    windower.add_to_chat(1, string.char(0x1F, 207)..'SilverLibs: All locks removed from ['..succStr..'] slots.')
+  elseif errorSlots:length() == 1 then
+    -- Print single error message
+    local errStr = errorSlots:concat(', ')
+    windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] is not a valid slot name.')
+  else
+    -- Print plural error message
+    local errStr = errorSlots:concat(', ')
+    windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] are not a valid slot names.')
   end
 end
 
