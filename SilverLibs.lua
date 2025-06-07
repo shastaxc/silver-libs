@@ -1,4 +1,4 @@
--- Version 2025.MAY.30.002
+-- Version 2025.JUN.07.001
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -775,7 +775,7 @@ function silibs.self_command(cmdParams, eventArgs)
     elseif lowerCmdParams[1] == 'unlock' then
       silibs.unlock('manual', lowerCmdParams:slice(2):unpack())
     elseif lowerCmdParams[1] == 'clearlocks' then
-      silibs.clearlocks(lowerCmdParams:unpack())
+      silibs.clearlocks(lowerCmdParams:slice(2):unpack())
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
@@ -2634,10 +2634,9 @@ function silibs.get_auto_reraise_gear()
   return {}
 end
 
--- Lock name is optional and is set to 'manual' if not specified.
--- All other parameters should be slot names indicating which slots to lock.
--- Lock name should either be the first or last parameter.
-function silibs.lock(...)
+-- Lock name is required, must be the first parameter, and cannot be a "slot" name.
+-- All other parameters should be slot names or 'all' indicating which slots to lock.
+function silibs.lock(lock_name, ...)
   -- Parameters are accessed in the magic "arg" variable
   for k,v in pairs(arg) do
     if v then
@@ -2646,27 +2645,22 @@ function silibs.lock(...)
     end
   end
 
-  local lock_name = 'manual'
+  -- Ensure lock name is not a slot or 'all'
+  if silibs.slot_names:contains(lock_name) or lock_name == 'all' then
+    windower.add_to_chat(123, 'SilverLibs: Lock name \''..lock_name..'\' is invalid.')
+    return
+  end
 
   -- If 'all' is specified as one of the params, update slot list to include all slots
   local is_all_slots = false
-  if table.contains(arg, 'all') then
+  if table.contains(arg, 'all') or arg.n == 0 then
     is_all_slots = true
-  end
-
-  if not silibs.slot_names:contains(arg[1]) and arg[1] ~= 'all' then
-    lock_name = arg[1]
-    arg[1]=nil
-  elseif not silibs.slot_names:contains(arg[arg.n]) and arg[arg.n] ~= 'all' then
-    lock_name = arg[arg.n]
-    arg[arg.n]=nil
-  end
-  arg.n=nil
-
-  if is_all_slots then
     -- Update list to include all slot names
     arg = gearswap.default_slot_map
   end
+
+  -- Remove extra table parameter
+  arg.n=nil
 
   local errorSlots = L{}
   for k,v in pairs(arg) do
@@ -2698,10 +2692,9 @@ function silibs.lock(...)
   end
 end
 
--- Lock name is optional and is set to 'manual' if not specified.
--- All other parameters should be slot names indicating which slots to unlock.
--- Lock name should either be the first or last parameter.
-function silibs.unlock(...)
+-- Lock name is required, must be the first parameter, and cannot be a "slot" name.
+-- All other parameters should be slot names or 'all' indicating which slots to unlock.
+function silibs.unlock(lock_name, ...)
   -- Parameters are accessed in the magic "arg" variable
   for k,v in pairs(arg) do
     if v then
@@ -2710,27 +2703,23 @@ function silibs.unlock(...)
     end
   end
 
-  local lock_name = 'manual'
+  -- Ensure lock name is not a slot or 'all'
+  if silibs.slot_names:contains(lock_name) or lock_name == 'all' then
+    windower.add_to_chat(123, 'SilverLibs: Lock name \''..lock_name..'\' is invalid.')
+    return
+  end
 
-  -- If 'all' is specified as one of the params, update slot list to include all slots
+  -- If 'all' is specified as one of the params, update slot list to include all slots.
+  -- Also consider 'all' slots if none are specified
   local is_all_slots = false
-  if table.contains(arg, 'all') then
+  if table.contains(arg, 'all') or arg.n == 0 then
     is_all_slots = true
-  end
-
-  if not silibs.slot_names:contains(arg[1]) and arg[1] ~= 'all' then
-    lock_name = arg[1]
-    arg[1]=nil
-  elseif not silibs.slot_names:contains(arg[arg.n]) and arg[arg.n] ~= 'all' then
-    lock_name = arg[arg.n]
-    arg[arg.n]=nil
-  end
-  arg.n=nil
-
-  if is_all_slots then
     -- Update list to include all slot names
     arg = gearswap.default_slot_map
   end
+
+  -- Remove extra table parameter
+  arg.n=nil
 
   local errorSlots = L{}
   for k,v in pairs(arg) do
@@ -2772,23 +2761,17 @@ function silibs.clearlocks(...)
     end
   end
 
-  -- If 'all' is specified as one of the params, update slot list to include all slots
+  -- If 'all' is specified as one of the params, update slot list to include all slots.
+  -- Also consider 'all' slots if none are specified
   local is_all_slots = false
-  if table.contains(arg, 'all') then
+  if table.contains(arg, 'all') or arg.n == 0 then
     is_all_slots = true
-  end
-
-  if not silibs.slot_names:contains(arg[1]) and not arg[1] == 'all' then
-    arg[1]=nil
-  elseif not silibs.slot_names:contains(arg[arg.n]) and not arg[arg.n] == 'all' then
-    arg[arg.n]=nil
-  end
-  arg.n=nil
-
-  if is_all_slots then
     -- Update list to include all slot names
     arg = gearswap.default_slot_map
   end
+
+  -- Remove extra table parameter
+  arg.n=nil
 
   local errorSlots = L{}
   for k,v in pairs(arg) do
