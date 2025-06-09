@@ -1,4 +1,3 @@
--- Version 2025.JUN.07.002
 -- Copyright © 2021-2025, Shasta
 -- All rights reserved.
 
@@ -35,6 +34,12 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
+silibs.version = '2025.JUN.08.0'
+
+-- This works because SilverLibs is loaded in global file, which is loaded
+-- by Mote-Include or Sel-Include so this variable is already initialized.
+silibs.base_lib = (selindrile_warned ~= nil and 'selindrile') or (mote_vars ~= nil and 'mote') or 'unknown'
+print('SilverLibs: Loaded version \''..silibs.version..'\' with base lib \''..silibs.base_lib..'\'')
 
 --=============================================================================
 --=============================================================================
@@ -391,12 +396,12 @@ silibs.slot_names = T{
 --=============================================================================
 --=============================================================================
 --=============================================================================
---               Fix/override Mote's functions and variables
+--               Fix/override base library's functions and variables
 --=============================================================================
 --=============================================================================
 --=============================================================================
 
--- Overwrite Mote's implementation of setting elemental gear (it's outdated)
+-- Overwrite base implementation of setting elemental gear (it's outdated)
 function set_elemental_gear(spell)
 end
 
@@ -418,10 +423,46 @@ spell_maps['Absorb-MND'] = 'Absorb'
 spell_maps['Absorb-CHR'] = 'Absorb'
 spell_maps['Absorb-ACC'] = 'Absorb'
 
-options = options or {}
-state = state or {}
-info = info or {}
-info.tagged_mobs = T{}
+-- Function to cancel buffs if they'd conflict with using the spell you're attempting.
+-- Requirement: Must have Cancel addon installed and loaded for this to work.
+-- Main job specific logic has moved to job files instead of this global function.
+if silibs.base_lib ~= 'selindrile' then -- Only overwrite Mote's version, not Selindrile's to avoid breaking stuff.
+  cancel_conflicting_buffs = function(spell, action, spellMap, eventArgs)
+    if (spell.english == 'Spectral Jig' or spell.english == 'Monomi: Ichi' or (spell.english == 'Sneak' and spell.target.type == 'SELF')) and buffactive['Sneak'] then
+      send_command('cancel sneak')
+    elseif spell.english == 'Utsusemi: Ni' or spell.english == 'Utsusemi: Ichi' then
+      -- Prevent casting Utsusemi if you already have 3+ shadows
+      if buffactive['Copy Image (3)'] or buffactive['Copy Image (4+)'] then
+        add_to_chat(123, '**!! '..spell.english..' Canceled: [3+ IMAGES] !!**')
+        cancel_spell()
+        eventArgs.cancel = true
+      else
+        send_command('cancel copy image*')
+      end
+    elseif spell.english == ('Stoneskin') then
+      send_command('@wait 1;cancel stoneskin')
+    elseif spell.english == 'Valiance' then
+      local abil_recasts = windower.ffxi.get_ability_recasts()
+      -- Use Vallation if Valiance is on cooldown or not available at current master level
+      if abil_recasts[spell.recast_id] >= 2 or (player.main_job ~= 'RUN' and player.sub_job_level < 50) then
+        send_command('input /jobability "Vallation" <me>')
+        cancel_spell()
+        eventArgs.cancel = true
+      -- Cancel Vallation buff before using Valiance
+      elseif abil_recasts[spell.recast_id] < 2 and buffactive['Vallation'] then
+        cast_delay(0.2)
+        send_command('cancel Vallation') -- command requires 'cancel' add-on to work
+      end
+    -- Cancel Valiance buff before using Vallation
+    elseif spell.english == 'Vallation' then
+      local abil_recasts = windower.ffxi.get_ability_recasts()
+      if buffactive['Valiance'] and abil_recasts[spell.recast_id] < 2 then
+        cast_delay(0.2)
+        send_command('cancel Valiance') -- command requires 'cancel' add-on to work
+      end
+    end
+  end
+end
 
 
 --=============================================================================
@@ -431,6 +472,11 @@ info.tagged_mobs = T{}
 --=============================================================================
 --=============================================================================
 --=============================================================================
+
+options = options or {}
+state = state or {}
+info = info or {}
+info.tagged_mobs = T{}
 
 function silibs.init_settings()
   -- States
@@ -467,6 +513,7 @@ function silibs.init_settings()
   silibs.snapshot_auto_equip_enabled = false
   silibs.handle_ammo_swaps_enabled = false
   silibs.auto_reraise_enabled = false
+  silibs.lock_on_usable_items_enabled = false
 
   -- Other variables
   -- Most recent weapons (used for re-arming)
@@ -1053,6 +1100,7 @@ function silibs.use_invisible()
     send_command(cmd)
   end
 end
+
 
 --=============================================================================
 --=============================================================================
@@ -2853,6 +2901,7 @@ function silibs.enforce_gear_locks(set_to_combine)
 
   return set_to_combine
 end
+
 
 --=============================================================================
 --=============================================================================
