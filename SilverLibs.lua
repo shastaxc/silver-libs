@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUN.08.0'
+silibs.version = '2025.JUN.21.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -3520,7 +3520,7 @@ windower.raw_register_event('prerender',function()
       end
     end
 
-    -- Every 0.5 seconds, check to re-arm gear
+    -- Every 0.5 seconds, check to re-arm gear or cancel Boost
     if now - silibs.timer3 > 0.5 then
       silibs.timer3 = now
       if silibs.equip_loop_enabled
@@ -3531,6 +3531,10 @@ windower.raw_register_event('prerender',function()
             or player.main_job == 'PUP')
             and pet_midaction()) then
         send_command('gs c update')
+      end
+
+      if buffactive['Boost'] and player.tp == 3000 then
+        send_command('cancel boost')
       end
     end
 
