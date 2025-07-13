@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUN.21.0'
+silibs.version = '2025.JUL.13.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -422,6 +422,673 @@ spell_maps['Absorb-INT'] = 'Absorb'
 spell_maps['Absorb-MND'] = 'Absorb'
 spell_maps['Absorb-CHR'] = 'Absorb'
 spell_maps['Absorb-ACC'] = 'Absorb'
+
+-- Time delay definition of any function overrides in Mote-Include because it loads before this file
+-- These overrides insert SilverLibs function calls where appropriate to automate library setup
+function silibs.load_override_functions()
+  if silibs.base_lib ~= 'selindrile' then -- Mote overrides
+    -- Determines what functions get called when an action is used
+    function handle_actions(spell, action)
+      -- Init an eventArgs that allows cancelling.
+      local eventArgs = {handled = false, cancel = false}
+
+      mote_vars.set_breadcrumbs:clear()
+
+      -- Get the spell mapping, since we'll be passing it to various functions and checks.
+      local spellMap = get_spell_map(spell)
+
+      -- General filter checks to see whether this function should be run.
+      -- If eventArgs.cancel is set, cancels this function, not the spell.
+      if _G['filter_'..action] then
+        _G['filter_'..action](spell, spellMap, eventArgs)
+      end
+
+      -- If filter didn't cancel it, process user and default actions.
+      if not eventArgs.cancel then
+        -- Global user handling of this action
+        if _G['user_'..action] then
+          _G['user_'..action](spell, action, spellMap, eventArgs)
+
+          if eventArgs.cancel then
+            cancel_spell()
+          end
+        end
+
+        if not eventArgs.cancel and not eventArgs.handled and silibs[action] then
+          silibs[action](spell, action, spellMap, eventArgs)
+        end
+
+        -- Job-specific handling of this action
+        if not eventArgs.cancel and not eventArgs.handled and _G['job_'..action] then
+          _G['job_'..action](spell, action, spellMap, eventArgs)
+
+          if eventArgs.cancel then
+            cancel_spell()
+          end
+        end
+
+        -- Default handling of this action
+        if not eventArgs.cancel and not eventArgs.handled and _G['default_'..action] then
+          _G['default_'..action](spell, spellMap)
+          display_breadcrumbs(spell, spellMap, action)
+        end
+
+        -- Global post-handling of this action
+        if not eventArgs.cancel and _G['user_post_'..action] then
+          _G['user_post_'..action](spell, action, spellMap, eventArgs)
+        end
+
+        -- Job-specific post-handling of this action
+        if not eventArgs.cancel and _G['job_post_'..action] then
+          _G['job_post_'..action](spell, action, spellMap, eventArgs)
+        end
+
+        if not eventArgs.cancel and silibs['post_'..action] then
+          silibs['post_'..action](spell, action, spellMap, eventArgs)
+        end
+      end
+
+      -- Cleanup once this action is done
+      if _G['cleanup_'..action] then
+        _G['cleanup_'..action](spell, spellMap, eventArgs)
+      end
+    end
+
+    -- Returns the appropriate idle set based on current state values and location.
+    function get_idle_set(petStatus)
+      local idleSet = sets.idle
+
+      if not idleSet then
+        return {}
+      end
+
+      mote_vars.set_breadcrumbs:append('sets')
+      mote_vars.set_breadcrumbs:append('idle')
+
+      local idleScope
+
+      if buffactive.weakness then
+        idleScope = 'Weak'
+      elseif areas.Cities:contains(world.area) then
+        idleScope = 'Town'
+      else
+        idleScope = 'Field'
+      end
+
+      if idleSet[idleScope] then
+        idleSet = idleSet[idleScope]
+        mote_vars.set_breadcrumbs:append(idleScope)
+      end
+
+      if idleSet[state.IdleMode.current] then
+        idleSet = idleSet[state.IdleMode.current]
+        mote_vars.set_breadcrumbs:append(state.IdleMode.current)
+      end
+
+      if (pet.isvalid or state.Buff.Pet) and idleSet.Pet then
+        idleSet = idleSet.Pet
+        petStatus = petStatus or pet.status
+        mote_vars.set_breadcrumbs:append('Pet')
+
+        if petStatus == 'Engaged' and idleSet.Engaged then
+          idleSet = idleSet.Engaged
+          mote_vars.set_breadcrumbs:append('Engaged')
+        end
+      end
+
+      for _,group in ipairs(classes.CustomIdleGroups) do
+        if idleSet[group] then
+          idleSet = idleSet[group]
+          mote_vars.set_breadcrumbs:append(group)
+        end
+      end
+
+      idleSet = apply_defense(idleSet)
+      idleSet = apply_kiting(idleSet)
+
+      idleSet = silibs.customize_idle(idleSet)
+
+      if user_customize_idle_set then
+        idleSet = user_customize_idle_set(idleSet)
+      end
+
+      if customize_idle_set then
+        idleSet = customize_idle_set(idleSet)
+      end
+
+      idleSet = silibs.post_customize_idle(idleSet)
+
+      return idleSet
+    end
+
+    -- Returns the appropriate melee set based on current state values.
+    function get_melee_set()
+      local meleeSet = sets.engaged
+
+      if not meleeSet then
+        return {}
+      end
+
+      mote_vars.set_breadcrumbs:append('sets')
+      mote_vars.set_breadcrumbs:append('engaged')
+
+      if state.CombatForm.has_value and meleeSet[state.CombatForm.value] then
+        meleeSet = meleeSet[state.CombatForm.value]
+        mote_vars.set_breadcrumbs:append(state.CombatForm.value)
+      end
+
+      if state.CombatWeapon.has_value and meleeSet[state.CombatWeapon.value] then
+        meleeSet = meleeSet[state.CombatWeapon.value]
+        mote_vars.set_breadcrumbs:append(state.CombatWeapon.value)
+      end
+
+      if meleeSet[state.OffenseMode.current] then
+        meleeSet = meleeSet[state.OffenseMode.current]
+        mote_vars.set_breadcrumbs:append(state.OffenseMode.current)
+      end
+
+      if meleeSet[state.HybridMode.current] then
+        meleeSet = meleeSet[state.HybridMode.current]
+        mote_vars.set_breadcrumbs:append(state.HybridMode.current)
+      end
+
+      for _,group in ipairs(classes.CustomMeleeGroups) do
+        if meleeSet[group] then
+          meleeSet = meleeSet[group]
+          mote_vars.set_breadcrumbs:append(group)
+        end
+      end
+
+      meleeSet = apply_defense(meleeSet)
+      meleeSet = apply_kiting(meleeSet)
+
+      meleeSet = silibs.customize_melee(meleeSet)
+
+      if customize_melee_set then
+        meleeSet = customize_melee_set(meleeSet)
+      end
+
+      if user_customize_melee_set then
+        meleeSet = user_customize_melee_set(meleeSet)
+      end
+
+      meleeSet = silibs.post_customize_melee(meleeSet)
+
+      return meleeSet
+    end
+
+    -- Function to apply any active defense set on top of the supplied set
+    function apply_defense(baseSet)
+      if state.DefenseMode.current ~= 'None' then
+        local defenseSet = sets.defense
+
+        defenseSet = sets.defense[state[state.DefenseMode.current .. 'DefenseMode'].current] or defenseSet
+
+        for _,group in ipairs(classes.CustomDefenseGroups) do
+          defenseSet = defenseSet[group] or defenseSet
+        end
+
+        defenseSet = silibs.customize_defense(defenseSet)
+
+        if customize_defense_set then
+          defenseSet = customize_defense_set(defenseSet)
+        end
+
+        defenseSet = silibs.post_customize_defense(defenseSet)
+
+        baseSet = set_combine(baseSet, defenseSet)
+      end
+
+      return baseSet
+    end
+  else -- Selindrile overrides
+    function handle_actions(spell, action)
+      -- Init an eventArgs that allows cancelling.
+      local eventArgs = {handled = false, cancel = false}
+
+      mote_vars.set_breadcrumbs:clear()
+
+      -- Get the spell mapping, since we'll be passing it to various functions and checks.
+      local spellMap = get_spell_map(spell)
+      gearswap.refresh_globals(false)
+
+      -- General filter checks to see whether this function should be run.
+      -- If eventArgs.cancel is set, cancels this function, not the spell.
+      if _G['user_filter_'..action] then
+        _G['user_filter_'..action](spell, spellMap, eventArgs)
+
+        if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+          cancel_spell()
+          return
+        end
+      end
+
+      if _G['user_job_filter_'..action] and not eventArgs.cancel then
+        _G['user_job_filter_'..action](spell, spellMap, eventArgs)
+
+        if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+          cancel_spell()
+          return
+        end
+      end
+
+      if _G['job_filter_'..action] and not eventArgs.cancel then
+        _G['job_filter_'..action](spell, spellMap, eventArgs)
+
+        if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+          cancel_spell()
+          return
+        end
+      end
+
+      if _G['filter_'..action] and not eventArgs.cancel then
+        _G['filter_'..action](spell, spellMap, eventArgs)
+
+        if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+          cancel_spell()
+          return
+        end
+      end
+
+      -- If filter didn't cancel it, process user and default actions.
+      if not eventArgs.cancel then
+        -- Global user handling of this action
+        if _G['user_'..action] then
+          _G['user_'..action](spell, spellMap, eventArgs)
+
+          if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+            cancel_spell()
+            return
+          end
+        end
+
+        if not eventArgs.cancel and not eventArgs.handled and silibs[action] then
+          silibs[action](spell, action, spellMap, eventArgs)
+        end
+
+        -- Job-specific handling of this action
+        if not eventArgs.cancel and not eventArgs.handled and _G['job_'..action] then
+          _G['job_'..action](spell, spellMap, eventArgs)
+
+          if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+              cancel_spell()
+            return
+          end
+        end
+
+        if not eventArgs.cancel and not eventArgs.handled and _G['user_job_'..action] then
+          _G['user_job_'..action](spell, spellMap, eventArgs)
+
+          if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+            cancel_spell()
+            return
+          end
+        end
+
+        -- Default handling of this action
+        if not eventArgs.cancel and not eventArgs.handled and _G['default_'..action] then
+          _G['default_'..action](spell, spellMap, eventArgs)
+          display_breadcrumbs(spell, spellMap, action)
+
+          if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+            cancel_spell()
+            return
+          end
+        end
+
+        -- Global user handling of this action
+        if _G['extra_user_'..action] then
+          _G['extra_user_'..action](spell, spellMap, eventArgs)
+
+          if eventArgs.cancel and (action == 'pretarget' or action == 'precast') then
+            cancel_spell()
+            return
+          end
+        end
+
+        -- Global post-handling of this action
+        if not eventArgs.cancel and _G['user_post_'..action] then
+          _G['user_post_'..action](spell, spellMap, eventArgs)
+        end
+
+        -- Job-specific post-handling of this action
+        if not eventArgs.cancel and _G['job_post_'..action] then
+          _G['job_post_'..action](spell, spellMap, eventArgs)
+        end
+
+        if not eventArgs.cancel and _G['user_job_post_'..action] then
+          _G['user_job_post_'..action](spell, spellMap, eventArgs)
+        end
+
+        if not eventArgs.cancel and _G['default_post_'..action] then
+          _G['default_post_'..action](spell, spellMap, eventArgs)
+        end
+
+        if not eventArgs.cancel and _G['extra_user_post_'..action] then
+          _G['extra_user_post_'..action](spell, spellMap, eventArgs)
+        end
+
+        if not eventArgs.cancel and silibs['post_'..action] then
+          silibs['post_'..action](spell, action, spellMap, eventArgs)
+        end
+      end
+
+      -- Cleanup once this action is done
+      if _G['cleanup_'..action] then
+        _G['cleanup_'..action](spell, spellMap, eventArgs)
+      end
+    end
+
+    -- Returns the appropriate idle set based on current state values and location.
+    function get_idle_set(petStatus)
+      local idleSet = sets.idle
+
+      if not idleSet then
+        return {}
+      end
+
+      mote_vars.set_breadcrumbs:append('sets')
+      mote_vars.set_breadcrumbs:append('idle')
+
+      if buffactive.weakness and sets.idle.Weak then
+        idleSet = sets.idle.Weak
+        mote_vars.set_breadcrumbs:append('Weak')
+      end
+
+      if not (player.in_combat or being_attacked) and (state.IdleMode.current:contains('DT') or state.IdleMode.current:contains('Tank')) then
+        if state.NonCombatIdleMode and idleSet[state.NonCombatIdleMode.current] then
+          idleSet = idleSet[state.NonCombatIdleMode.current]
+          mote_vars.set_breadcrumbs:append(state.NonCombatIdleMode.current)
+        end
+      elseif idleSet[state.IdleMode.current] then
+        idleSet = idleSet[state.IdleMode.current]
+        mote_vars.set_breadcrumbs:append(state.IdleMode.current)
+      end
+
+      if (pet.isvalid or state.Buff.Pet) and idleSet.Pet then
+        idleSet = idleSet.Pet
+        petStatus = petStatus or pet.status
+        mote_vars.set_breadcrumbs:append('Pet')
+
+        if petStatus == 'Engaged' and idleSet.Engaged then
+          idleSet = idleSet.Engaged
+          mote_vars.set_breadcrumbs:append('Engaged')
+        end
+      end
+
+      for _,group in ipairs(classes.CustomIdleGroups) do
+        if idleSet[group] then
+          idleSet = idleSet[group]
+          mote_vars.set_breadcrumbs:append(group)
+        end
+      end
+
+      if buffactive['Elvorseal'] and sets.buff.Elvorseal then
+        idleSet = set_combine(idleSet, sets.buff.Elvorseal)
+      end
+
+      --Apply time based gear.
+      if (state.IdleMode.value == 'Normal' or state.IdleMode.value:contains('Sphere')) and not pet.isvalid then
+        if player.hpp < 80 then
+          if sets.ExtraRegen then idleSet = set_combine(idleSet, sets.ExtraRegen) end
+        end
+
+        if classes.DuskToDawn then
+          if sets.DuskIdle then idleSet = set_combine(idleSet, sets.DuskIdle) end
+        end
+
+        if classes.Daytime then
+          if sets.DayIdle then idleSet = set_combine(idleSet, sets.DayIdle) end
+        else
+          if sets.NightIdle then idleSet = set_combine(idleSet, sets.NightIdle) end
+        end
+      end
+
+      if data.areas.assault:contains(world.area) and sets.Assault then
+        idleSet = set_combine(idleSet, sets.Assault)
+      end
+      
+      if sets.Reive and buffactive['Reive Mark'] then
+        idleSet = set_combine(idleSet, sets.Reive)
+      end
+
+      if user_customize_idle_set then
+        idleSet = user_customize_idle_set(idleSet)
+      end
+    
+      idleSet = silibs.customize_idle(idleSet)
+
+      if job_customize_idle_set then
+        idleSet = job_customize_idle_set(idleSet)
+      end
+    
+      if user_job_customize_idle_set then
+        idleSet = user_job_customize_idle_set(idleSet)
+      end
+
+      if data.areas.cities:contains(world.area) then
+        if sets.idle.Town then
+          idleSet = set_combine(idleSet, sets.Kiting, sets.idle.Town)
+        elseif sets.Town then
+          idleSet = set_combine(idleSet, sets.Kiting, sets.Town)
+        else 
+          idleSet = set_combine(idleSet, sets.Kiting)
+        end
+
+        if (world.area:contains('Adoulin') or world.area == "Celennia Memorial Library") and item_available("Councilor's Garb") then
+          idleSet = set_combine(idleSet, {body="Councilor's Garb"})
+        elseif (world.area:contains('Bastok') or world.area == "Metalworks") and item_available("Republic Aketon") then
+          idleSet = set_combine(idleSet, {body="Republic Aketon"})
+        elseif (world.area:contains('Windurst') or world.area == "Heavens Tower") and item_available("Federation Aketon") then
+          idleSet = set_combine(idleSet, {body="Federation Aketon"})
+        elseif (world.area:contains("San d'Oria") or world.area == "Chateau d'Oraguille") and item_available("Kingdom Aketon") then
+          idleSet = set_combine(idleSet, {body="Kingdom Aketon"})
+        elseif world.area == "Mog Garden" and item_available("Jubilee Shirt") then
+          idleSet = set_combine(idleSet, {body="Jubilee Shirt"})
+        end
+      end
+
+      idleSet = apply_passive(idleSet)
+
+      if state.Capacity.value then 
+        idleSet = set_combine(idleSet, sets.Capacity)
+      end
+
+      idleSet = apply_defense(idleSet)
+      idleSet = apply_kiting(idleSet)
+
+      if silent_check_disable() and state.DefenseMode.value == 'None' then
+        if state.IdleMode.value:contains('MDT') and sets.defense.MDT then
+          idleSet = set_combine(idleSet, sets.defense.MDT)
+        elseif sets.defense.PDT then
+          idleSet = set_combine(idleSet, sets.defense.PDT)
+        end
+      end
+
+      if state.UnlockWeapons.value and sets.weapons[state.Weapons.value] then
+        idleSet = set_combine(idleSet, sets.weapons[state.Weapons.value])
+      end
+
+      if (buffactive.sleep or buffactive.Lullaby) and sets.IdleWakeUp then
+        if item_available("Sacrifice Torque") and player.main_job == 'SMN' and pet.isvalid then
+          idleSet = set_combine(idleSet, sets.IdleWakeUp)
+        elseif item_available("Prime Horn") and player.main_job == 'BRD' then
+          idleSet = set_combine(idleSet, sets.IdleWakeUp)    
+        elseif state.Weapons.value == 'None' or state.UnlockWeapons.value then
+            idleSet = set_combine(idleSet, sets.IdleWakeUp)
+        elseif state.PWUnlock.value then
+          windower.send_command('gs c set unlockweapons true; wait 1; gs c set unlockweapons false')
+          idleSet = set_combine(idleSet, sets.IdleWakeUp)
+        end
+      end
+
+      if buffactive.doom then
+        idleSet = set_combine(idleSet, sets.buff.Doom)
+      end
+
+      if extra_user_customize_idle_set then
+        idleSet = extra_user_customize_idle_set(idleSet)
+      end
+
+      idleSet = silibs.post_customize_idle(idleSet)
+
+      return idleSet
+    end
+
+
+    -- Returns the appropriate melee set based on current state values.
+    -- Set construction order (all sets after sets.engaged are optional):
+    --   sets.engaged[state.CombatForm][state.CombatWeapon][state.OffenseMode][state.DefenseMode][classes.CustomMeleeGroups (any number)]
+    function get_melee_set()
+      local meleeSet = sets.engaged
+
+      if not meleeSet then
+        return {}
+      end
+
+      mote_vars.set_breadcrumbs:append('sets')
+      mote_vars.set_breadcrumbs:append('engaged')
+
+      if state.CombatForm.has_value and meleeSet[state.CombatForm.value] then
+        meleeSet = meleeSet[state.CombatForm.value]
+        mote_vars.set_breadcrumbs:append(state.CombatForm.value)
+      end
+
+      if state.CombatWeapon.has_value and meleeSet[state.CombatWeapon.value] then
+        meleeSet = meleeSet[state.CombatWeapon.value]
+        mote_vars.set_breadcrumbs:append(state.CombatWeapon.value)
+      end
+
+      if meleeSet[state.OffenseMode.current] then
+        meleeSet = meleeSet[state.OffenseMode.current]
+        mote_vars.set_breadcrumbs:append(state.OffenseMode.current)
+      end
+
+      if meleeSet[state.HybridMode.current] then
+        meleeSet = meleeSet[state.HybridMode.current]
+        mote_vars.set_breadcrumbs:append(state.HybridMode.current)
+      end
+
+      for _,group in ipairs(classes.CustomMeleeGroups) do
+        if meleeSet[group] then
+          meleeSet = meleeSet[group]
+          mote_vars.set_breadcrumbs:append(group)
+        end
+      end
+
+      if user_customize_melee_set then
+        meleeSet = user_customize_melee_set(meleeSet)
+      end
+
+      meleeSet = silibs.customize_melee(meleeSet)
+
+      if job_customize_melee_set then
+        meleeSet = job_customize_melee_set(meleeSet)
+      end
+
+      if user_job_customize_melee_set then
+        meleeSet = user_job_customize_melee_set(meleeSet)
+      end
+
+      if buffactive['Elvorseal'] and sets.buff.Elvorseal then
+        meleeSet = set_combine(meleeSet, sets.buff.Elvorseal)
+      end
+
+      if state.ExtraMeleeMode and state.ExtraMeleeMode.value ~= 'None' then
+        meleeSet = set_combine(meleeSet, sets[state.ExtraMeleeMode.value])
+      end
+
+      meleeSet = apply_passive(meleeSet)
+
+      if state.Capacity.value == true then 
+        meleeSet = set_combine(meleeSet, sets.Capacity)
+      end
+
+      meleeSet = apply_defense(meleeSet)
+      meleeSet = apply_kiting(meleeSet)
+
+      if silent_check_disable() and state.DefenseMode.value == 'None' then
+        if state.HybridMode.value:contains('MDT') and sets.defense.MDT then
+          meleeSet = set_combine(meleeSet, sets.defense.MDT)
+        elseif sets.defense.PDT then
+          meleeSet = set_combine(meleeSet, sets.defense.PDT)
+        end
+      end
+
+      if buffactive['Reive Mark'] and sets.Reive then
+        meleeSet = set_combine(meleeSet, sets.Reive)
+      end
+
+      if (buffactive.sleep or buffactive.Lullaby) and sets.buff.Sleep then
+        if (item_available("Vim Torque") or item_available("Vim Torque +1")) and (player.main_job == 'WAR' or player.main_job == 'PLD' or player.main_job == 'DRK' or player.main_job == 'SAM' or player.main_job == 'DRG') then
+          meleeSet = set_combine(meleeSet, sets.buff.Sleep)
+        elseif item_available("Frenzy Sallet") and (player.main_job == 'MNK' or player.main_job == 'THF' or player.main_job == 'DRK' or player.main_job == 'BST' or player.main_job == 'SAM' or player.main_job == 'DRG' or player.main_job == 'DNC' or player.main_job == 'RUN') then
+          meleeSet = set_combine(meleeSet, sets.buff.Sleep)
+        elseif item_available("Berserker's Torque") and (player.main_job == 'WAR' or player.main_job == 'PLD' or player.main_job == 'DRK' or player.main_job == 'SAM' or player.main_job == 'DRG') then
+          meleeSet = set_combine(meleeSet, sets.buff.Sleep)
+        elseif state.Weapons.value == 'None' or state.UnlockWeapons.value then
+          meleeSet = set_combine(meleeSet, sets.buff.Sleep)
+        elseif state.PWUnlock.value then
+          windower.send_command('gs c set unlockweapons true; wait 1; gs c set unlockweapons false')
+          meleeSet = set_combine(meleeSet, sets.buff.Sleep)
+        end
+      end
+
+      if buffactive.doom then
+        meleeSet = set_combine(meleeSet, sets.buff.Doom)
+      end
+
+      if extra_user_customize_melee_set then
+        meleeSet = extra_user_customize_melee_set(meleeSet)
+      end
+
+      if state.UnlockWeapons.value and sets.weapons[state.Weapons.value] then
+        meleeSet = set_combine(meleeSet, sets.weapons[state.Weapons.value])
+      end
+
+      meleeSet = silibs.post_customize_melee(meleeSet)
+
+      return meleeSet
+    end
+
+    -- Function to apply any active defense set on top of the supplied set
+    function apply_defense(baseSet)
+      if state.DefenseMode.current ~= 'None' then
+        local defenseSet = sets.defense
+
+        defenseSet = sets.defense[state[state.DefenseMode.current .. 'DefenseMode'].current] or defenseSet
+
+        for _,group in ipairs(classes.CustomDefenseGroups) do
+          defenseSet = defenseSet[group] or defenseSet
+        end
+
+        if sets.Reive and buffactive['Reive Mark'] and sets.Reive.neck == "Adoulin's Refuge +1" then
+          defenseSet = set_combine(defenseSet, sets.Reive)
+        end
+
+        if user_customize_defense_set then
+          defenseSet = user_customize_defense_set(defenseSet)
+        end
+
+        defenseSet = silibs.customize_defense(defenseSet)
+
+        if job_customize_defense_set then
+          defenseSet = job_customize_defense_set(defenseSet)
+        end
+
+        if user_job_customize_defense_set then
+          defenseSet = user_job_customize_defense_set(defenseSet)
+        end
+
+        defenseSet = silibs.post_customize_defense(defenseSet)
+
+        baseSet = set_combine(baseSet, defenseSet)
+      end
+
+      return baseSet
+    end
+  end
+end
 
 -- Function to cancel buffs if they'd conflict with using the spell you're attempting.
 -- Requirement: Must have Cancel addon installed and loaded for this to work.
@@ -1219,10 +1886,9 @@ function silibs.handle_elemental_belts(spell, spellMap, phase)
         and spell.english ~= 'Meteor'
         and spellMap ~= 'Helix'
         and spellMap ~= 'ElementalEnfeeble')
-      or (spell.skill == 'Blue Magic' and silibs.blue_magic_magical_dmg_spells:contains(spell.english))
-      or spellMap == 'ElementalNinjutsu'
-      or spell.english == 'Kaustra'
-      or spell.english == 'Holy' or spell.english == 'Holy II')
+        or (spell.skill == 'Blue Magic' and silibs.blue_magic_magical_dmg_spells:contains(spell.english))
+        or spellMap == 'ElementalNinjutsu'
+        or spell.english == 'Holy' or spell.english == 'Holy II')
     then
       local base_day_weather_mult = silibs.get_day_weather_multiplier(spell.element, false, has_iridescence)
       local obi_mult = silibs.get_day_weather_multiplier(spell.element, true, has_iridescence)
@@ -2609,10 +3275,10 @@ function silibs.select_snapshot_set_for_ranged_attacks(spell, eventArgs)
 
     if buffactive['Velocity Shot'] and silibs.snapshot_sets['Velocity'][snapshot_needed] then
       equip(silibs.snapshot_sets['Velocity'][snapshot_needed])
-      eventArgs.handled=true -- Prevents Mote/Sel lib from overwriting the equipSet
+      eventArgs.handled = true -- Prevents Mote/Sel lib from overwriting the equipSet
     elseif silibs.snapshot_sets[snapshot_needed] then
       equip(silibs.snapshot_sets[snapshot_needed])
-      eventArgs.handled=true -- Prevents Mote/Sel lib from overwriting the equipSet
+      eventArgs.handled = true -- Prevents Mote/Sel lib from overwriting the equipSet
     end
   end
 end
@@ -2826,7 +3492,9 @@ function silibs.self_command(cmdParams, eventArgs)
     end
   end
   if cmdParams[1] == 'rearm' then
-    equip(silibs.most_recent_weapons)
+    -- Filter locked slots out of equip command
+    local weaponset_to_equip = silibs.enforce_gear_locks(silibs.most_recent_weapons)
+    equip(weaponset_to_equip)
   end
 end
 
@@ -3149,7 +3817,7 @@ function silibs.user_setup_hook()
   end
 end
 
-function silibs.precast_hook(spell, action, spellMap, eventArgs)
+function silibs.precast(spell, action, spellMap, eventArgs)
   if silibs.cancel_outranged_ws_enabled then
     silibs.cancel_outranged_ws(spell, eventArgs)
   end
@@ -3183,41 +3851,41 @@ function silibs.precast_hook(spell, action, spellMap, eventArgs)
     if customEquipSet['QuickMagic'] and (spell.type == 'Trust' or silibs.quick_magic_spells[spell.type]:contains(spell.en)) then
       customEquipSet = customEquipSet['QuickMagic']
       equip(customEquipSet)
-      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+      eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
     end
     if player.sub_job == 'RDM' and player.sub_job_level > 0 and customEquipSet['RDM'] then
       customEquipSet = customEquipSet['RDM']
       equip(customEquipSet)
-      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+      eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
     end
     if player.main_job == 'SCH' then
       if spell.type == 'WhiteMagic' and (buffactive['Light Arts'] or buffactive['Addendum: White']) then
         if customEquipSet['Grimoire'] then
           customEquipSet = customEquipSet['Grimoire']
           equip(customEquipSet)
-          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+          eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
         elseif customEquipSet['LightArts'] then
           customEquipSet = customEquipSet['LightArts']
           equip(customEquipSet)
-          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+          eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
         end
       elseif spell.type == 'BlackMagic' and (buffactive['Dark Arts'] or buffactive['Addendum: Black']) then
         -- Add Grimoire set if exists
         if customEquipSet['Grimoire'] then
           customEquipSet = customEquipSet['Grimoire']
           equip(customEquipSet)
-          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+          eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
         elseif customEquipSet['DarkArts'] then
           customEquipSet = customEquipSet['DarkArts']
           equip(customEquipSet)
-          eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+          eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
         end
       end
     end
   end
 end
 
-function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
+function silibs.post_precast(spell, action, spellMap, eventArgs)
   if silibs.th_enabled and state.TreasureMode.value ~= 'None' and spell.action_type ~= 'Item' then
     -- Equip TH gear if appropriate
     if state.TreasureMode.value == 'Fulltime'
@@ -3318,10 +3986,11 @@ function silibs.post_precast_hook(spell, action, spellMap, eventArgs)
   -- Equip auto-reraise gear as appropriate
   equip(silibs.get_auto_reraise_gear())
 
+  -- Should always be last in post_precast
   silibs.set_midaction(spell, action, spellMap, eventArgs)
 end
 
-function silibs.midcast_hook(spell, action, spellMap, eventArgs)
+function silibs.midcast(spell, action, spellMap, eventArgs)
   -- If spell is on the quick magic list, and user has a quick magic set, use it
   if spell.action_type == 'Magic' and sets.precast.FC then
     local customEquipSet = select_specific_set(sets.precast.FC, spell, spellMap)
@@ -3336,12 +4005,12 @@ function silibs.midcast_hook(spell, action, spellMap, eventArgs)
         customEquipSet = customEquipSet['RDM']
         equip(customEquipSet)
       end
-      eventArgs.handled=true -- Prevents Mote lib from overwriting the equipSet
+      eventArgs.handled = true -- Prevents Mote lib from overwriting the equipSet
     end
   end
 end
 
-function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
+function silibs.post_midcast(spell, action, spellMap, eventArgs)
   if silibs.handle_ammo_swaps_enabled then
     silibs.equip_ammo(spell, action, spellMap, eventArgs)
   end
@@ -3385,9 +4054,7 @@ function silibs.post_midcast_hook(spell, action, spellMap, eventArgs)
   equip(silibs.get_auto_reraise_gear())
 end
 
-function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
-  silibs.reset_midaction()
-  
+function silibs.aftercast(spell, action, spellMap, eventArgs)
   if silibs.custom_roll_timers_enabled then
     if spell.type == 'CorsairRoll' then
       -- Update timers
@@ -3424,12 +4091,18 @@ function silibs.aftercast_hook(spell, action, spellMap, eventArgs)
   end
 end
 
-function silibs.post_aftercast_hook(spell, action, spellMap, eventArgs)
+function silibs.post_aftercast(spell, action, spellMap, eventArgs)
+  silibs.reset_midaction()
+
   -- Equip auto-reraise gear as appropriate
   equip(silibs.get_auto_reraise_gear())
 end
 
-function silibs.customize_idle_set(idleSet)
+function silibs.customize_idle(idleSet)
+  return idleSet
+end
+
+function silibs.post_customize_idle(idleSet)
   -- Ignore equip for locked slots
   idleSet = silibs.enforce_gear_locks(idleSet)
 
@@ -3439,7 +4112,11 @@ function silibs.customize_idle_set(idleSet)
   return idleSet
 end
 
-function silibs.customize_melee_set(meleeSet)
+function silibs.customize_melee(meleeSet)
+  return meleeSet
+end
+
+function silibs.post_customize_melee(meleeSet)
   if silibs.th_enabled and state.TreasureMode.value ~= 'None' then
     local current_target = windower.ffxi.get_mob_by_target('t')
     local is_target_enemy = silibs.is_target_enemy(current_target)
@@ -3475,7 +4152,11 @@ function silibs.customize_melee_set(meleeSet)
   return meleeSet
 end
 
-function silibs.customize_defense_set(defenseSet)
+function silibs.customize_defense(defenseSet)
+  return defenseSet
+end
+
+function silibs.post_customize_defense(defenseSet)
   -- Ignore equip for locked slots
   defenseSet = silibs.enforce_gear_locks(defenseSet)
 
@@ -3641,5 +4322,62 @@ windower.raw_register_event('incoming text', function(old, new, color)
   return new, color
 end)
 
+
+--=============================================================================
+--=============================================================================
+--=============================================================================
+--                            Deprecated Functions
+--=============================================================================
+--=============================================================================
+--=============================================================================
+
+-- DEPRECATED
+function silibs.precast_hook(...)
+end
+
+-- DEPRECATED
+function silibs.post_precast_hook(...)
+end
+
+-- DEPRECATED
+function silibs.midcast_hook(...)
+end
+
+-- DEPRECATED
+function silibs.post_midcast_hook(...)
+end
+
+-- DEPRECATED
+function silibs.aftercast_hook(...)
+end
+
+-- DEPRECATED
+function silibs.post_aftercast_hook(...)
+end
+
+-- DEPRECATED
+function silibs.customize_idle_set(idleSet)
+  return idleSet
+end
+
+-- DEPRECATED
+function silibs.customize_melee_set(meleeSet)
+  return meleeSet
+end
+
+-- DEPRECATED
+function silibs.customize_defense_set(defenseSet)
+  return defenseSet
+end
+
+
+--=============================================================================
+--=============================================================================
+--=============================================================================
+--                        Execute Functions On Load
+--=============================================================================
+--=============================================================================
+--=============================================================================
 silibs.init_settings()
+silibs.load_override_functions:schedule(1)
 return silibs
