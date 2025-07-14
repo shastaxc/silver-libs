@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUL.13.2'
+silibs.version = '2025.JUL.13.3'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -1851,6 +1851,10 @@ function silibs.use_invisible()
   else
     send_command(cmd)
   end
+end
+
+function silibs.get_last_midcast_set()
+  return silibs.last_midcast_set or {}
 end
 
 
