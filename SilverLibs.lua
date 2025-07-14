@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUL.13.0'
+silibs.version = '2025.JUL.13.1'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -1293,6 +1293,8 @@ function silibs.init_settings()
   if last_time_packet then
     silibs.parse_packet('0x037', last_time_packet)
   end
+
+  silibs.last_midcast_set = {} -- Saves the last midcast set used
 
   silibs.reset_midaction()
 end
@@ -4052,6 +4054,8 @@ function silibs.post_midcast(spell, action, spellMap, eventArgs)
 
   -- Equip auto-reraise gear as appropriate
   equip(silibs.get_auto_reraise_gear())
+
+  silibs.last_midcast_set = set_combine(gearswap.equip_list, {})
 end
 
 function silibs.aftercast(spell, action, spellMap, eventArgs)
