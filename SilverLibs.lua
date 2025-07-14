@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUL.13.1'
+silibs.version = '2025.JUL.13.2'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -641,6 +641,39 @@ function silibs.load_override_functions()
 
       return baseSet
     end
+
+    -- Routing function for general known self_commands.  Mappings are at the bottom of the file.
+    -- Handles splitting the provided command line up into discrete words, for the other functions to use.
+    function self_command(commandArgs)
+      local commandArgs = commandArgs
+      if type(commandArgs) == 'string' then
+        commandArgs = T(commandArgs:split(' '))
+        if #commandArgs == 0 then
+          return
+        end
+      end
+
+      -- init a new eventArgs
+      local eventArgs = {handled = false}
+
+      silibs.self_command(commandArgs, eventArgs)
+
+      -- Allow jobs to override this code
+      if job_self_command then
+        job_self_command(commandArgs, eventArgs)
+      end
+
+      if not eventArgs.handled then
+        -- Of the original command message passed in, remove the first word from
+        -- the list (it will be used to determine which function to call), and
+        -- send the remaining words as parameters for the function.
+        local handleCmd = table.remove(commandArgs, 1)
+
+        if selfCommandMaps[handleCmd] then
+          selfCommandMaps[handleCmd](commandArgs)
+        end
+      end
+    end
   else -- Selindrile overrides
     function handle_actions(spell, action)
       -- Init an eventArgs that allows cancelling.
@@ -1086,6 +1119,56 @@ function silibs.load_override_functions()
       end
 
       return baseSet
+    end
+
+    -- Routing function for general known self_commands.  Mappings are at the bottom of the file.
+    -- Handles splitting the provided command line up into discrete words, for the other functions to use.
+    function self_command(commandArgs)
+      local originalCommand = commandArgs
+        if type(commandArgs) == 'string' then
+          commandArgs = T(commandArgs:split(' '))
+          if #commandArgs == 0 then
+            return
+          end
+        end
+
+      if commandArgs[#commandArgs]:startswith('<st') then
+        local st_variable = (table.remove(commandArgs, #commandArgs)):lower()
+        st_command = table.concat(commandArgs, ' ')
+        windower.chat.input('/dance motion '..st_variable..'')
+        return
+      end
+
+      -- init a new eventArgs
+      local eventArgs = {handled = false}
+
+      silibs.self_command(commandArgs, eventArgs)
+
+      -- Allow users to override this code
+      if user_job_self_command then
+        user_job_self_command(commandArgs, eventArgs)
+      end
+
+      -- Allow jobs to override this code
+      if not eventArgs.handled and job_self_command then
+        job_self_command(commandArgs, eventArgs)
+      end
+
+      -- Allow jobs to override this code
+      if not eventArgs.handled and user_self_command then
+        user_self_command(commandArgs, eventArgs)
+      end
+
+      if not eventArgs.handled then
+        -- Of the original command message passed in, remove the first word from
+        -- the list (it will be used to determine which function to call), and
+        -- send the remaining words as parameters for the function.
+        local handleCmd = (table.remove(commandArgs, 1)):lower()
+
+        if selfCommandMaps[handleCmd] then
+          selfCommandMaps[handleCmd](commandArgs)
+        end
+      end
     end
   end
 end
