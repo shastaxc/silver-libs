@@ -20,3 +20,7 @@ This document describes all changes made to SilverLibs.
 
 ## 2025.JUL.13.3
 * Added function getter for silibs.last_midcast_set called silibs.get_last_midcast_set(). This is done in order to remain consistent in how variables are exposed to users for general purpose use.
+
+## 2025.JUL.17.0
+* Deprecated silibs.self_command function.
+  * Just deprecating the name. Renamed to silibs.self_command_hook in order to prevent older implementations from calling it twice.

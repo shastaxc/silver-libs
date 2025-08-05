@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUL.13.3'
+silibs.version = '2025.JUL.17.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -656,7 +656,7 @@ function silibs.load_override_functions()
       -- init a new eventArgs
       local eventArgs = {handled = false}
 
-      silibs.self_command(commandArgs, eventArgs)
+      silibs.self_command_hook(commandArgs, eventArgs)
 
       -- Allow jobs to override this code
       if job_self_command then
@@ -1142,7 +1142,7 @@ function silibs.load_override_functions()
       -- init a new eventArgs
       local eventArgs = {handled = false}
 
-      silibs.self_command(commandArgs, eventArgs)
+      silibs.self_command_hook(commandArgs, eventArgs)
 
       -- Allow users to override this code
       if user_job_self_command then
@@ -3524,7 +3524,7 @@ function silibs.set_lockstyle()
   end, 10)
 end
 
-function silibs.self_command(cmdParams, eventArgs)
+function silibs.self_command_hook(cmdParams, eventArgs)
   if silibs.premade_commands_enabled then
     local lowerCmdParams = T{}
     -- Make all cmdParams lowercase
@@ -4459,6 +4459,10 @@ end
 -- DEPRECATED
 function silibs.customize_defense_set(defenseSet)
   return defenseSet
+end
+
+-- DEPRECATED
+function silibs.self_command(cmdParams, eventArgs)
 end
 
 
