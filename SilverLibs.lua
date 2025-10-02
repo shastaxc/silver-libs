@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.JUL.17.0'
+silibs.version = '2025.OCT.02.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -422,6 +422,24 @@ spell_maps['Absorb-INT'] = 'Absorb'
 spell_maps['Absorb-MND'] = 'Absorb'
 spell_maps['Absorb-CHR'] = 'Absorb'
 spell_maps['Absorb-ACC'] = 'Absorb'
+spell_maps['Honor March'] = 'March'
+spell_maps['Aria of Passion'] = 'Aria'
+spell_maps['Goddess\'s Hymnus'] = 'Hymnus'
+spell_maps['Sentinel\'s Scherzo'] = 'Scherzo'
+spell_maps['Magic Finale'] = 'Finale'
+spell_maps['Herb Pastoral'] = 'Pastoral'
+spell_maps['Scop\'s Operetta'] = 'Operetta'
+spell_maps['Puppet\'s Operetta'] = 'Operetta'
+spell_maps['Fowl Aubade'] = 'Aubade'
+spell_maps['Goblin Gavotte'] = 'Gavotte'
+spell_maps['Gold Capriccio'] = 'Capriccio'
+spell_maps['Shining Fantasia'] = 'Fantasia'
+spell_maps['Warding Round'] = 'Round'
+spell_maps['Maiden\'s Virelai'] = 'Virelai'
+spell_maps['Adventurer\'s Dirge'] = 'Dirge'
+spell_maps['Foe Sirvente'] = 'Sirvente'
+spell_maps['Pining Nocturne'] = 'Nocturne'
+
 
 -- Time delay definition of any function overrides in Mote-Include because it loads before this file
 -- These overrides insert SilverLibs function calls where appropriate to automate library setup

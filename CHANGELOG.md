@@ -1,6 +1,25 @@
 # Changelog
 This document describes all changes made to SilverLibs.
 
+## 2025.OCT.02.0
+* Add all songs to spell_maps
+
+## 2025.JUL.17.0
+* Deprecated silibs.self_command function.
+  * Just deprecating the name. Renamed to silibs.self_command_hook in order to prevent older implementations from calling it twice.
+
+## 2025.JUL.13.3
+* Added function getter for silibs.last_midcast_set called silibs.get_last_midcast_set(). This is done in order to remain consistent in how variables are exposed to users for general purpose use.
+
+## 2025.JUL.13.2
+* Added a custom self_command handler so users don't have to manually include it in their job luas during installation of SilverLibs.
+  * You can (and should) remove the silibs.self_command function call from your job luas.
+
+## 2025.JUL.13.1
+* Added silibs.last_midcast_set variable which stores the midcast set used in your most recent action.
+  * If you are using my RDM and BLM luas you should remove any setters for the last_midcast_set variable from there and use the silibs.get_last_midcast_set() function instead.
+  * This was necessary due to the change in the last patch for where and when SilverLibs action hooks are executed.
+
 ## 2025.JUL.13.0
 * Add overrides to Mote and Selindrile action handlers which process the precast, midcast, etc lifecycle functions.
   * This was needed in order for SilverLibs to inject logic more specifically where it belongs in the lifecycle.
@@ -8,19 +27,3 @@ This document describes all changes made to SilverLibs.
   * This fixes the remaining bug related to the gear locking feature.
 * Removed Kaustra from dynamic elemental belt equipping logic (Hachirin and Orpheus).
   * It was decided that when using Kaustra, a SCH will always control the weather to make Hachirin-no-Obi always the best choice. Will let them set this in their Kaustra set and not override it with SilverLibs logic.
-
-## 2025.JUL.13.1
-* Added silibs.last_midcast_set variable which stores the midcast set used in your most recent action.
-  * If you are using my RDM and BLM luas you should remove any setters for the last_midcast_set variable from there and use the silibs.get_last_midcast_set() function instead.
-  * This was necessary due to the change in the last patch for where and when SilverLibs action hooks are executed.
-
-## 2025.JUL.13.2
-* Added a custom self_command handler so users don't have to manually include it in their job luas during installation of SilverLibs.
-  * You can (and should) remove the silibs.self_command function call from your job luas.
-
-## 2025.JUL.13.3
-* Added function getter for silibs.last_midcast_set called silibs.get_last_midcast_set(). This is done in order to remain consistent in how variables are exposed to users for general purpose use.
-
-## 2025.JUL.17.0
-* Deprecated silibs.self_command function.
-  * Just deprecating the name. Renamed to silibs.self_command_hook in order to prevent older implementations from calling it twice.
