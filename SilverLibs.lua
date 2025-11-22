@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.OCT.02.0'
+silibs.version = '2025.NOV.22.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -392,6 +392,23 @@ silibs.slot_names = T{
   waist='waist',
 }
 
+-- At startup, this list gets updated with the items IDs and other variant names.
+-- This enables fast lookup by both name and ID.
+silibs.no_swap_gear = S{"Shobuhouou Kabuto", "Volte Doublet", "Volte Harness", "Reraise Gorget", "Chocobo Pullus Torque",
+    "Federation Stables Scarf", "Kingdom Stables Collar", "Republic Stables Medal", "Chocobo Whistle", "Wing Gorget",
+    "Stoneskin Torque", "Airmid's Gorget", "Portafurnace", "Raising Earring", "Signal Pearl", "Tactics Pearl",
+    "Federation Earring", "Kingdom Earring", "Republic Earring", "Reraise Earring", "Mhaura Earring", "Selbina Earring",
+    "Duchy Earring", "Kazham Earring", "Rabao Earring", "Empire Earring", "Norg Earring", "Safehold Earring", "Nashmau Earring",
+    "Kocco's Earring", "Mamool Ja Earring", "Duck Ring", "Homing Ring", "Invisible Ring", "Reraise Ring", "Return Ring",
+    "Sneak Ring", "Warp Ring", "Albatross Ring", "Pelican Ring", "Penguin Ring", "Ecphoria Ring", "Olduum Ring",
+    "Tavnazian Ring", "Teleport Ring: Altep", "Teleport Ring: Dem", "Teleport Ring: Holla", "Recall Ring: Jugner",
+    "Teleport Ring: Mea", "Recall Ring: Meriphataud", "Recall Ring: Pashhow", "Teleport Ring: Vahzl", "Teleport Ring: Yhoat",
+    "Ceizak Ring",  "Dim. Ring (Dem)", "Dim. Ring (Holla)", "Dim. Ring (Mea)", "Emporox's Ring",
+    "Hennetiel Ring", "Kamihr Ring", "Marjami Ring", "Morimar Ring", "Yahse Ring", "Yorcia Ring",
+    "Trizek Ring", "Echad Ring", "Facility Ring", "Capacity Ring", "Dem Ring", "Empress Band",
+    "Emperor Band", "Anniversary Ring", "Caliber Ring", "Chariot Band", "Ducal Guard's Ring", "Decennial Ring",
+    "Duodecennial Ring", "Kupofried's Ring", "Novennial Ring", "Undecennial Ring", "Allied Ring", "Resolution Ring",
+    "Endorsement Ring", "Expertise Ring", "Vocation Ring"}
 
 --=============================================================================
 --=============================================================================
@@ -1281,7 +1298,6 @@ function silibs.init_settings()
   silibs.snapshot_auto_equip_enabled = false
   silibs.handle_ammo_swaps_enabled = false
   silibs.auto_reraise_enabled = false
-  silibs.lock_on_usable_items_enabled = false
 
   -- Other variables
   -- Most recent weapons (used for re-arming)
@@ -1377,9 +1393,10 @@ function silibs.init_settings()
     hpp = 10,
   }
   silibs.auto_reraise_hpp_threshold = 10
+
   -- Each slot can have various locks including manual (set by player calling a command),
   -- and potentially several automated locks used by SilverLibs features such as
-  -- when `lock_on_usable_items_enabled` and a usable item is equipped.
+  -- `usable_item` which is set when an item from the `no_swap_gear` list is equipped.
   -- Each slot uses a Set to contain locks. Gear swapping will only be allowed for
   -- a slot with an empty Set of locks.
   silibs.locked_slots = {}
@@ -1396,6 +1413,41 @@ function silibs.init_settings()
   end
 
   silibs.last_midcast_set = {} -- Saves the last midcast set used
+
+  -- Add lowercase version of item names
+  res.items:filter(function(i)
+    i.en_lower = i.en:lower()
+    i.enl_lower = i.enl:lower()
+    return i
+  end)
+
+  -- Update no_swap_gear set with additional lookup values such as ID
+  silibs.temp = S{}
+  for lookup_name in silibs.no_swap_gear:it() do
+    -- Lookup item ID
+    item_res = res.items:with('en_lower', lookup_name:lower());
+    if item_res then
+      -- Add item names and ID to the set
+      silibs.temp:add(lookup_name)
+      silibs.temp:add(item_res.english)
+      silibs.temp:add(item_res.enl)
+      silibs.temp:add(item_res.id)
+    else
+      -- Try to lookup by alt name
+      item_res = res.items:with('enl_lower', lookup_name:lower());
+      if item_res then
+        -- Add item names and ID to the set
+        silibs.temp:add(lookup_name)
+        silibs.temp:add(item_res.english)
+        silibs.temp:add(item_res.enl)
+        silibs.temp:add(item_res.id)
+      else
+        windower.add_to_chat(123, 'SilverLibs: \'no_swap_gear\' item not found (check spelling): '..lookup_name)
+      end
+    end
+  end
+  -- Update the original set to the new set with names and IDs combined
+  silibs.no_swap_gear = silibs.temp
 
   silibs.reset_midaction()
 end
@@ -1752,7 +1804,7 @@ function silibs.unlock(lock_name, ...)
 end
 
 -- All parameters should be slot names indicating which slots to clear locks.
-function silibs.clearlocks(...)
+function silibs.clear_locks(...)
   -- Parameters are accessed in the magic "arg" variable
   for k,v in pairs(arg) do
     if v then
@@ -1798,6 +1850,27 @@ function silibs.clearlocks(...)
     -- Print plural error message
     local errStr = errorSlots:concat(', ')
     windower.add_to_chat(123, 'SilverLibs: ['..errStr..'] are not a valid slot names.')
+  end
+end
+
+-- Search for locks by name. If slot is specified, only checks that slot; otherwise,
+-- checks all slots and returns true if at least one contains a lock with that name.
+function silibs.has_lock(lock_to_find, search_slot)
+  if search_slot then
+    -- Validate/transform slot to name that we use in our locked_slots table.
+    local slot_name = silibs.slot_names[search_slot]
+    if slot_name then
+      return silibs.locked_slots[slot_name]:contains(lock_to_find)
+    else
+      windower.add_to_chat(123, 'SilverLibs: \''..search_slot..'\' is not a valid slot name.')
+    end
+  else
+    for k,v in pairs(gearswap.default_slot_map) do
+      if v then
+        return true
+      end
+    end
+    return false
   end
 end
 
@@ -2967,7 +3040,7 @@ function silibs.set_waltz_stats(table)
     if rawget(silibs.waltz_stats,k) ~= nil then
       silibs.waltz_stats[k] = v
     else
-      print('Silibs: Invalid waltz stat defined \''..tostring(k)..'\'')
+      print('SilverLibs: Invalid waltz stat defined \''..tostring(k)..'\'')
     end
   end
 end
@@ -3584,7 +3657,7 @@ function silibs.self_command_hook(cmdParams, eventArgs)
     elseif lowerCmdParams[1] == 'unlock' then
       silibs.unlock('manual', lowerCmdParams:slice(2):unpack())
     elseif lowerCmdParams[1] == 'clearlocks' then
-      silibs.clearlocks(lowerCmdParams:slice(2):unpack())
+      silibs.clear_locks(lowerCmdParams:slice(2):unpack())
     end
     if silibs.force_lower_cmd then
       cmdParams = lowerCmdParams
@@ -3610,7 +3683,7 @@ end
 -- 't' is target object
 function silibs.is_ws_out_of_range(ws_range, s, t)
   if ws_range == nil or s == nil or t == nil then
-    print('Silibs: Invalid params for is_ws_out_of_range.')
+    print('SilverLibs: Invalid params for is_ws_out_of_range.')
     return true
   end
 
@@ -3756,10 +3829,10 @@ function silibs.enable_th(feature_config)
             silibs.th_aoe_actions.abilities[name] = found
           end
         else
-          windower.add_to_chat(123, 'Silibs: \''..name..'\' invalid range of '..aoe_range..'.')
+          windower.add_to_chat(123, 'SilverLibs: \''..name..'\' invalid range of '..aoe_range..'.')
         end
       else
-        windower.add_to_chat(123, 'Silibs: \''..name..'\' invalid name. Not a WS, spell, or JA')
+        windower.add_to_chat(123, 'SilverLibs: \''..name..'\' invalid name. Not a WS, spell, or JA')
       end
     end
   end
@@ -3817,7 +3890,7 @@ function silibs.customize_quick_magic_spells(custom_quick_magic_spells)
   end
 
   if not is_input_valid then
-    print('Silibs: customize_quick_magic_spells input is not a valid format.')
+    print('SilverLibs: customize_quick_magic_spells input is not a valid format.')
   end
 end
 
@@ -3868,7 +3941,7 @@ end
 -- hpp (optional number): determines HP threshold for which 'auto' mode will equip reraise gear (default: 10)
 function silibs.enable_auto_reraise(config)
   if not config or not config.set then
-    windower.add_to_chat(123, 'Silibs: No valid gear set defined for auto reraise mode')
+    windower.add_to_chat(123, 'SilverLibs: No valid gear set defined for auto reraise mode')
   else
     silibs.auto_reraise_config.set = config.set
     silibs.auto_reraise_enabled = true
@@ -3881,10 +3954,6 @@ function silibs.enable_auto_reraise(config)
   silibs.set_auto_reraise_state(silibs.auto_reraise_config.mode)
 
   silibs.auto_reraise_config.hpp = config.hpp or 10
-end
-
-function silibs.enable_lock_on_usable_items()
-  silibs.lock_on_usable_items_enabled = true
 end
 
 
@@ -3925,6 +3994,13 @@ function silibs.user_setup_hook()
 end
 
 function silibs.precast(spell, action, spellMap, eventArgs)
+  -- Check if any 'usable_item' locks are active when using WS and warn user
+  if spell.type == 'WeaponSkill' then
+    if silibs.has_lock('usable_item') then
+      windower.add_to_chat(123, 'SilverLibs: A usable item is locked in an equip slot.')
+    end
+  end
+
   if silibs.cancel_outranged_ws_enabled then
     silibs.cancel_outranged_ws(spell, eventArgs)
   end
@@ -4010,13 +4086,13 @@ function silibs.post_precast(spell, action, spellMap, eventArgs)
         if sets.TreasureHunter.RA then
           equip(sets.TreasureHunter.RA)
         else
-          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter.RA not found.')
+          windower.add_to_chat(123, 'SilverLibs: sets.TreasureHunter.RA not found.')
         end
       else
         if sets.TreasureHunter then
           equip(sets.TreasureHunter)
         else
-          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+          windower.add_to_chat(123, 'SilverLibs: sets.TreasureHunter not found.')
         end
       end
     -- Handle AoE actions separately
@@ -4142,13 +4218,13 @@ function silibs.post_midcast(spell, action, spellMap, eventArgs)
         if sets.TreasureHunter.RA then
           equip(sets.TreasureHunter.RA)
         else
-          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter.RA not found.')
+          windower.add_to_chat(123, 'SilverLibs: sets.TreasureHunter.RA not found.')
         end
       else
         if sets.TreasureHunter then
           equip(sets.TreasureHunter)
         else
-          windower.add_to_chat(123, 'Silibs: sets.TreasureHunter not found.')
+          windower.add_to_chat(123, 'SilverLibs: sets.TreasureHunter not found.')
         end
       end
     end
@@ -4346,7 +4422,32 @@ windower.raw_register_event('prerender',function()
 end)
 
 windower.raw_register_event('outgoing chunk', function(id, data, modified, injected, blocked)
-  if id == 0x053 then -- Send lockstyle command to server
+  if id == 0x050 then
+    -- Equipment update
+    local p = packets.parse('outgoing', data)
+    local bag = p['Bag']
+    local index = p['Item Index']
+    local slot = p['Equip Slot']
+
+    -- If index is 0, "empty" was equipped
+    if index == 0 then
+      -- Remove 'usable_item' lock on the slot if there was one
+      silibs.unlock('usable_item', gearswap.default_slot_map[slot])
+    else
+      -- Get item info
+      local item_info = windower.ffxi.get_items(bag, index)
+      -- Check if new item is usable item
+      if item_info then
+        if silibs.no_swap_gear:contains(item_info.id) then
+          -- Item is on no_swap_gear list, set lock so item stays equipped
+          silibs.lock('usable_item', gearswap.default_slot_map[slot])
+        else
+          -- Item is not on no_swap_gear list. Remove any 'usable_item' lock on that slot if there was any.
+          silibs.unlock('usable_item', gearswap.default_slot_map[slot])
+        end
+      end
+    end
+  elseif id == 0x053 then -- Send lockstyle command to server
     local type = data:unpack('C', 0x05)
     if type == 0 then -- This is lockstyle 'disable' command
       silibs.locked_style = false
@@ -4411,6 +4512,8 @@ end)
 
 windower.raw_register_event('zone change', function(new_zone, old_zone)
   silibs.on_zone_change_for_th(new_zone, old_zone)
+  -- Remove all 'usable_item' gear locks
+  silibs.unlock('usable_item', 'all')
 end)
 
 windower.raw_register_event('incoming text', function(old, new, color)
