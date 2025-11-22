@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.NOV.22.0'
+silibs.version = '2025.NOV.22.1'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -408,7 +408,8 @@ silibs.no_swap_gear = S{"Shobuhouou Kabuto", "Volte Doublet", "Volte Harness", "
     "Trizek Ring", "Echad Ring", "Facility Ring", "Capacity Ring", "Dem Ring", "Empress Band",
     "Emperor Band", "Anniversary Ring", "Caliber Ring", "Chariot Band", "Ducal Guard's Ring", "Decennial Ring",
     "Duodecennial Ring", "Kupofried's Ring", "Novennial Ring", "Undecennial Ring", "Allied Ring", "Resolution Ring",
-    "Endorsement Ring", "Expertise Ring", "Vocation Ring"}
+    "Endorsement Ring", "Expertise Ring", "Vocation Ring", "Era. Bul. Pouch", "Dev. Bul. Pouch", "Chr. Bul. Pouch",
+    "Liv. Bul. Pouch", "Quelling B. Quiver", "Yoichi's Quiver", "Artemis's Quiver", "Chrono Quiver"}
 
 --=============================================================================
 --=============================================================================

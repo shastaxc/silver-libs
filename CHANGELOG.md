@@ -1,6 +1,9 @@
 # Changelog
 This document describes all changes made to SilverLibs.
 
+## 2025.NOV.22.1
+* Added quivers and ammo pouches to no_swap_gear list.
+
 ## 2025.NOV.22.0
 * Added "usable_item" auto-lock feature which checks the "silibs.no_swap_gear" list when gear is equipped and if it's on the list, keeps it equipped until it is manually removed or the player changes zones.
 * Added a warning when using WS and a "usable_item" lock is active.
