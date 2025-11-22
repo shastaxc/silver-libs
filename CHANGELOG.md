@@ -5,7 +5,7 @@ This document describes all changes made to SilverLibs.
 * Added quivers and ammo pouches to no_swap_gear list.
 
 ## 2025.NOV.22.0
-* Added "usable_item" auto-lock feature which checks the "silibs.no_swap_gear" list when gear is equipped and if it's on the list, keeps it equipped until it is manually removed or the player changes zones.
+* Added "usable_item" auto-lock feature which checks the "silibs.no_swap_gear" list when gear is equipped and if it's on the list, keeps it equipped until it is manually removed or the player changes zones. This feature is enabled by default and cannot opt-out, but if you wish to override the list you can add to your globals file your own verison of `silibs.no_swap_gear` which must be a "Set" containing item IDs.
 * Added a warning when using WS and a "usable_item" lock is active.
 * Users can remove any existing gear locking logic from their job luas now. If you were using any adapted from my personal luas, you can leave them alone with no conflict in functionality but if you were interested in cleaning it up a bit, here's what I removed https://github.com/shastaxc/gearswap-data/commit/6302024520216574fdcf3877a2fe21c23cf2706c
 * Updated some chat messages from using "Silibs:" prefix to "SilverLibs:".
