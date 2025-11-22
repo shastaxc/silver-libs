@@ -7,6 +7,7 @@ This document describes all changes made to SilverLibs.
 ## 2025.NOV.22.0
 * Added "usable_item" auto-lock feature which checks the "silibs.no_swap_gear" list when gear is equipped and if it's on the list, keeps it equipped until it is manually removed or the player changes zones.
 * Added a warning when using WS and a "usable_item" lock is active.
+* Users can remove any existing gear locking logic from their job luas now. If you were using any adapted from my personal luas, you can leave them alone with no conflict in functionality but if you were interested in cleaning it up a bit, here's what I removed https://github.com/shastaxc/gearswap-data/commit/6302024520216574fdcf3877a2fe21c23cf2706c
 * Updated some chat messages from using "Silibs:" prefix to "SilverLibs:".
 
 ## 2025.OCT.02.0
