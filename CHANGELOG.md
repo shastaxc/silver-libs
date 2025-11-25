@@ -1,6 +1,9 @@
 # Changelog
 This document describes all changes made to SilverLibs.
 
+## 2025.NOV.24.0
+* Small bug fix from previous update.
+
 ## 2025.NOV.22.1
 * Added quivers and ammo pouches to no_swap_gear list.
 

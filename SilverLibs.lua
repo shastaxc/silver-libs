@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.NOV.22.1'
+silibs.version = '2025.NOV.24.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -1867,7 +1867,7 @@ function silibs.has_lock(lock_to_find, search_slot)
     end
   else
     for k,v in pairs(gearswap.default_slot_map) do
-      if v then
+      if silibs.locked_slots[v]:contains(lock_to_find) then
         return true
       end
     end
