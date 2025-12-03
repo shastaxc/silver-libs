@@ -34,7 +34,7 @@
 --=============================================================================
 
 silibs = {} -- Initialize library namespace
-silibs.version = '2025.NOV.24.0'
+silibs.version = '2025.DEC.2.0'
 
 -- This works because SilverLibs is loaded in global file, which is loaded
 -- by Mote-Include or Sel-Include so this variable is already initialized.
@@ -395,21 +395,24 @@ silibs.slot_names = T{
 -- At startup, this list gets updated with the items IDs and other variant names.
 -- This enables fast lookup by both name and ID.
 silibs.no_swap_gear = S{"Shobuhouou Kabuto", "Volte Doublet", "Volte Harness", "Reraise Gorget", "Chocobo Pullus Torque",
-    "Federation Stables Scarf", "Kingdom Stables Collar", "Republic Stables Medal", "Chocobo Whistle", "Wing Gorget",
-    "Stoneskin Torque", "Airmid's Gorget", "Portafurnace", "Raising Earring", "Signal Pearl", "Tactics Pearl",
-    "Federation Earring", "Kingdom Earring", "Republic Earring", "Reraise Earring", "Mhaura Earring", "Selbina Earring",
-    "Duchy Earring", "Kazham Earring", "Rabao Earring", "Empire Earring", "Norg Earring", "Safehold Earring", "Nashmau Earring",
-    "Kocco's Earring", "Mamool Ja Earring", "Duck Ring", "Homing Ring", "Invisible Ring", "Reraise Ring", "Return Ring",
-    "Sneak Ring", "Warp Ring", "Albatross Ring", "Pelican Ring", "Penguin Ring", "Ecphoria Ring", "Olduum Ring",
-    "Tavnazian Ring", "Teleport Ring: Altep", "Teleport Ring: Dem", "Teleport Ring: Holla", "Recall Ring: Jugner",
-    "Teleport Ring: Mea", "Recall Ring: Meriphataud", "Recall Ring: Pashhow", "Teleport Ring: Vahzl", "Teleport Ring: Yhoat",
-    "Ceizak Ring",  "Dim. Ring (Dem)", "Dim. Ring (Holla)", "Dim. Ring (Mea)", "Emporox's Ring",
-    "Hennetiel Ring", "Kamihr Ring", "Marjami Ring", "Morimar Ring", "Yahse Ring", "Yorcia Ring",
-    "Trizek Ring", "Echad Ring", "Facility Ring", "Capacity Ring", "Dem Ring", "Empress Band",
-    "Emperor Band", "Anniversary Ring", "Caliber Ring", "Chariot Band", "Ducal Guard's Ring", "Decennial Ring",
-    "Duodecennial Ring", "Kupofried's Ring", "Novennial Ring", "Undecennial Ring", "Allied Ring", "Resolution Ring",
-    "Endorsement Ring", "Expertise Ring", "Vocation Ring", "Era. Bul. Pouch", "Dev. Bul. Pouch", "Chr. Bul. Pouch",
-    "Liv. Bul. Pouch", "Quelling B. Quiver", "Yoichi's Quiver", "Artemis's Quiver", "Chrono Quiver"}
+  "Federation Stables Scarf", "Kingdom Stables Collar", "Republic Stables Medal", "Chocobo Whistle", "Wing Gorget",
+  "Stoneskin Torque", "Airmid's Gorget", "Portafurnace", "Raising Earring", "Signal Pearl", "Tactics Pearl",
+  "Federation Earring", "Kingdom Earring", "Republic Earring", "Reraise Earring", "Mhaura Earring", "Selbina Earring",
+  "Duchy Earring", "Kazham Earring", "Rabao Earring", "Empire Earring", "Norg Earring", "Safehold Earring", "Nashmau Earring",
+  "Kocco's Earring", "Mamool Ja Earring", "Duck Ring", "Homing Ring", "Invisible Ring", "Reraise Ring", "Return Ring",
+  "Sneak Ring", "Warp Ring", "Albatross Ring", "Pelican Ring", "Penguin Ring", "Ecphoria Ring", "Olduum Ring",
+  "Tavnazian Ring", "Teleport Ring: Altep", "Teleport Ring: Dem", "Teleport Ring: Holla", "Recall Ring: Jugner",
+  "Teleport Ring: Mea", "Recall Ring: Meriphataud", "Recall Ring: Pashhow", "Teleport Ring: Vahzl", "Teleport Ring: Yhoat",
+  "Ceizak Ring",  "Dim. Ring (Dem)", "Dim. Ring (Holla)", "Dim. Ring (Mea)", "Emporox's Ring",
+  "Hennetiel Ring", "Kamihr Ring", "Marjami Ring", "Morimar Ring", "Yahse Ring", "Yorcia Ring",
+  "Trizek Ring", "Echad Ring", "Facility Ring", "Capacity Ring", "Dem Ring", "Empress Band",
+  "Emperor Band", "Anniversary Ring", "Caliber Ring", "Chariot Band", "Ducal Guard's Ring", "Decennial Ring",
+  "Duodecennial Ring", "Kupofried's Ring", "Novennial Ring", "Undecennial Ring", "Allied Ring", "Resolution Ring",
+  "Endorsement Ring", "Expertise Ring", "Vocation Ring", "Era. Bul. Pouch", "Dev. Bul. Pouch", "Chr. Bul. Pouch",
+  "Liv. Bul. Pouch", "Quelling B. Quiver", "Yoichi's Quiver", "Artemis's Quiver", "Chrono Quiver", "Poseidon's Ring",
+  "Prishe's Boots +1",
+}
+
 
 --=============================================================================
 --=============================================================================

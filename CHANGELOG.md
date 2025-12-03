@@ -1,6 +1,9 @@
 # Changelog
 This document describes all changes made to SilverLibs.
 
+## 2025.DEC.2.0
+* Add items to no_swap_gear list.
+
 ## 2025.NOV.24.0
 * Small bug fix from previous update.
 
